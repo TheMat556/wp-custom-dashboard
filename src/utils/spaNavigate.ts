@@ -5,11 +5,9 @@
  * content area (#wpcontent / #wpfooter). Sidebar and navbar React trees stay
  * alive — no unmount/remount, no flicker.
  *
- * Falls back to full page reload for:
- *  - cross-origin URLs
- *  - editor pages (post.php, post-new.php, site-editor.php)
- *  - non-GET navigations (forms, logout)
- *  - fetch failures
+ * Only a narrow set of admin screens are SPA-safe. Core WordPress pages with
+ * heavy bootstrapping (dashboard, media, widgets, site health, etc.) use a
+ * normal navigation so their JS initializes correctly.
  */
 
 import { useSyncExternalStore } from "react";
@@ -53,17 +51,6 @@ export function useActiveKey(): string | undefined {
 
 // ── SPA navigation core ──────────────────────────────────────────────────────
 
-// These admin pages rely on complex WordPress bootstrapping (editors, media grid).
-// They must do a full navigation so core JS can initialize normally.
-const FULL_RELOAD_PAGES = [
-  "post.php",
-  "post-new.php",
-  "site-editor.php",
-  "upload.php",
-  "media-upload.php",
-  "media-new.php",
-];
-
 function isAdminUrl(url: string): boolean {
   try {
     const parsed = new URL(url, window.location.origin);
@@ -76,12 +63,20 @@ function isAdminUrl(url: string): boolean {
   }
 }
 
-function isEditorUrl(url: string): boolean {
+function hasUnsafePageParam(parsed: URL): boolean {
+  const page = parsed.searchParams.get("page");
+  return page === "site-health";
+}
+
+export function isSpaEligibleUrl(url: string): boolean {
   try {
     const parsed = new URL(url, window.location.origin);
-    const raw = `${parsed.pathname}${parsed.search}`;
-    return FULL_RELOAD_PAGES.some(
-      (p) => raw.endsWith("/" + p) || raw.includes("/" + p) || raw.includes(`page=${p}`)
+    return (
+      parsed.origin === window.location.origin &&
+      parsed.pathname.startsWith("/wp-admin") &&
+      parsed.pathname.endsWith("/admin.php") &&
+      parsed.searchParams.has("page") &&
+      !hasUnsafePageParam(parsed)
     );
   } catch {
     return false;
@@ -111,8 +106,8 @@ function updateTitle(doc: Document) {
  * Returns true if SPA navigation succeeded, false if it fell back to full reload.
  */
 export async function spaNavigate(url: string): Promise<boolean> {
-  // Bail out for non-admin, editor, or cross-origin URLs
-  if (!isAdminUrl(url) || isEditorUrl(url)) {
+  // Bail out for anything outside the narrow SPA-safe allowlist.
+  if (!isAdminUrl(url) || !isSpaEligibleUrl(url)) {
     window.location.assign(url);
     return false;
   }
@@ -210,8 +205,8 @@ function handleContentClick(e: MouseEvent) {
 
   const fullUrl = new URL(href, window.location.origin).href;
 
-  // Only intercept admin URLs that aren't editor pages
-  if (!isAdminUrl(fullUrl) || isEditorUrl(fullUrl)) return;
+  // Only intercept SPA-safe admin URLs.
+  if (!isAdminUrl(fullUrl) || !isSpaEligibleUrl(fullUrl)) return;
 
   e.preventDefault();
   spaNavigate(fullUrl);
