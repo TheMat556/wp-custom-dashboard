@@ -53,7 +53,15 @@ export function useActiveKey(): string | undefined {
 
 // ── SPA navigation core ──────────────────────────────────────────────────────
 
-const EDITOR_PAGES = ["post.php", "post-new.php", "site-editor.php"];
+// These admin pages rely on complex WordPress bootstrapping (editors, media grid).
+// They must do a full navigation so core JS can initialize normally.
+const FULL_RELOAD_PAGES = [
+  "post.php",
+  "post-new.php",
+  "site-editor.php",
+  "upload.php",
+  "media-upload.php",
+];
 
 function isAdminUrl(url: string): boolean {
   try {
@@ -70,7 +78,7 @@ function isAdminUrl(url: string): boolean {
 function isEditorUrl(url: string): boolean {
   try {
     const parsed = new URL(url, window.location.origin);
-    return EDITOR_PAGES.some((p) => parsed.pathname.endsWith("/" + p));
+    return FULL_RELOAD_PAGES.some((p) => parsed.pathname.endsWith("/" + p));
   } catch {
     return false;
   }
