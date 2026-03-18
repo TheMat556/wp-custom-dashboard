@@ -84,11 +84,10 @@ html, body {
     grid-area: content !important;
     margin-left: 0 !important;
     min-width: 0 !important;
-    overflow-y: auto !important;
+    overflow-y: scroll !important;
     visibility: hidden !important;
     opacity: 0 !important;
     transition: opacity 0.08s ease !important;
-    will-change: opacity;
 }
 
 /* ── Reveal content once React is ready ── */
