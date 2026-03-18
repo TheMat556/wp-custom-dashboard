@@ -14,10 +14,10 @@ import {
   Typography,
   theme,
 } from "antd";
+import { useMemo, useRef } from "react";
 import { useTheme } from "../../context/ThemeContext";
 import { useSidebar } from "../../context/SidebarContext";
 import { useMenu } from "../../hooks/useMenu";
-import { useMemo, useRef, useState } from "react";
 import "../../types/wp";
 import { getActiveKey, navigate, navigateHome } from "../../utils/wp";
 import UserDropdown from "./UserDropdown";
@@ -32,13 +32,8 @@ export default function Navbar() {
   const { menuItems } = useMenu();
   const { token } = theme.useToken();
   const isDark = appTheme === "dark";
-  const activeKey = useMemo(() => getActiveKey(), []);
-  const [isToggleHovered, setIsToggleHovered] = useState(false);
-  const [isTogglePressed, setIsTogglePressed] = useState(false);
-  const [isThemeHovered, setIsThemeHovered] = useState(false);
-  const [isThemePressed, setIsThemePressed] = useState(false);
+  const activeKey = getActiveKey();
 
-  // Ref for dropdown container (renders popups inside this element)
   const containerRef = useRef<HTMLDivElement>(null);
   const getPopupContainer = () => containerRef.current || document.body;
 
@@ -48,27 +43,6 @@ export default function Navbar() {
   const headerBorderColor = isDark
     ? token.colorSplit
     : token.colorBorderSecondary;
-  const breadcrumbShellStyle = {
-    marginTop: 4,
-    padding: 0,
-    borderRadius: 0,
-    backgroundColor: "transparent",
-    border: "none",
-    transition: "color 200ms ease",
-    boxShadow: "none",
-  };
-  const toggleButtonBackground = isTogglePressed
-    ? token.controlItemBgActive
-    : isToggleHovered
-      ? token.controlItemBgHover
-      : isDark
-        ? token.colorFillAlter
-        : "transparent";
-  const themeButtonBackground = isThemePressed
-    ? token.controlItemBgActive
-    : isThemeHovered
-      ? token.controlItemBgHover
-      : "transparent";
 
   const breadcrumbItems = useMemo(() => {
     const items: { title: React.ReactNode }[] = [
@@ -80,8 +54,7 @@ export default function Navbar() {
             onClick={navigateHome}
           >
             <HomeOutlined
-              className="mr-1"
-              style={{ fontSize: 16, color: token.colorTextTertiary }}
+              style={{ fontSize: 16, color: token.colorTextTertiary, marginRight: 4 }}
             />
             <Text style={{ color: token.colorTextSecondary }}>
               Home
@@ -156,13 +129,8 @@ export default function Navbar() {
     token.colorTextTertiary,
   ]);
 
-  // Choose the right icon for the toggle button
   const getToggleIcon = () => {
-    if (isMobile) {
-      // On mobile: always show hamburger menu
-      return <MenuOutlined />;
-    }
-    // On desktop: show fold/unfold based on collapsed state
+    if (isMobile) return <MenuOutlined />;
     return collapsed ? <MenuUnfoldOutlined /> : <MenuFoldOutlined />;
   };
 
@@ -195,35 +163,27 @@ export default function Navbar() {
           title={
             isMobile ? "Open menu" : collapsed ? "Expand sidebar" : "Collapse sidebar"
           }
-          onMouseEnter={() => setIsToggleHovered(true)}
-          onMouseLeave={() => {
-            setIsToggleHovered(false);
-            setIsTogglePressed(false);
-          }}
-          onMouseDown={() => setIsTogglePressed(true)}
-          onMouseUp={() => setIsTogglePressed(false)}
-          onBlur={() => setIsTogglePressed(false)}
           style={{
             width: 64,
             height: 64,
             borderRadius: 0,
             fontSize: 18,
-            color:
-              isToggleHovered || isTogglePressed
-                ? token.colorText
-                : token.colorTextSecondary,
-            backgroundColor: toggleButtonBackground,
+            color: token.colorTextSecondary,
             borderInlineEnd: `1px solid ${headerBorderColor}`,
-            boxShadow:
-              isDark && (isToggleHovered || isTogglePressed)
-                ? `inset 0 -1px 0 ${token.colorSplit}`
-                : "none",
             transition:
-              "background-color 180ms ease, color 180ms ease, box-shadow 180ms ease",
+              "background-color 180ms ease, color 180ms ease",
           }}
         />
         {!isMobile && (
-          <div style={breadcrumbShellStyle}>
+          <div style={{
+            marginTop: 4,
+            padding: 0,
+            borderRadius: 0,
+            backgroundColor: "transparent",
+            border: "none",
+            transition: "color 200ms ease",
+            boxShadow: "none",
+          }}>
             <Breadcrumb
               items={breadcrumbItems}
               separator={
@@ -261,10 +221,7 @@ export default function Navbar() {
             ) : (
               <BulbOutlined
                 style={{
-                  color:
-                    isThemeHovered || isThemePressed
-                      ? token.colorText
-                      : token.colorTextSecondary,
+                  color: token.colorTextSecondary,
                   fontSize: 18,
                 }}
               />
@@ -272,28 +229,12 @@ export default function Navbar() {
           }
           onClick={toggleTheme}
           title={isDark ? "Switch to light mode" : "Switch to dark mode"}
-          onMouseEnter={() => setIsThemeHovered(true)}
-          onMouseLeave={() => {
-            setIsThemeHovered(false);
-            setIsThemePressed(false);
-          }}
-          onMouseDown={() => setIsThemePressed(true)}
-          onMouseUp={() => setIsThemePressed(false)}
-          onBlur={() => setIsThemePressed(false)}
           style={{
             width: 38,
             height: 38,
-            color:
-              isThemeHovered || isThemePressed
-                ? token.colorText
-                : token.colorTextSecondary,
-            backgroundColor: themeButtonBackground,
-            boxShadow:
-              isDark && (isThemeHovered || isThemePressed)
-                ? `inset 0 0 0 1px ${token.colorSplit}`
-                : "none",
+            color: token.colorTextSecondary,
             transition:
-              "background-color 180ms ease, color 180ms ease, box-shadow 180ms ease",
+              "background-color 180ms ease, color 180ms ease",
           }}
         />
 

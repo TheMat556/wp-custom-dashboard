@@ -44,7 +44,7 @@ async function persistTheme(t: Theme) {
   }
 }
 
-export const themeStore = {
+const themeStore = {
   get(): Theme {
     return currentTheme;
   },

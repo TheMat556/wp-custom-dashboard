@@ -9,12 +9,6 @@ class WP_React_UI_Asset_Loader {
     private const CACHE_MANIFEST = 'wp_react_ui_manifest';
     private const CACHE_DEV      = 'wp_react_ui_is_dev';
     private const CACHE_MENU     = 'wp_react_ui_menu';
-    private const CACHE_SIDEBAR_SHELL = 'wp_react_ui_sidebar_shell';
-
-    private static ?array $manifest_request_cache = null;
-    private static ?array $menu_request_cache = null;
-    private static array $sidebar_shell_request_cache = [];
-    public static array $css_urls = [];
 
     // ─── Init ─────────────────────────────────────────────────────────────────
 
@@ -43,14 +37,9 @@ class WP_React_UI_Asset_Loader {
     // ─── Manifest ─────────────────────────────────────────────────────────────
 
     private static function get_manifest(): ?array {
-        if (self::$manifest_request_cache !== null) {
-            return self::$manifest_request_cache;
-        }
-
         $cached = get_transient(self::CACHE_MANIFEST);
         if ($cached !== false) {
-            self::$manifest_request_cache = $cached;
-            return self::$manifest_request_cache;
+            return $cached;
         }
 
         $manifest_path = self::$dist_dir . '.vite/manifest.json';
@@ -60,8 +49,7 @@ class WP_React_UI_Asset_Loader {
         if (!$manifest) return null;
 
         set_transient(self::CACHE_MANIFEST, $manifest, DAY_IN_SECONDS);
-        self::$manifest_request_cache = $manifest;
-        return self::$manifest_request_cache;
+        return $manifest;
     }
 
     public static function get_preload_assets(): array {
@@ -101,10 +89,6 @@ class WP_React_UI_Asset_Loader {
 
     // ─── Cache clearing ───────────────────────────────────────────────────────
 
-    /**
-     * Clears only the menu transient for the current user.
-     * Called on plugin activation / deactivation / theme switch.
-     */
     public static function clear_menu_cache(): void {
         global $wpdb;
 
@@ -118,35 +102,11 @@ class WP_React_UI_Asset_Loader {
                 '_transient_timeout_' . $prefix . '_%'
             )
         );
-
-        self::$menu_request_cache = null;
-        self::clear_sidebar_shell_cache();
     }
 
-    public static function clear_sidebar_shell_cache(): void {
-        global $wpdb;
-
-        $prefix = self::CACHE_SIDEBAR_SHELL;
-        $wpdb->query(
-            $wpdb->prepare(
-                "DELETE FROM {$wpdb->options}
-                 WHERE option_name LIKE %s
-                 OR    option_name LIKE %s",
-                '_transient_' . $prefix . '_%',
-                '_transient_timeout_' . $prefix . '_%'
-            )
-        );
-
-        self::$sidebar_shell_request_cache = [];
-    }
-
-    /**
-     * Clears everything — manifest, dev flag, and all menu caches.
-     */
     public static function clear_cache(): void {
         delete_transient(self::CACHE_MANIFEST);
         delete_transient(self::CACHE_DEV);
-        self::$manifest_request_cache = null;
         self::clear_menu_cache();
     }
 
@@ -178,8 +138,6 @@ class WP_React_UI_Asset_Loader {
             }
             return $tag;
         }, 10, 2);
-
-        // In dev mode outside.css is handled by Vite HMR — no separate enqueue needed
     }
 
     private static function enqueue_prod(): void {
@@ -195,19 +153,18 @@ class WP_React_UI_Asset_Loader {
             [], null, false
         );
 
-        // ── Collect CSS URLs — DO NOT enqueue globally.
-        // Pass them to JS so mount.tsx injects them only into shadow roots.
-        $css_urls = [];
+        // Enqueue entry CSS globally (no shadow DOM)
+        $css_index = 0;
         foreach (($entry['css'] ?? []) as $css_file) {
-            $css_urls[] = self::$dist_url . $css_file;
+            wp_enqueue_style(
+                'wp-react-ui-css-' . $css_index,
+                self::$dist_url . $css_file,
+                [], null
+            );
+            $css_index++;
         }
 
-        // Store on wpReactUi.cssUrls — consumed by mount.tsx
-        // (wp_localize_script is called later in wp-react-ui.php,
-        //  so we stash the URLs in a static property for pickup there)
-        self::$css_urls = $css_urls;
-
-        // ── outside.css still goes into <head> — that's intentional
+        // outside.css — WordPress content area tweaks
         $outside_entry = $manifest['src/outside.css'] ?? null;
         if (!empty($outside_entry['file'])) {
             wp_enqueue_style(
@@ -230,14 +187,6 @@ class WP_React_UI_Asset_Loader {
     }
     // ─── Comments enabled check ───────────────────────────────────────────────
 
-    /**
-     * Returns true if comments are effectively enabled on this site.
-     *
-     * Checks all public post types for comments support via post_type_supports().
-     * SNN-BRX disables comments by calling remove_post_type_support() on all
-     * public post types, so this check catches it without hardcoding any
-     * third-party option key.
-     */
     private static function are_comments_enabled(): bool {
         $post_types = get_post_types(['public' => true]);
 
@@ -253,31 +202,22 @@ class WP_React_UI_Asset_Loader {
     // ─── Menu data ────────────────────────────────────────────────────────────
 
     public static function get_menu_data(): array {
-        if (self::$menu_request_cache !== null) {
-            return self::$menu_request_cache;
-        }
-
         $user_id   = get_current_user_id();
         $cache_key = self::CACHE_MENU . '_' . $user_id;
         $cached    = get_transient($cache_key);
 
         if ($cached !== false) {
-            self::$menu_request_cache = $cached;
-            return self::$menu_request_cache;
+            return $cached;
         }
 
         global $menu, $submenu;
         $items = [];
 
-        // Dynamically detect whether comments are enabled — works with SNN-BRX,
-        // Disable Comments plugin, or any other mechanism that calls
-        // remove_post_type_support().
         $comments_enabled = self::are_comments_enabled();
 
         foreach ((array) $menu as $item) {
             if (empty($item[0])) continue;
 
-            // Hide the Comments menu item when comments are disabled site-wide
             if (!$comments_enabled && isset($item[2]) && $item[2] === 'edit-comments.php') {
                 continue;
             }
@@ -315,170 +255,11 @@ class WP_React_UI_Asset_Loader {
         }
 
         set_transient($cache_key, $items, HOUR_IN_SECONDS);
-        self::$menu_request_cache = $items;
-        return self::$menu_request_cache;
-    }
-
-    public static function get_sidebar_shell_html(array $branding, string $theme): string {
-        $user_id    = get_current_user_id();
-        $site_name = (string) ($branding['siteName'] ?? get_bloginfo('name'));
-        $logo_url  = self::get_sidebar_shell_logo_url($branding, $theme);
-        $menu_items = array_slice(self::get_menu_data(), 0, 10);
-        $signature = md5((string) wp_json_encode([
-            'branding' => $branding,
-            'theme'    => $theme,
-            'menu'     => $menu_items,
-        ]));
-        $cache_key = self::CACHE_SIDEBAR_SHELL . '_' . $user_id . '_' . $theme;
-
-        if (isset(self::$sidebar_shell_request_cache[$cache_key], self::$sidebar_shell_request_cache[$cache_key]['signature'])
-            && self::$sidebar_shell_request_cache[$cache_key]['signature'] === $signature) {
-            return self::$sidebar_shell_request_cache[$cache_key]['html'];
-        }
-
-        $cached = get_transient($cache_key);
-        if (is_array($cached)
-            && isset($cached['signature'], $cached['html'])
-            && $cached['signature'] === $signature
-            && is_string($cached['html'])) {
-            self::$sidebar_shell_request_cache[$cache_key] = $cached;
-            return $cached['html'];
-        }
-
-        ob_start();
-        ?>
-        <div class="wp-react-ui-sidebar-shell" aria-hidden="true">
-            <div class="wp-react-ui-sidebar-shell__header">
-                <div class="wp-react-ui-sidebar-shell__brand">
-                    <span class="wp-react-ui-sidebar-shell__logo">
-                        <?php if ($logo_url !== '') : ?>
-                            <img src="<?php echo esc_url($logo_url); ?>" alt="">
-                        <?php else : ?>
-                            <span class="wp-react-ui-sidebar-shell__logo-fallback">
-                                <?php echo esc_html(strtoupper(substr($site_name, 0, 1) ?: 'S')); ?>
-                            </span>
-                        <?php endif; ?>
-                    </span>
-
-                    <span class="wp-react-ui-sidebar-shell__brand-copy">
-                        <span class="wp-react-ui-sidebar-shell__site-name">
-                            <?php echo esc_html($site_name); ?>
-                        </span>
-                        <span class="wp-react-ui-sidebar-shell__site-subtitle">Control Panel</span>
-                    </span>
-                </div>
-            </div>
-
-            <div class="wp-react-ui-sidebar-shell__menu">
-                <?php foreach ($menu_items as $item) : ?>
-                    <?php
-                    $is_active = self::is_sidebar_shell_item_active($item);
-                    $count     = isset($item['count']) ? (int) $item['count'] : 0;
-                    ?>
-                    <div class="wp-react-ui-sidebar-shell__item<?php echo $is_active ? ' is-active' : ''; ?>">
-                        <span class="wp-react-ui-sidebar-shell__item-icon">
-                            <?php echo self::render_sidebar_shell_icon($item); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>
-                        </span>
-                        <span class="wp-react-ui-sidebar-shell__item-label">
-                            <?php echo esc_html((string) ($item['label'] ?? '')); ?>
-                        </span>
-                        <?php if ($count > 0) : ?>
-                            <span class="wp-react-ui-sidebar-shell__item-count">
-                                <?php echo esc_html((string) $count); ?>
-                            </span>
-                        <?php endif; ?>
-                    </div>
-                <?php endforeach; ?>
-            </div>
-        </div>
-        <?php
-
-        $html = trim((string) ob_get_clean());
-        $payload = [
-            'signature' => $signature,
-            'html'      => $html,
-        ];
-
-        set_transient($cache_key, $payload, HOUR_IN_SECONDS);
-        self::$sidebar_shell_request_cache[$cache_key] = $payload;
-
-        return $html;
-    }
-
-    private static function get_sidebar_shell_logo_url(array $branding, string $theme): string {
-        $logos = isset($branding['logos']) && is_array($branding['logos']) ? $branding['logos'] : [];
-        $light_url = isset($logos['lightUrl']) ? (string) $logos['lightUrl'] : '';
-        $dark_url = isset($logos['darkUrl']) ? (string) $logos['darkUrl'] : '';
-        $default_url = isset($logos['defaultUrl']) ? (string) $logos['defaultUrl'] : '';
-
-        if ($theme === 'dark') {
-            return $dark_url !== '' ? $dark_url : ($light_url !== '' ? $light_url : $default_url);
-        }
-
-        return $light_url !== '' ? $light_url : $default_url;
-    }
-
-    private static function is_sidebar_shell_item_active(array $item): bool {
-        if (empty($item['slug'])) {
-            return false;
-        }
-
-        if (self::is_current_admin_slug((string) $item['slug'])) {
-            return true;
-        }
-
-        foreach ((array) ($item['children'] ?? []) as $child) {
-            if (!empty($child['slug']) && self::is_current_admin_slug((string) $child['slug'])) {
-                return true;
-            }
-        }
-
-        return false;
-    }
-
-    private static function is_current_admin_slug(string $slug): bool {
-        global $pagenow;
-
-        $page = isset($_GET['page']) ? sanitize_text_field(wp_unslash($_GET['page'])) : '';
-        if ($page !== '') {
-            return $page === $slug;
-        }
-
-        $current = (string) $pagenow;
-
-        if (isset($_GET['post_type'])) {
-            $current .= '?post_type=' . sanitize_key(wp_unslash($_GET['post_type']));
-        }
-
-        return $current === $slug;
-    }
-
-    private static function render_sidebar_shell_icon(array $item): string {
-        $icon = isset($item['icon']) ? (string) $item['icon'] : '';
-        $label = isset($item['label']) ? (string) $item['label'] : '';
-
-        if ($icon !== '' && str_starts_with($icon, 'dashicons-')) {
-            return '<span class="dashicons ' . esc_attr($icon) . '" aria-hidden="true"></span>';
-        }
-
-        $initial = strtoupper(substr($label, 0, 1) ?: '•');
-
-        return '<span class="wp-react-ui-sidebar-shell__item-icon-fallback" aria-hidden="true">' . esc_html($initial) . '</span>';
+        return $items;
     }
 
     /**
      * Parses a raw WordPress menu label into a clean label + optional count.
-     *
-     * WordPress renders notification bubbles like:
-     *   Plugins <span class="update-plugins count-3">
-     *              <span class="plugin-count">3</span>
-     *            </span>
-     *   Comments <span class="awaiting-mod count-12">
-     *               <span class="pending-count">12</span>
-     *             </span>
-     *
-     * Returns count as int when found, null when not present.
-     * Count is never returned as 0 — a zero bubble is treated as no bubble.
      *
      * @return array{ label: string, count: int|null }
      */
@@ -493,7 +274,6 @@ class WP_React_UI_Asset_Loader {
         }
 
         $cleaned = preg_replace('/<span[^>]*>.*?<\/span>/is', '', $raw);
-        $cleaned = preg_replace('/<span[^>]*>.*?<\/span>/is', '', $cleaned);
         $cleaned = wp_strip_all_tags($cleaned);
         $cleaned = trim(preg_replace('/\s+/', ' ', $cleaned));
 

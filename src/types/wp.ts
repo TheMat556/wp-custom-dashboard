@@ -24,8 +24,6 @@ declare global {
       theme?: string;
       assetsUrl?: string;
       publicUrl?: string;
-      cssUrls?: string[];
-      sidebarShellHtml?: string;
       logoutUrl?: string;
       logoutNonce?: string;
       user?: {

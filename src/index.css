@@ -1,9 +1,21 @@
-@import "tailwindcss";
+/* Base styles — loaded globally via wp_enqueue_style */
+#react-navbar-root,
+#react-sidebar-root {
+  font-family: "Inter", -apple-system, BlinkMacSystemFont, sans-serif;
+  line-height: 1.5;
+  font-size: 14px;
+}
 
-@layer base {
-  :host {
-    font-family: "Inter", -apple-system, BlinkMacSystemFont, sans-serif;
-    line-height: 1.5;
-    font-size: 14px;
-  }
+/* Hover effects handled in CSS instead of useState */
+.wp-react-ui-user-trigger:hover {
+  background-color: rgba(0, 0, 0, 0.04);
+}
+.wp-react-ui-user-trigger:active {
+  background-color: rgba(0, 0, 0, 0.08);
+}
+[data-theme="dark"] .wp-react-ui-user-trigger:hover {
+  background-color: rgba(255, 255, 255, 0.08);
+}
+[data-theme="dark"] .wp-react-ui-user-trigger:active {
+  background-color: rgba(255, 255, 255, 0.12);
 }

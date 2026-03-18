@@ -1,5 +1,5 @@
 import { Layout, theme } from "antd";
-import { useMemo, useState, useCallback } from "react";
+import { useState, useCallback } from "react";
 import { useTheme } from "../../context/ThemeContext";
 import { useSidebar } from "../../context/SidebarContext";
 import { useMenu } from "../../hooks/useMenu";
@@ -34,13 +34,12 @@ export default function Sidebar() {
   const isDark = appTheme === "dark";
 
   const { menuItems, loading, refresh } = useMenu();
-  const activeKey = useMemo(() => getActiveKey(), []);
+  const activeKey = getActiveKey();
 
   const [openKeys, setOpenKeys] = useState<string[]>(() =>
     getInitialOpenKeys(menuItems, activeKey)
   );
 
-  // Prevent re-opening an already-open submenu (accordion style)
   const handleOpenChange = (keys: string[]) => {
     const newlyOpened = keys.find((k) => !openKeys.includes(k));
     if (keys.length === 0) {
@@ -48,14 +47,12 @@ export default function Sidebar() {
     } else if (newlyOpened) {
       setOpenKeys([newlyOpened]);
     }
-    // If clicking the already-open parent → do nothing, keep it open
   };
 
-  // Called when a collapsed parent icon is clicked — expand + open submenu
   const handleParentClick = useCallback(
     (key: string) => {
       toggle();
-      setTimeout(() => setOpenKeys([key]), 50);
+      setOpenKeys([key]);
     },
     [toggle]
   );

@@ -1,29 +1,56 @@
+import React from "react";
+import { createRoot } from "react-dom/client";
+import { ConfigProvider, theme as antTheme } from "antd";
+import { ErrorBoundary } from "./components/ErrorBoundary";
+import { ThemeProvider, useTheme } from "./context/ThemeContext";
+import { SidebarProvider } from "./context/SidebarContext";
 import Navbar from "./components/navbar";
 import Sidebar from "./components/sidebar";
-import { mountInShadow } from "./shadow-mount";
-import { SidebarProvider } from "./context/SidebarContext";
+import "./types/wp";
 import "./index.css";
 
-function createShadowHost() {
-  const shadowHost = document.createElement("div");
-  shadowHost.className = "wp-react-ui-shadow-host";
-  return shadowHost;
+function ThemedApp({ children }: { children: React.ReactNode }) {
+  const { theme } = useTheme();
+
+  return (
+    <ConfigProvider
+      theme={{
+        algorithm:
+          theme === "dark"
+            ? antTheme.darkAlgorithm
+            : antTheme.defaultAlgorithm,
+        token: {
+          fontFamily:
+            '"Inter", -apple-system, BlinkMacSystemFont, sans-serif',
+          colorPrimary: "#4f46e5",
+        },
+      }}
+    >
+      {children}
+    </ConfigProvider>
+  );
 }
 
-function getSidebarShell() {
-  return window.wpReactUi?.sidebarShellHtml?.trim() ?? "";
+function Providers({ children }: { children: React.ReactNode }) {
+  return (
+    <ThemeProvider>
+      <SidebarProvider>
+        <ThemedApp>{children}</ThemedApp>
+      </SidebarProvider>
+    </ThemeProvider>
+  );
 }
 
 function setupDOM() {
   const wpwrap = document.getElementById("wpwrap");
   if (!wpwrap) return;
+
   const initialTheme = window.wpReactUi?.theme ?? "light";
 
   if (!document.getElementById("react-navbar-root")) {
     const navbarRoot = document.createElement("div");
     navbarRoot.id = "react-navbar-root";
     navbarRoot.setAttribute("data-theme", initialTheme);
-    navbarRoot.appendChild(createShadowHost());
     wpwrap.insertBefore(navbarRoot, wpwrap.firstChild);
   }
 
@@ -31,17 +58,6 @@ function setupDOM() {
     const sidebarRoot = document.createElement("div");
     sidebarRoot.id = "react-sidebar-root";
     sidebarRoot.setAttribute("data-theme", initialTheme);
-
-    const sidebarShell = getSidebarShell();
-    if (sidebarShell !== "") {
-      const shell = document.createElement("div");
-      shell.className = "wp-react-ui-sidebar-shell-wrapper";
-      shell.innerHTML = sidebarShell;
-      sidebarRoot.classList.add("has-server-shell");
-      sidebarRoot.appendChild(shell);
-    }
-
-    sidebarRoot.appendChild(createShadowHost());
     const wpcontent = document.getElementById("wpcontent");
     wpcontent
       ? wpwrap.insertBefore(sidebarRoot, wpcontent)
@@ -51,16 +67,24 @@ function setupDOM() {
 
 setupDOM();
 
-// Both components wrapped in SidebarProvider
-// Cross-shadow communication happens via window custom events
-mountInShadow("react-navbar-root", () => (
-  <SidebarProvider>
-    <Navbar />
-  </SidebarProvider>
-));
+function mount(hostId: string, Component: React.ComponentType) {
+  const host = document.getElementById(hostId);
+  if (!host) return;
 
-mountInShadow("react-sidebar-root", () => (
-  <SidebarProvider>
-    <Sidebar />
-  </SidebarProvider>
-));
+  createRoot(host).render(
+    <React.StrictMode>
+      <ErrorBoundary name={hostId}>
+        <Providers>
+          <Component />
+        </Providers>
+      </ErrorBoundary>
+    </React.StrictMode>
+  );
+
+  host.classList.add("mounted");
+}
+
+mount("react-navbar-root", Navbar);
+mount("react-sidebar-root", Sidebar);
+
+document.getElementById("wpwrap")?.classList.add("react-ready");

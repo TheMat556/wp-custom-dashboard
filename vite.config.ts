@@ -1,12 +1,10 @@
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react-swc'
-import tailwindcss from '@tailwindcss/vite'
 import { resolve } from 'path'
 
 export default defineConfig({
   plugins: [
     react(),
-    tailwindcss(),
   ],
 
   publicDir: 'public',
@@ -23,7 +21,6 @@ export default defineConfig({
     rollupOptions: {
       input: {
         main: resolve(__dirname, 'src/main.tsx'),
-        styles: resolve(__dirname, 'src/index.css'),
         outside: resolve(__dirname, 'src/outside.css'),
       },
 
@@ -33,18 +30,15 @@ export default defineConfig({
         assetFileNames: 'assets/[name]-[hash].[ext]',
         
         manualChunks(id) {
-          // React ecosystem
           if (id.includes('node_modules/react') || 
               id.includes('node_modules/scheduler')) {
             return 'react'
           }
           
-          // Ant Design icons (keep separate - large!)
           if (id.includes('@ant-design/icons')) {
             return 'antd-icons'
           }
           
-          // All Ant Design related (core + rc-*)
           if (id.includes('node_modules/antd') || 
               id.includes('@ant-design/') ||
               id.includes('node_modules/rc-')) {

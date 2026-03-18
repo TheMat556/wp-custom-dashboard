@@ -13,10 +13,6 @@ require_once __DIR__ . '/includes/class-rest-api.php';
 
 WP_React_UI_Branding_Settings::init();
 
-add_action('update_option_wp_react_ui_branding', function () {
-    WP_React_UI_Asset_Loader::clear_sidebar_shell_cache();
-}, 10, 0);
-
 // ─── Admin Init ───────────────────────────────────────────────────────────────
 
 add_action('admin_init', function () {
@@ -67,7 +63,7 @@ add_action('admin_head', function () {
     global $pagenow;
     $editor_pages = ['post.php', 'post-new.php', 'site-editor.php'];
     if (in_array($pagenow, $editor_pages, true)) {
-        return; // Output nothing — let WordPress render natively
+        return;
     }
 
     $preload_assets = WP_React_UI_Asset_Loader::get_preload_assets();
@@ -80,7 +76,11 @@ add_action('admin_head', function () {
         echo '<link rel="modulepreload" href="' . esc_url($js_url) . '">' . "\n";
     }
 
-    echo '<style id="wp-react-ui-critical">' . file_get_contents(__DIR__ . '/includes/critical.css') . '</style>';
+    static $critical_css = null;
+    if ($critical_css === null) {
+        $critical_css = file_get_contents(__DIR__ . '/includes/critical.css');
+    }
+    echo '<style id="wp-react-ui-critical">' . $critical_css . '</style>';
 
 }, 1);
 
@@ -104,7 +104,6 @@ add_action('admin_enqueue_scripts', function () {
 
     wp_localize_script('wp-react-ui', 'wpReactUi', [
         'menu'        => WP_React_UI_Asset_Loader::get_menu_data(),
-        'menuVersion' => time(),
         'siteName'    => $branding['siteName'],
         'branding'    => $branding,
         'theme'       => $theme,
@@ -113,10 +112,7 @@ add_action('admin_enqueue_scripts', function () {
         'restUrl'     => rest_url('wp-react-ui/v1'),
         'logoutUrl'   => wp_logout_url(admin_url()),
         'logoutNonce' => wp_create_nonce('log-out'),
-        'assetsUrl'   => plugin_dir_url(__FILE__) . 'dist/', // For hashed assets
-        'publicUrl'   => plugin_dir_url(__FILE__) . 'dist/', // Same in prod
-        'cssUrls'     => WP_React_UI_Asset_Loader::$css_urls, // ← add this
-        'sidebarShellHtml' => WP_React_UI_Asset_Loader::get_sidebar_shell_html($branding, $theme),
+        'assetsUrl'   => plugin_dir_url(__FILE__) . 'dist/',
         'user'        => [
             'name'   => $user->display_name,
             'role'   => implode(', ', $user->roles),

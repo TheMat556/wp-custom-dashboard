@@ -10,7 +10,7 @@ import {
   theme,
   type MenuProps,
 } from "antd";
-import { useMemo, useState } from "react";
+import { useMemo } from "react";
 import { getAdminBaseUrl } from "../../utils/wp";
 import "../../types/wp";
 
@@ -43,14 +43,7 @@ export default function UserDropdown({
 }) {
   const user = useMemo(() => getWpUser(), []);
   const { token } = theme.useToken();
-  const [isHovered, setIsHovered] = useState(false);
-  const [isPressed, setIsPressed] = useState(false);
 
-  const triggerBackground = isPressed
-    ? token.controlItemBgActive
-    : isHovered
-      ? token.controlItemBgHover
-      : "transparent";
   const avatarBackground = isDark
     ? token.colorPrimaryBgHover
     : token.colorPrimaryBg;
@@ -152,18 +145,9 @@ export default function UserDropdown({
           padding: "6px 10px",
           borderRadius: token.borderRadiusLG,
           color: token.colorText,
-          backgroundColor: triggerBackground,
-          boxShadow: "none",
           transition: "background-color 180ms ease, color 180ms ease",
         }}
-        onMouseEnter={() => setIsHovered(true)}
-        onMouseLeave={() => {
-          setIsHovered(false);
-          setIsPressed(false);
-        }}
-        onMouseDown={() => setIsPressed(true)}
-        onMouseUp={() => setIsPressed(false)}
-        onBlur={() => setIsPressed(false)}
+        className="wp-react-ui-user-trigger"
       >
         <div style={{ textAlign: "right" }}>
           <Text
