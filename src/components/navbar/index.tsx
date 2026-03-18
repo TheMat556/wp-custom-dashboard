@@ -19,7 +19,8 @@ import { useTheme } from "../../context/ThemeContext";
 import { useSidebar } from "../../context/SidebarContext";
 import { useMenu } from "../../hooks/useMenu";
 import "../../types/wp";
-import { getActiveKey, navigate, navigateHome } from "../../utils/wp";
+import { navigate, navigateHome } from "../../utils/wp";
+import { useActiveKey } from "../../utils/spaNavigate";
 import UserDropdown from "./UserDropdown";
 
 const { Text } = Typography;
@@ -32,7 +33,7 @@ export default function Navbar() {
   const { menuItems } = useMenu();
   const { token } = theme.useToken();
   const isDark = appTheme === "dark";
-  const activeKey = getActiveKey();
+  const activeKey = useActiveKey();
 
   const containerRef = useRef<HTMLDivElement>(null);
   const getPopupContainer = () => containerRef.current || document.body;

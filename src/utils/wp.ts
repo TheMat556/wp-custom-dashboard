@@ -4,6 +4,7 @@
  */
 
 import "../types/wp";
+import { spaNavigate } from "./spaNavigate";
 
 export function getWpConfig() {
   return window.wpReactUi ?? {};
@@ -21,16 +22,22 @@ export function getActiveKey(): string | undefined {
   return window.location.pathname.split("/").filter(Boolean).pop();
 }
 
-export function navigate(slug: string): void {
+export function buildAdminUrl(slug: string): string {
   const base = getAdminBaseUrl();
   const normalizedSlug = slug.replace(/^\/+/, "");
-  const target =
-    normalizedSlug.includes("?") || normalizedSlug.includes(".php")
-      ? `${base}/${normalizedSlug}`
-      : `${base}/admin.php?page=${normalizedSlug}`;
-  window.location.assign(target);
+  return normalizedSlug.includes("?") || normalizedSlug.includes(".php")
+    ? `${base}/${normalizedSlug}`
+    : `${base}/admin.php?page=${normalizedSlug}`;
+}
+
+export function navigate(slug: string): void {
+  spaNavigate(buildAdminUrl(slug));
 }
 
 export function navigateHome(): void {
-  window.location.assign(`${getAdminBaseUrl()}/index.php`);
+  spaNavigate(`${getAdminBaseUrl()}/index.php`);
+}
+
+export function getWpUser() {
+  return window.wpReactUi?.user ?? { name: "Admin", role: "administrator" };
 }

@@ -11,7 +11,7 @@ import {
   type MenuProps,
 } from "antd";
 import { useMemo } from "react";
-import { getAdminBaseUrl } from "../../utils/wp";
+import { getAdminBaseUrl, navigate } from "../../utils/wp";
 import "../../types/wp";
 
 const { Text } = Typography;
@@ -50,8 +50,7 @@ export default function UserDropdown({
   const avatarColor = isDark ? token.colorPrimaryTextHover : token.colorPrimaryText;
 
   const goEditProfile = () => {
-    const base = getAdminBaseUrl();
-    window.location.href = `${base}/profile.php`;
+    navigate("profile.php");
   };
 
   const goLogout = () => {

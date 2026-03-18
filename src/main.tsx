@@ -8,6 +8,7 @@ import Navbar from "./components/navbar";
 import Sidebar from "./components/sidebar";
 import "./types/wp";
 import "./index.css";
+import { initSpaNavigation } from "./utils/spaNavigate";
 
 function ThemedApp({ children }: { children: React.ReactNode }) {
   const { theme } = useTheme();
@@ -88,3 +89,4 @@ mount("react-navbar-root", Navbar);
 mount("react-sidebar-root", Sidebar);
 
 document.getElementById("wpwrap")?.classList.add("react-ready");
+initSpaNavigation();

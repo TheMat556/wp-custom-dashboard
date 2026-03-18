@@ -19,3 +19,17 @@
 [data-theme="dark"] .wp-react-ui-user-trigger:active {
   background-color: rgba(255, 255, 255, 0.12);
 }
+
+/* View Transitions for SPA navigation (progressive enhancement) */
+::view-transition-old(root) {
+  animation: wp-spa-fade-out 120ms ease-out;
+}
+::view-transition-new(root) {
+  animation: wp-spa-fade-in 120ms ease-in;
+}
+@keyframes wp-spa-fade-out {
+  to { opacity: 0; }
+}
+@keyframes wp-spa-fade-in {
+  from { opacity: 0; }
+}

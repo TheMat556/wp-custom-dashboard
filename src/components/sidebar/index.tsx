@@ -1,11 +1,12 @@
 import { Layout, theme } from "antd";
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
 import { useTheme } from "../../context/ThemeContext";
 import { useSidebar } from "../../context/SidebarContext";
 import { useMenu } from "../../hooks/useMenu";
 import type { MenuItem } from "../../hooks/useMenu";
 import "../../types/wp";
-import { getActiveKey, navigate } from "../../utils/wp";
+import { navigate } from "../../utils/wp";
+import { useActiveKey } from "../../utils/spaNavigate";
 import { SidebarContent } from "./SidebarContent";
 import { MobileDrawer } from "./MobileDrawer";
 
@@ -34,11 +35,19 @@ export default function Sidebar() {
   const isDark = appTheme === "dark";
 
   const { menuItems, loading, refresh } = useMenu();
-  const activeKey = getActiveKey();
+  const activeKey = useActiveKey();
 
   const [openKeys, setOpenKeys] = useState<string[]>(() =>
     getInitialOpenKeys(menuItems, activeKey)
   );
+
+  // Sync open submenu when activeKey changes (SPA navigation)
+  useEffect(() => {
+    const keys = getInitialOpenKeys(menuItems, activeKey);
+    if (keys.length > 0) {
+      setOpenKeys(keys);
+    }
+  }, [activeKey, menuItems]);
 
   const handleOpenChange = (keys: string[]) => {
     const newlyOpened = keys.find((k) => !openKeys.includes(k));
