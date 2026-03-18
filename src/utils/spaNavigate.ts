@@ -61,6 +61,7 @@ const FULL_RELOAD_PAGES = [
   "site-editor.php",
   "upload.php",
   "media-upload.php",
+  "media-new.php",
 ];
 
 function isAdminUrl(url: string): boolean {
@@ -78,7 +79,10 @@ function isAdminUrl(url: string): boolean {
 function isEditorUrl(url: string): boolean {
   try {
     const parsed = new URL(url, window.location.origin);
-    return FULL_RELOAD_PAGES.some((p) => parsed.pathname.endsWith("/" + p));
+    const raw = `${parsed.pathname}${parsed.search}`;
+    return FULL_RELOAD_PAGES.some(
+      (p) => raw.endsWith("/" + p) || raw.includes("/" + p) || raw.includes(`page=${p}`)
+    );
   } catch {
     return false;
   }

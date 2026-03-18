@@ -30,8 +30,34 @@ export function buildAdminUrl(slug: string): string {
     : `${base}/admin.php?page=${normalizedSlug}`;
 }
 
+function requiresHardNavigation(url: string, slug?: string): boolean {
+  try {
+    const parsed = new URL(url, window.location.origin);
+    const raw = `${parsed.pathname}${parsed.search} ${slug ?? ""}`;
+    return (
+      raw.includes("/upload.php") ||
+      raw.includes("upload.php") ||
+      raw.includes("/media-upload.php") ||
+      raw.includes("media-upload.php") ||
+      raw.includes("/media-new.php") ||
+      raw.includes("media-new.php") ||
+      raw.includes("page=upload.php") ||
+      raw.includes("page=media-upload.php") ||
+      raw.includes("page=media-new.php")
+    );
+  } catch {
+    return false;
+  }
+}
+
 export function navigate(slug: string): void {
-  spaNavigate(buildAdminUrl(slug));
+  const target = buildAdminUrl(slug);
+  if (requiresHardNavigation(target, slug)) {
+    window.location.assign(target);
+    return;
+  }
+
+  spaNavigate(target);
 }
 
 export function navigateHome(): void {
