@@ -71,8 +71,26 @@ function applyCssVar(snapshot: SidebarSnapshot) {
   );
 }
 
+const LS_KEY = "wp-react-sidebar-collapsed";
+
+function readPersistedCollapsed(): boolean {
+  try {
+    return localStorage.getItem(LS_KEY) === "true";
+  } catch {
+    return false;
+  }
+}
+
+function persistCollapsed(collapsed: boolean) {
+  try {
+    localStorage.setItem(LS_KEY, String(collapsed));
+  } catch {
+    // Private browsing or storage full — ignore
+  }
+}
+
 let currentState: SidebarStoreState = {
-  desktopCollapsed: false,
+  desktopCollapsed: readPersistedCollapsed(),
   isMobile: getViewportIsMobile(),
   mobileOpen: false,
 };
@@ -101,6 +119,7 @@ function setState(
   }
 
   currentState = nextState;
+  persistCollapsed(nextState.desktopCollapsed);
   emitChange();
 }
 

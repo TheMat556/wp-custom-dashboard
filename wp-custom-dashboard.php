@@ -82,6 +82,30 @@ add_action('admin_head', function () {
     }
     echo '<style id="wp-react-ui-critical">' . $critical_css . '</style>';
 
+    // Sync sidebar collapsed state + theme before first paint (no layout shift)
+    $theme = get_user_meta(get_current_user_id(), 'wp_react_ui_theme', true) ?: 'light';
+    echo '<script id="wp-react-ui-early-state">';
+    echo '(function(){';
+    echo 'var d=document.documentElement,b=document.body;';
+    // Sidebar: read localStorage to set correct grid column width immediately
+    echo 'try{var c=localStorage.getItem("wp-react-sidebar-collapsed")==="true";';
+    echo 'd.style.setProperty("--sidebar-width",c?"64px":"240px");}catch(e){}';
+    // Theme: apply server-known theme to data-theme attributes
+    echo 'var t=' . wp_json_encode($theme) . ';';
+    echo 'b.setAttribute("data-theme",t);';
+    echo 'if(t==="dark")b.classList.add("wp-react-dark");';
+    echo '})();</script>';
+
+    // Preload branding logo images
+    $branding = WP_React_UI_Branding_Settings::get_frontend_branding();
+    $logos = $branding['logos'] ?? [];
+    $theme_logo = ($theme === 'dark' && !empty($logos['darkUrl']))
+        ? $logos['darkUrl']
+        : ($logos['lightUrl'] ?? $logos['defaultUrl'] ?? '');
+    if (!empty($theme_logo)) {
+        echo '<link rel="preload" href="' . esc_url($theme_logo) . '" as="image">' . "\n";
+    }
+
 }, 1);
 
 // ─── REST API ─────────────────────────────────────────────────────────────────
