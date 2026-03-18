@@ -61,7 +61,7 @@ add_action('admin_head', function () {
     echo '<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">' . "\n";
 
     global $pagenow;
-    $skip_pages = ['post.php', 'post-new.php', 'site-editor.php', 'upload.php', 'media-upload.php'];
+    $skip_pages = ['post.php', 'post-new.php', 'site-editor.php'];
     if (in_array($pagenow, $skip_pages, true)) {
         return;
     }
@@ -116,7 +116,7 @@ add_action('rest_api_init', ['WP_React_UI_REST_API', 'register']);
 
 add_action('admin_enqueue_scripts', function () {
     global $pagenow;
-    $skip_pages = ['post.php', 'post-new.php', 'site-editor.php', 'upload.php', 'media-upload.php'];
+    $skip_pages = ['post.php', 'post-new.php', 'site-editor.php'];
     if (in_array($pagenow, $skip_pages, true)) {
         return;
     }
