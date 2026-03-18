@@ -1,5 +1,4 @@
 import {
-  UserOutlined,
   EditOutlined,
   LogoutOutlined,
 } from "@ant-design/icons";
@@ -11,7 +10,7 @@ import {
   theme,
   type MenuProps,
 } from "antd";
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { getAdminBaseUrl } from "../../utils/wp";
 import "../../types/wp";
 
@@ -21,16 +20,16 @@ const { Text } = Typography;
 
 function getWpUser() {
   const wp = window.wpReactUi;
-  const name = wp?.user?.name ?? "Admin User";
+  const name = wp?.user?.name?.trim() || "Admin User";
   const role = wp?.user?.role ?? "Super Admin";
-  const avatar = wp?.user?.avatar ?? null;
   const initials = name
-    .split(" ")
-    .map((w: string) => w[0])
+    .split(/\s+/)
+    .filter(Boolean)
+    .map((w: string) => w[0] ?? "")
     .join("")
     .slice(0, 2)
-    .toUpperCase();
-  return { name, role, initials, avatar };
+    .toUpperCase() || "AU";
+  return { name, role, initials };
 }
 
 // ── User Dropdown ─────────────────────────────────────────────────────────────
@@ -44,6 +43,18 @@ export default function UserDropdown({
 }) {
   const user = useMemo(() => getWpUser(), []);
   const { token } = theme.useToken();
+  const [isHovered, setIsHovered] = useState(false);
+  const [isPressed, setIsPressed] = useState(false);
+
+  const triggerBackground = isPressed
+    ? token.controlItemBgActive
+    : isHovered
+      ? token.controlItemBgHover
+      : "transparent";
+  const avatarBackground = isDark
+    ? token.colorPrimaryBgHover
+    : token.colorPrimaryBg;
+  const avatarColor = isDark ? token.colorPrimaryTextHover : token.colorPrimaryText;
 
   const goEditProfile = () => {
     const base = getAdminBaseUrl();
@@ -65,16 +76,15 @@ export default function UserDropdown({
         <Flex gap={12} align="center" style={{ padding: "8px 4px" }}>
           <Avatar
             size={40}
-            src={user.avatar}
             style={{
-              backgroundColor: isDark ? "#1e1b4b" : "#ede9fe",
-              color: isDark ? "#818cf8" : "#4f46e5",
+              backgroundColor: avatarBackground,
+              color: avatarColor,
               fontWeight: 700,
               fontSize: 14,
               flexShrink: 0,
             }}
           >
-            {user.initials || <UserOutlined />}
+            {user.initials}
           </Avatar>
           <div style={{ minWidth: 0 }}>
             <Text
@@ -141,40 +151,47 @@ export default function UserDropdown({
           cursor: "pointer",
           padding: "6px 10px",
           borderRadius: token.borderRadiusLG,
-          transition: "background-color 150ms ease",
+          color: token.colorText,
+          backgroundColor: triggerBackground,
+          boxShadow: "none",
+          transition: "background-color 180ms ease, color 180ms ease",
         }}
-        onMouseEnter={(e) => {
-          e.currentTarget.style.backgroundColor = isDark
-            ? token.colorBgTextHover
-            : token.colorBgTextHover;
+        onMouseEnter={() => setIsHovered(true)}
+        onMouseLeave={() => {
+          setIsHovered(false);
+          setIsPressed(false);
         }}
-        onMouseLeave={(e) => {
-          e.currentTarget.style.backgroundColor = "transparent";
-        }}
+        onMouseDown={() => setIsPressed(true)}
+        onMouseUp={() => setIsPressed(false)}
+        onBlur={() => setIsPressed(false)}
       >
         <div style={{ textAlign: "right" }}>
           <Text
             strong
-            style={{ display: "block", fontSize: 13, lineHeight: 1.3 }}
+            style={{
+              display: "block",
+              fontSize: 13,
+              lineHeight: 1.3,
+              color: token.colorText,
+            }}
           >
             {user.name}
           </Text>
-          <Text type="secondary" style={{ fontSize: 11 }}>
+          <Text style={{ fontSize: 11, color: token.colorTextSecondary }}>
             {user.role}
           </Text>
         </div>
         <Avatar
           size={38}
-          src={user.avatar}
           style={{
-            backgroundColor: isDark ? "#1e1b4b" : "#ede9fe",
-            color: isDark ? "#818cf8" : "#4f46e5",
+            backgroundColor: avatarBackground,
+            color: avatarColor,
             fontWeight: 700,
             fontSize: 13,
             flexShrink: 0,
           }}
         >
-          {user.initials || <UserOutlined />}
+          {user.initials}
         </Avatar>
       </Flex>
     </Dropdown>

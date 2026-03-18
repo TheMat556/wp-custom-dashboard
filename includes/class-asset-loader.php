@@ -9,6 +9,12 @@ class WP_React_UI_Asset_Loader {
     private const CACHE_MANIFEST = 'wp_react_ui_manifest';
     private const CACHE_DEV      = 'wp_react_ui_is_dev';
     private const CACHE_MENU     = 'wp_react_ui_menu';
+    private const CACHE_SIDEBAR_SHELL = 'wp_react_ui_sidebar_shell';
+
+    private static ?array $manifest_request_cache = null;
+    private static ?array $menu_request_cache = null;
+    private static array $sidebar_shell_request_cache = [];
+    public static array $css_urls = [];
 
     // ─── Init ─────────────────────────────────────────────────────────────────
 
@@ -37,9 +43,14 @@ class WP_React_UI_Asset_Loader {
     // ─── Manifest ─────────────────────────────────────────────────────────────
 
     private static function get_manifest(): ?array {
+        if (self::$manifest_request_cache !== null) {
+            return self::$manifest_request_cache;
+        }
+
         $cached = get_transient(self::CACHE_MANIFEST);
         if ($cached !== false) {
-            return $cached;
+            self::$manifest_request_cache = $cached;
+            return self::$manifest_request_cache;
         }
 
         $manifest_path = self::$dist_dir . '.vite/manifest.json';
@@ -49,7 +60,43 @@ class WP_React_UI_Asset_Loader {
         if (!$manifest) return null;
 
         set_transient(self::CACHE_MANIFEST, $manifest, DAY_IN_SECONDS);
-        return $manifest;
+        self::$manifest_request_cache = $manifest;
+        return self::$manifest_request_cache;
+    }
+
+    public static function get_preload_assets(): array {
+        self::init();
+
+        $manifest = self::get_manifest();
+        if (!$manifest) {
+            return [
+                'css' => [],
+                'js'  => [],
+            ];
+        }
+
+        $entry = $manifest['src/main.tsx'] ?? null;
+        $css_urls = [];
+        $js_urls  = [];
+
+        if (!empty($entry['css'])) {
+            foreach ($entry['css'] as $css_file) {
+                $css_urls[] = self::$dist_url . $css_file;
+            }
+        }
+
+        foreach ($manifest as $chunk) {
+            if (empty($chunk['file']) || !str_ends_with($chunk['file'], '.js')) {
+                continue;
+            }
+
+            $js_urls[] = self::$dist_url . $chunk['file'];
+        }
+
+        return [
+            'css' => $css_urls,
+            'js'  => $js_urls,
+        ];
     }
 
     // ─── Cache clearing ───────────────────────────────────────────────────────
@@ -71,6 +118,26 @@ class WP_React_UI_Asset_Loader {
                 '_transient_timeout_' . $prefix . '_%'
             )
         );
+
+        self::$menu_request_cache = null;
+        self::clear_sidebar_shell_cache();
+    }
+
+    public static function clear_sidebar_shell_cache(): void {
+        global $wpdb;
+
+        $prefix = self::CACHE_SIDEBAR_SHELL;
+        $wpdb->query(
+            $wpdb->prepare(
+                "DELETE FROM {$wpdb->options}
+                 WHERE option_name LIKE %s
+                 OR    option_name LIKE %s",
+                '_transient_' . $prefix . '_%',
+                '_transient_timeout_' . $prefix . '_%'
+            )
+        );
+
+        self::$sidebar_shell_request_cache = [];
     }
 
     /**
@@ -79,6 +146,7 @@ class WP_React_UI_Asset_Loader {
     public static function clear_cache(): void {
         delete_transient(self::CACHE_MANIFEST);
         delete_transient(self::CACHE_DEV);
+        self::$manifest_request_cache = null;
         self::clear_menu_cache();
     }
 
@@ -160,10 +228,6 @@ class WP_React_UI_Asset_Loader {
             return $tag;
         }, 10, 2);
     }
-
-// Add this static property at the top of the class:
-public static array $css_urls = [];
-
     // ─── Comments enabled check ───────────────────────────────────────────────
 
     /**
@@ -189,12 +253,17 @@ public static array $css_urls = [];
     // ─── Menu data ────────────────────────────────────────────────────────────
 
     public static function get_menu_data(): array {
+        if (self::$menu_request_cache !== null) {
+            return self::$menu_request_cache;
+        }
+
         $user_id   = get_current_user_id();
         $cache_key = self::CACHE_MENU . '_' . $user_id;
         $cached    = get_transient($cache_key);
 
         if ($cached !== false) {
-            return $cached;
+            self::$menu_request_cache = $cached;
+            return self::$menu_request_cache;
         }
 
         global $menu, $submenu;
@@ -246,7 +315,155 @@ public static array $css_urls = [];
         }
 
         set_transient($cache_key, $items, HOUR_IN_SECONDS);
-        return $items;
+        self::$menu_request_cache = $items;
+        return self::$menu_request_cache;
+    }
+
+    public static function get_sidebar_shell_html(array $branding, string $theme): string {
+        $user_id    = get_current_user_id();
+        $site_name = (string) ($branding['siteName'] ?? get_bloginfo('name'));
+        $logo_url  = self::get_sidebar_shell_logo_url($branding, $theme);
+        $menu_items = array_slice(self::get_menu_data(), 0, 10);
+        $signature = md5((string) wp_json_encode([
+            'branding' => $branding,
+            'theme'    => $theme,
+            'menu'     => $menu_items,
+        ]));
+        $cache_key = self::CACHE_SIDEBAR_SHELL . '_' . $user_id . '_' . $theme;
+
+        if (isset(self::$sidebar_shell_request_cache[$cache_key], self::$sidebar_shell_request_cache[$cache_key]['signature'])
+            && self::$sidebar_shell_request_cache[$cache_key]['signature'] === $signature) {
+            return self::$sidebar_shell_request_cache[$cache_key]['html'];
+        }
+
+        $cached = get_transient($cache_key);
+        if (is_array($cached)
+            && isset($cached['signature'], $cached['html'])
+            && $cached['signature'] === $signature
+            && is_string($cached['html'])) {
+            self::$sidebar_shell_request_cache[$cache_key] = $cached;
+            return $cached['html'];
+        }
+
+        ob_start();
+        ?>
+        <div class="wp-react-ui-sidebar-shell" aria-hidden="true">
+            <div class="wp-react-ui-sidebar-shell__header">
+                <div class="wp-react-ui-sidebar-shell__brand">
+                    <span class="wp-react-ui-sidebar-shell__logo">
+                        <?php if ($logo_url !== '') : ?>
+                            <img src="<?php echo esc_url($logo_url); ?>" alt="">
+                        <?php else : ?>
+                            <span class="wp-react-ui-sidebar-shell__logo-fallback">
+                                <?php echo esc_html(strtoupper(substr($site_name, 0, 1) ?: 'S')); ?>
+                            </span>
+                        <?php endif; ?>
+                    </span>
+
+                    <span class="wp-react-ui-sidebar-shell__brand-copy">
+                        <span class="wp-react-ui-sidebar-shell__site-name">
+                            <?php echo esc_html($site_name); ?>
+                        </span>
+                        <span class="wp-react-ui-sidebar-shell__site-subtitle">Control Panel</span>
+                    </span>
+                </div>
+            </div>
+
+            <div class="wp-react-ui-sidebar-shell__menu">
+                <?php foreach ($menu_items as $item) : ?>
+                    <?php
+                    $is_active = self::is_sidebar_shell_item_active($item);
+                    $count     = isset($item['count']) ? (int) $item['count'] : 0;
+                    ?>
+                    <div class="wp-react-ui-sidebar-shell__item<?php echo $is_active ? ' is-active' : ''; ?>">
+                        <span class="wp-react-ui-sidebar-shell__item-icon">
+                            <?php echo self::render_sidebar_shell_icon($item); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>
+                        </span>
+                        <span class="wp-react-ui-sidebar-shell__item-label">
+                            <?php echo esc_html((string) ($item['label'] ?? '')); ?>
+                        </span>
+                        <?php if ($count > 0) : ?>
+                            <span class="wp-react-ui-sidebar-shell__item-count">
+                                <?php echo esc_html((string) $count); ?>
+                            </span>
+                        <?php endif; ?>
+                    </div>
+                <?php endforeach; ?>
+            </div>
+        </div>
+        <?php
+
+        $html = trim((string) ob_get_clean());
+        $payload = [
+            'signature' => $signature,
+            'html'      => $html,
+        ];
+
+        set_transient($cache_key, $payload, HOUR_IN_SECONDS);
+        self::$sidebar_shell_request_cache[$cache_key] = $payload;
+
+        return $html;
+    }
+
+    private static function get_sidebar_shell_logo_url(array $branding, string $theme): string {
+        $logos = isset($branding['logos']) && is_array($branding['logos']) ? $branding['logos'] : [];
+        $light_url = isset($logos['lightUrl']) ? (string) $logos['lightUrl'] : '';
+        $dark_url = isset($logos['darkUrl']) ? (string) $logos['darkUrl'] : '';
+        $default_url = isset($logos['defaultUrl']) ? (string) $logos['defaultUrl'] : '';
+
+        if ($theme === 'dark') {
+            return $dark_url !== '' ? $dark_url : ($light_url !== '' ? $light_url : $default_url);
+        }
+
+        return $light_url !== '' ? $light_url : $default_url;
+    }
+
+    private static function is_sidebar_shell_item_active(array $item): bool {
+        if (empty($item['slug'])) {
+            return false;
+        }
+
+        if (self::is_current_admin_slug((string) $item['slug'])) {
+            return true;
+        }
+
+        foreach ((array) ($item['children'] ?? []) as $child) {
+            if (!empty($child['slug']) && self::is_current_admin_slug((string) $child['slug'])) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    private static function is_current_admin_slug(string $slug): bool {
+        global $pagenow;
+
+        $page = isset($_GET['page']) ? sanitize_text_field(wp_unslash($_GET['page'])) : '';
+        if ($page !== '') {
+            return $page === $slug;
+        }
+
+        $current = (string) $pagenow;
+
+        if (isset($_GET['post_type'])) {
+            $current .= '?post_type=' . sanitize_key(wp_unslash($_GET['post_type']));
+        }
+
+        return $current === $slug;
+    }
+
+    private static function render_sidebar_shell_icon(array $item): string {
+        $icon = isset($item['icon']) ? (string) $item['icon'] : '';
+        $label = isset($item['label']) ? (string) $item['label'] : '';
+
+        if ($icon !== '' && str_starts_with($icon, 'dashicons-')) {
+            return '<span class="dashicons ' . esc_attr($icon) . '" aria-hidden="true"></span>';
+        }
+
+        $initial = strtoupper(substr($label, 0, 1) ?: '•');
+
+        return '<span class="wp-react-ui-sidebar-shell__item-icon-fallback" aria-hidden="true">' . esc_html($initial) . '</span>';
     }
 
     /**

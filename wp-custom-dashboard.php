@@ -8,7 +8,14 @@
 defined('ABSPATH') || exit;
 
 require_once __DIR__ . '/includes/class-asset-loader.php';
+require_once __DIR__ . '/includes/class-branding-settings.php';
 require_once __DIR__ . '/includes/class-rest-api.php';
+
+WP_React_UI_Branding_Settings::init();
+
+add_action('update_option_wp_react_ui_branding', function () {
+    WP_React_UI_Asset_Loader::clear_sidebar_shell_cache();
+}, 10, 0);
 
 // ─── Admin Init ───────────────────────────────────────────────────────────────
 
@@ -57,29 +64,20 @@ add_action('admin_head', function () {
     echo '<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>' . "\n";
     echo '<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">' . "\n";
 
-    $manifest_path = plugin_dir_path(__FILE__) . 'dist/.vite/manifest.json';
-    if (file_exists($manifest_path)) {
-        $manifest = json_decode(file_get_contents($manifest_path), true);
-        $entry    = $manifest['src/main.tsx'] ?? null;
+    global $pagenow;
+    $editor_pages = ['post.php', 'post-new.php', 'site-editor.php'];
+    if (in_array($pagenow, $editor_pages, true)) {
+        return; // Output nothing — let WordPress render natively
+    }
 
-        global $pagenow;
-        $editor_pages = ['post.php', 'post-new.php', 'site-editor.php'];
-        if (in_array($pagenow, $editor_pages, true)) {
-            return; // Output nothing — let WordPress render natively
-        }
+    $preload_assets = WP_React_UI_Asset_Loader::get_preload_assets();
 
-        if (!empty($entry['css'])) {
-            foreach ($entry['css'] as $css_file) {
-                $css_url = plugin_dir_url(__FILE__) . 'dist/' . $css_file;
-                echo '<link rel="preload" href="' . esc_url($css_url) . '" as="style">' . "\n";
-            }
-        }
+    foreach ($preload_assets['css'] as $css_url) {
+        echo '<link rel="preload" href="' . esc_url($css_url) . '" as="style">' . "\n";
+    }
 
-        foreach ($manifest as $chunk) {
-            if (empty($chunk['file']) || !str_ends_with($chunk['file'], '.js')) continue;
-            $chunk_url = plugin_dir_url(__FILE__) . 'dist/' . $chunk['file'];
-            echo '<link rel="modulepreload" href="' . esc_url($chunk_url) . '">' . "\n";
-        }
+    foreach ($preload_assets['js'] as $js_url) {
+        echo '<link rel="modulepreload" href="' . esc_url($js_url) . '">' . "\n";
     }
 
     echo '<style id="wp-react-ui-critical">' . file_get_contents(__DIR__ . '/includes/critical.css') . '</style>';
@@ -100,26 +98,28 @@ add_action('admin_enqueue_scripts', function () {
 
     WP_React_UI_Asset_Loader::enqueue();
 
-    $user  = wp_get_current_user();
-    $theme = get_user_meta($user->ID, 'wp_react_ui_theme', true) ?: 'light';
+    $user     = wp_get_current_user();
+    $theme    = get_user_meta($user->ID, 'wp_react_ui_theme', true) ?: 'light';
+    $branding = WP_React_UI_Branding_Settings::get_frontend_branding();
 
     wp_localize_script('wp-react-ui', 'wpReactUi', [
-    'menu'        => WP_React_UI_Asset_Loader::get_menu_data(),
-    'menuVersion' => time(),
-    'siteName'    => get_bloginfo('name'),
-    'theme'       => $theme,
-    'adminUrl'    => admin_url(),
-    'nonce'       => wp_create_nonce('wp_rest'),
-    'restUrl'     => rest_url('wp-react-ui/v1'),
-    'logoutUrl'   => wp_logout_url(admin_url()),
-    'logoutNonce' => wp_create_nonce('log-out'),
-    'assetsUrl' => plugin_dir_url(__FILE__) . 'dist/', // For hashed assets
-    'publicUrl' => plugin_dir_url(__FILE__) . 'dist/', // Same in prod
-    'cssUrls'     => WP_React_UI_Asset_Loader::$css_urls, // ← add this
-    'user'        => [
-        'name'   => $user->display_name,
-        'role'   => implode(', ', $user->roles),
-        'avatar' => get_avatar_url($user->ID, ['size' => 80]),
-    ],
-]);
+        'menu'        => WP_React_UI_Asset_Loader::get_menu_data(),
+        'menuVersion' => time(),
+        'siteName'    => $branding['siteName'],
+        'branding'    => $branding,
+        'theme'       => $theme,
+        'adminUrl'    => admin_url(),
+        'nonce'       => wp_create_nonce('wp_rest'),
+        'restUrl'     => rest_url('wp-react-ui/v1'),
+        'logoutUrl'   => wp_logout_url(admin_url()),
+        'logoutNonce' => wp_create_nonce('log-out'),
+        'assetsUrl'   => plugin_dir_url(__FILE__) . 'dist/', // For hashed assets
+        'publicUrl'   => plugin_dir_url(__FILE__) . 'dist/', // Same in prod
+        'cssUrls'     => WP_React_UI_Asset_Loader::$css_urls, // ← add this
+        'sidebarShellHtml' => WP_React_UI_Asset_Loader::get_sidebar_shell_html($branding, $theme),
+        'user'        => [
+            'name'   => $user->display_name,
+            'role'   => implode(', ', $user->roles),
+        ],
+    ]);
 });

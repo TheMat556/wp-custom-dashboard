@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect, useRef } from "react";
+import { useState, useCallback, useEffect, useRef, useMemo } from "react";
 import "../types/wp";
 
 export interface SubMenuItem {
@@ -132,7 +132,7 @@ export function useMenu() {
   }, []);
 
   // DOM-filtered view — only hides items we can positively confirm are hidden.
-  const menuItems = filterByDomVisibility(allItems);
+  const menuItems = useMemo(() => filterByDomVisibility(allItems), [allItems]);
 
   return { menuItems, loading, refresh };
 }

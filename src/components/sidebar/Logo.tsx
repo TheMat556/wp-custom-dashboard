@@ -1,5 +1,6 @@
 import { CloseOutlined } from "@ant-design/icons";
 import { Button, Flex, Typography, theme } from "antd";
+import { useTheme } from "../../context/ThemeContext";
 
 const { Text } = Typography;
 
@@ -12,8 +13,21 @@ export function Logo({
   showClose?: boolean;
   onClose?: () => void;
 }) {
+  const { theme: appTheme } = useTheme();
   const { token } = theme.useToken();
+  const isDark = appTheme === "dark";
+  const branding = window.wpReactUi?.branding;
   const assetsUrl = window.wpReactUi?.assetsUrl ?? "/";
+  const siteName = branding?.siteName ?? window.wpReactUi?.siteName ?? "Site";
+  const fallbackLogoUrl = `${assetsUrl}logo.svg`;
+  const logoUrl = isDark
+    ? branding?.logos.darkUrl ??
+      branding?.logos.lightUrl ??
+      branding?.logos.defaultUrl ??
+      fallbackLogoUrl
+    : branding?.logos.lightUrl ??
+      branding?.logos.defaultUrl ??
+      fallbackLogoUrl;
 
   return (
     <Flex
@@ -28,9 +42,15 @@ export function Logo({
     >
       <Flex align="center">
         <img
-          src={`${assetsUrl}logo.svg`}
-          alt="Logo"
-          style={{ width: 36, height: 36, borderRadius: 12, flexShrink: 0 }}
+          src={logoUrl}
+          alt={`${siteName} logo`}
+          style={{
+            width: 36,
+            height: 36,
+            display: "block",
+            objectFit: "contain",
+            flexShrink: 0,
+          }}
         />
         {!collapsed && (
           <div style={{ marginLeft: 12, lineHeight: 1.2 }}>
@@ -42,7 +62,7 @@ export function Logo({
                 letterSpacing: "-0.02em",
               }}
             >
-              Hader
+              {siteName}
             </Text>
             <Text
               type="secondary"

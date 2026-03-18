@@ -7,8 +7,59 @@ import { ThemeProvider, useTheme } from "./context/ThemeContext";
 import type { Theme } from "./context/ThemeContext";
 import "./types/wp";
 
-let mountedCount = 0;
 const TOTAL_COMPONENTS = 2;
+const COLD_REVEAL_DELAY = 300;
+const WARM_REVEAL_DELAY = 80;
+
+type PendingMount = {
+  host: HTMLElement;
+  shadowHost: HTMLElement;
+  mountPoint: HTMLDivElement;
+  ready: boolean;
+};
+
+const pendingMounts = new Map<string, PendingMount>();
+let hasRevealedRoots = false;
+
+function canUseSessionStorage() {
+  try {
+    return typeof window !== "undefined" && typeof window.sessionStorage !== "undefined";
+  } catch {
+    return false;
+  }
+}
+
+function getCssWarmKey(url: string) {
+  return `wp-react-ui:css-warm:${url}`;
+}
+
+function areCssUrlsWarm(urls: string[]) {
+  if (!canUseSessionStorage() || urls.length === 0) {
+    return false;
+  }
+
+  try {
+    return urls.every(
+      (url) => window.sessionStorage.getItem(getCssWarmKey(url)) === "1"
+    );
+  } catch {
+    return false;
+  }
+}
+
+function markCssUrlsWarm(urls: string[]) {
+  if (!canUseSessionStorage()) {
+    return;
+  }
+
+  try {
+    urls.forEach((url) => {
+      window.sessionStorage.setItem(getCssWarmKey(url), "1");
+    });
+  } catch {
+    // Ignore storage write failures; warm-path caching is only an optimization.
+  }
+}
 
 function getCssUrls(): string[] {
   const fromPhp = window.wpReactUi?.cssUrls;
@@ -29,16 +80,52 @@ function getDashiconsUrl(): string | null {
   return null;
 }
 
-function onComponentReady(host: HTMLElement) {
-  host.classList.add("mounted");
-  mountedCount++;
-
-  if (mountedCount >= TOTAL_COMPONENTS) {
-    const wpwrap = document.getElementById("wpwrap");
-    if (wpwrap) {
-      wpwrap.classList.add("react-ready");
-    }
+function revealMountedRoots() {
+  if (hasRevealedRoots || pendingMounts.size < TOTAL_COMPONENTS) {
+    return;
   }
+
+  const allReady = [...pendingMounts.values()].every(({ ready }) => ready);
+  if (!allReady) {
+    return;
+  }
+
+  hasRevealedRoots = true;
+
+  pendingMounts.forEach(({ host, mountPoint }) => {
+    const entry = pendingMounts.get(host.id);
+    if (entry) {
+      entry.shadowHost.style.visibility = "visible";
+      entry.shadowHost.style.pointerEvents = "auto";
+    }
+    mountPoint.style.visibility = "visible";
+    host.classList.add("mounted");
+  });
+
+  const wpwrap = document.getElementById("wpwrap");
+  if (wpwrap) {
+    wpwrap.classList.add("react-ready");
+  }
+}
+
+function registerPendingMount(
+  hostId: string,
+  host: HTMLElement,
+  shadowHost: HTMLElement,
+  mountPoint: HTMLDivElement
+) {
+  pendingMounts.set(hostId, { host, shadowHost, mountPoint, ready: false });
+  revealMountedRoots();
+}
+
+function markMountReady(hostId: string) {
+  const entry = pendingMounts.get(hostId);
+  if (!entry || entry.ready) {
+    return;
+  }
+
+  entry.ready = true;
+  revealMountedRoots();
 }
 
 function ThemedWrapper({ Component }: { Component: React.ComponentType }) {
@@ -73,15 +160,29 @@ export function mountInShadow(
     return;
   }
 
+  const hasServerShell = host.classList.contains("has-server-shell");
+  const shadowHost =
+    host.querySelector<HTMLElement>(".wp-react-ui-shadow-host") ?? host;
+
   host.style.cssText = `
     display: flex;
     flex-direction: column;
     width: 100%;
     height: 100%;
     min-width: 0;
+    ${hasServerShell ? "position: relative;" : ""}
   `;
 
-  const shadow = host.attachShadow({ mode: "open" });
+  shadowHost.style.cssText = `
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    height: 100%;
+    min-width: 0;
+    ${hasServerShell ? "position: absolute; inset: 0; visibility: hidden; pointer-events: none;" : ""}
+  `;
+
+  const shadow = shadowHost.attachShadow({ mode: "open" });
   const initialTheme: Theme =
     (window.wpReactUi?.theme ?? "light") as Theme;
   host.setAttribute("data-theme", initialTheme);
@@ -95,6 +196,7 @@ export function mountInShadow(
     min-width: 0;
     visibility: hidden;
   `;
+  registerPendingMount(hostId, host, shadowHost, mountPoint);
 
   // Inject dashicons
   const dashiconsUrl = getDashiconsUrl();
@@ -106,6 +208,7 @@ export function mountInShadow(
   }
 
   const cssUrls = getCssUrls();
+  const warmCss = areCssUrlsWarm(cssUrls);
 
   const renderApp = () => {
     createRoot(mountPoint).render(
@@ -131,8 +234,8 @@ export function mountInShadow(
     const onOneLoaded = () => {
       loadedCount++;
       if (loadedCount >= total) {
-        mountPoint.style.visibility = "visible";
-        onComponentReady(host);
+        markCssUrlsWarm(cssUrls);
+        markMountReady(hostId);
       }
     };
 
@@ -150,14 +253,12 @@ export function mountInShadow(
     // Fallback in case load events never fire
     setTimeout(() => {
       if (!host.classList.contains("mounted")) {
-        mountPoint.style.visibility = "visible";
-        onComponentReady(host);
+        markMountReady(hostId);
       }
-    }, 800);
+    }, warmCss ? WARM_REVEAL_DELAY : COLD_REVEAL_DELAY);
   } else {
     // Dev mode — Vite handles styles, render immediately
     renderApp();
-    mountPoint.style.visibility = "visible";
-    onComponentReady(host);
+    markMountReady(hostId);
   }
 }

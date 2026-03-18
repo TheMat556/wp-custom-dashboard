@@ -27,7 +27,7 @@ html, body {
 /* ── CSS variable driven by JS on collapse/expand ── */
 :root {
     --sidebar-width: 240px;
-    --sidebar-transition: 0.3s ease;
+    --sidebar-transition: 0.2s ease;
 }
 
 #wpwrap {
@@ -55,6 +55,17 @@ html, body {
     overflow: hidden !important;
 }
 
+#react-sidebar-root:not(.mounted) {
+    position: relative !important;
+    background: #ffffff !important;
+    border-right: 1px solid #e2e8f0 !important;
+}
+
+#react-sidebar-root[data-theme="dark"]:not(.mounted) {
+    background: #141414 !important;
+    border-right-color: #303030 !important;
+}
+
 /* ── Navbar ── */
 #react-navbar-root {
     grid-area: navbar !important;
@@ -76,7 +87,8 @@ html, body {
     overflow-y: auto !important;
     visibility: hidden !important;
     opacity: 0 !important;
-    transition: opacity 0.15s ease !important;
+    transition: opacity 0.08s ease !important;
+    will-change: opacity;
 }
 
 /* ── Reveal content once React is ready ── */
@@ -103,17 +115,227 @@ html, body {
 
 #react-sidebar-root:not(.mounted)::before {
     content: "";
-    display: block;
-    margin: 20px 16px;
-    height: 18px;
-    width: 60%;
-    border-radius: 6px;
-    background: linear-gradient(90deg, #f1f5f9 25%, #e2e8f0 50%, #f1f5f9 75%);
-    background-size: 200% 100%;
+    position: absolute;
+    top: 16px;
+    left: 16px;
+    right: 16px;
+    height: 80px;
+    border-radius: 18px;
+    background:
+        linear-gradient(90deg, #f1f5f9 25%, #e2e8f0 50%, #f1f5f9 75%) 16px 16px / 48px 48px no-repeat,
+        linear-gradient(90deg, #f1f5f9 25%, #e2e8f0 50%, #f1f5f9 75%) 80px 20px / 92px 16px no-repeat,
+        linear-gradient(90deg, #f1f5f9 25%, #e2e8f0 50%, #f1f5f9 75%) 80px 46px / 128px 12px no-repeat,
+        #f8fafc;
+    box-shadow: inset 0 0 0 1px rgba(226, 232, 240, 0.9);
     animation: wp-react-skeleton 1.5s ease-in-out infinite;
 }
 
+#react-sidebar-root:not(.mounted)::after {
+    content: "";
+    position: absolute;
+    top: 120px;
+    left: 16px;
+    right: 16px;
+    bottom: 24px;
+    background:
+        linear-gradient(90deg, #f1f5f9 25%, #e2e8f0 50%, #f1f5f9 75%) 0 0 / 18px 18px no-repeat,
+        linear-gradient(90deg, #f1f5f9 25%, #e2e8f0 50%, #f1f5f9 75%) 32px 2px / calc(100% - 76px) 14px no-repeat,
+        linear-gradient(90deg, #f1f5f9 25%, #e2e8f0 50%, #f1f5f9 75%) 0 44px / 18px 18px no-repeat,
+        linear-gradient(90deg, #f1f5f9 25%, #e2e8f0 50%, #f1f5f9 75%) 32px 46px / calc(100% - 92px) 14px no-repeat,
+        linear-gradient(90deg, #f1f5f9 25%, #e2e8f0 50%, #f1f5f9 75%) 0 88px / 18px 18px no-repeat,
+        linear-gradient(90deg, #f1f5f9 25%, #e2e8f0 50%, #f1f5f9 75%) 32px 90px / calc(100% - 64px) 14px no-repeat,
+        linear-gradient(90deg, #f1f5f9 25%, #e2e8f0 50%, #f1f5f9 75%) 0 148px / calc(100% - 48px) 12px no-repeat,
+        linear-gradient(90deg, #f1f5f9 25%, #e2e8f0 50%, #f1f5f9 75%) 0 188px / calc(100% - 72px) 12px no-repeat,
+        linear-gradient(90deg, #f1f5f9 25%, #e2e8f0 50%, #f1f5f9 75%) 0 228px / calc(100% - 56px) 12px no-repeat;
+    animation: wp-react-skeleton 1.5s ease-in-out infinite;
+    pointer-events: none;
+}
+
+#react-sidebar-root.has-server-shell:not(.mounted)::before,
+#react-sidebar-root.has-server-shell:not(.mounted)::after {
+    display: none !important;
+}
+
+.wp-react-ui-shadow-host {
+    min-width: 0;
+}
+
+.wp-react-ui-sidebar-shell-wrapper {
+    position: absolute;
+    inset: 0;
+    display: flex;
+}
+
+.wp-react-ui-sidebar-shell {
+    display: flex;
+    flex: 1;
+    flex-direction: column;
+    min-height: 100%;
+    padding: 16px 12px 12px;
+    background: inherit;
+    color: #0f172a;
+    pointer-events: none;
+}
+
+#react-sidebar-root[data-theme="dark"] .wp-react-ui-sidebar-shell {
+    color: #f8fafc;
+}
+
+.wp-react-ui-sidebar-shell__header {
+    padding: 0 4px 16px;
+}
+
+.wp-react-ui-sidebar-shell__brand {
+    display: flex;
+    align-items: center;
+    min-height: 64px;
+    gap: 12px;
+    padding: 0 4px;
+}
+
+.wp-react-ui-sidebar-shell__logo {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 36px;
+    height: 36px;
+    flex-shrink: 0;
+}
+
+.wp-react-ui-sidebar-shell__logo img {
+    display: block;
+    width: 36px;
+    height: 36px;
+    object-fit: contain;
+}
+
+.wp-react-ui-sidebar-shell__logo-fallback {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 36px;
+    height: 36px;
+    border-radius: 12px;
+    font-size: 14px;
+    font-weight: 700;
+    background: #ede9fe;
+    color: #4f46e5;
+}
+
+#react-sidebar-root[data-theme="dark"] .wp-react-ui-sidebar-shell__logo-fallback {
+    background: rgba(99, 102, 241, 0.18);
+    color: #a5b4fc;
+}
+
+.wp-react-ui-sidebar-shell__brand-copy {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+    line-height: 1.2;
+}
+
+.wp-react-ui-sidebar-shell__site-name {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    font-size: 17px;
+    font-weight: 700;
+    letter-spacing: -0.02em;
+}
+
+.wp-react-ui-sidebar-shell__site-subtitle {
+    margin-top: 2px;
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: #64748b;
+}
+
+#react-sidebar-root[data-theme="dark"] .wp-react-ui-sidebar-shell__site-subtitle {
+    color: #94a3b8;
+}
+
+.wp-react-ui-sidebar-shell__menu {
+    display: flex;
+    flex: 1;
+    flex-direction: column;
+    gap: 6px;
+    padding: 8px 4px 0;
+}
+
+.wp-react-ui-sidebar-shell__item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    min-height: 40px;
+    padding: 0 12px;
+    border-radius: 10px;
+    color: inherit;
+}
+
+.wp-react-ui-sidebar-shell__item.is-active {
+    background: #eef2ff;
+    color: #312e81;
+}
+
+#react-sidebar-root[data-theme="dark"] .wp-react-ui-sidebar-shell__item.is-active {
+    background: rgba(99, 102, 241, 0.18);
+    color: #e0e7ff;
+}
+
+.wp-react-ui-sidebar-shell__item-icon,
+.wp-react-ui-sidebar-shell__item-icon .dashicons,
+.wp-react-ui-sidebar-shell__item-icon-fallback {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 18px;
+    height: 18px;
+    flex-shrink: 0;
+    font-size: 18px;
+}
+
+.wp-react-ui-sidebar-shell__item-icon-fallback {
+    font-size: 12px;
+    font-weight: 700;
+}
+
+.wp-react-ui-sidebar-shell__item-label {
+    flex: 1;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    font-size: 14px;
+    font-weight: 500;
+}
+
+.wp-react-ui-sidebar-shell__item-count {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 20px;
+    height: 20px;
+    padding: 0 6px;
+    border-radius: 999px;
+    background: #4f46e5;
+    color: #ffffff;
+    font-size: 11px;
+    font-weight: 700;
+    line-height: 1;
+}
+
+#react-sidebar-root[data-theme="dark"] .wp-react-ui-sidebar-shell__item-count {
+    background: #6366f1;
+}
+
+#react-sidebar-root.mounted .wp-react-ui-sidebar-shell-wrapper {
+    display: none !important;
+}
+
 #react-navbar-root.mounted::before,
-#react-sidebar-root.mounted::before {
+#react-sidebar-root.mounted::before,
+#react-sidebar-root.mounted::after {
     display: none !important;
 }

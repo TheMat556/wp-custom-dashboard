@@ -1,5 +1,5 @@
 import { Layout, theme } from "antd";
-import { useMemo, useState, useEffect, useRef, useCallback } from "react";
+import { useMemo, useState, useCallback } from "react";
 import { useTheme } from "../../context/ThemeContext";
 import { useSidebar } from "../../context/SidebarContext";
 import { useMenu } from "../../hooks/useMenu";
@@ -36,16 +36,9 @@ export default function Sidebar() {
   const { menuItems, loading, refresh } = useMenu();
   const activeKey = useMemo(() => getActiveKey(), []);
 
-  // Seed open keys exactly once after menu items load
-  const openKeysSeeded = useRef(false);
-  const [openKeys, setOpenKeys] = useState<string[]>([]);
-
-  useEffect(() => {
-    if (menuItems.length > 0 && !openKeysSeeded.current) {
-      openKeysSeeded.current = true;
-      setOpenKeys(getInitialOpenKeys(menuItems, activeKey));
-    }
-  }, [menuItems, activeKey]);
+  const [openKeys, setOpenKeys] = useState<string[]>(() =>
+    getInitialOpenKeys(menuItems, activeKey)
+  );
 
   // Prevent re-opening an already-open submenu (accordion style)
   const handleOpenChange = (keys: string[]) => {

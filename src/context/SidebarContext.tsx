@@ -1,18 +1,15 @@
 import {
   createContext,
-  useContext,
-  useEffect,
-  useState,
   useCallback,
-  useRef,
+  useContext,
+  useSyncExternalStore,
   type ReactNode,
 } from "react";
 
 const MOBILE_BREAKPOINT = 768;
-const SIDEBAR_FULL      = 240;
+const SIDEBAR_FULL = 240;
 const SIDEBAR_COLLAPSED = 64;
-const SIDEBAR_MOBILE    = 0;
-const COLLAPSE_EVENT    = "sidebar:toggle";
+const SIDEBAR_MOBILE = 0;
 
 interface SidebarContextValue {
   collapsed: boolean;
@@ -22,124 +19,193 @@ interface SidebarContextValue {
   mobileOpen: boolean;
 }
 
-const SidebarContext = createContext<SidebarContextValue>({
-  collapsed: false,
-  toggle: () => {},
-  isMobile: false,
-  sidebarWidth: SIDEBAR_FULL,
-  mobileOpen: false,
-});
+interface SidebarStoreState {
+  desktopCollapsed: boolean;
+  isMobile: boolean;
+  mobileOpen: boolean;
+}
+
+type SidebarSnapshot = Omit<SidebarContextValue, "toggle">;
+type Listener = () => void;
+
+const listeners = new Set<Listener>();
+
+let resizeFrame: number | null = null;
+let stopResizeListening: (() => void) | null = null;
+
+function canUseDOM() {
+  return typeof window !== "undefined" && typeof document !== "undefined";
+}
+
+function getViewportIsMobile() {
+  return canUseDOM() ? window.innerWidth < MOBILE_BREAKPOINT : false;
+}
 
 function getSidebarWidth(collapsed: boolean, isMobile: boolean): number {
-  if (isMobile)  return SIDEBAR_MOBILE;
+  if (isMobile) return SIDEBAR_MOBILE;
   if (collapsed) return SIDEBAR_COLLAPSED;
   return SIDEBAR_FULL;
 }
 
-function applyCssVar(collapsed: boolean, isMobile: boolean) {
-  const width = getSidebarWidth(collapsed, isMobile);
-  document.documentElement.style.setProperty("--sidebar-width", `${width}px`);
+function getCollapsed(state: SidebarStoreState) {
+  return state.isMobile ? !state.mobileOpen : state.desktopCollapsed;
 }
 
-export function SidebarProvider({ children }: { children: ReactNode }) {
-  const [isMobile, setIsMobile] = useState(
-    () => typeof window !== "undefined" ? window.innerWidth < MOBILE_BREAKPOINT : false
+function getSnapshot(state: SidebarStoreState): SidebarSnapshot {
+  const collapsed = getCollapsed(state);
+
+  return {
+    collapsed,
+    isMobile: state.isMobile,
+    sidebarWidth: getSidebarWidth(collapsed, state.isMobile),
+    mobileOpen: state.mobileOpen,
+  };
+}
+
+function applyCssVar(snapshot: SidebarSnapshot) {
+  if (!canUseDOM()) return;
+
+  document.documentElement.style.setProperty(
+    "--sidebar-width",
+    `${snapshot.sidebarWidth}px`
   );
+}
 
-  // Desktop collapsed state
-  const [desktopCollapsed, setDesktopCollapsed] = useState(false);
+let currentState: SidebarStoreState = {
+  desktopCollapsed: false,
+  isMobile: getViewportIsMobile(),
+  mobileOpen: false,
+};
+let currentSnapshot: SidebarSnapshot = getSnapshot(currentState);
 
-  // Mobile drawer open state
-  const [mobileOpen, setMobileOpen] = useState(false);
+function emitChange() {
+  currentSnapshot = getSnapshot(currentState);
+  applyCssVar(currentSnapshot);
+  listeners.forEach((listener) => listener());
+}
 
-  // Use ref to avoid stale closure in event handler
-  const isMobileRef = useRef(isMobile);
-  useEffect(() => {
-    isMobileRef.current = isMobile;
-  }, [isMobile]);
+function setState(
+  updater:
+    | SidebarStoreState
+    | ((state: SidebarStoreState) => SidebarStoreState)
+) {
+  const nextState =
+    typeof updater === "function" ? updater(currentState) : updater;
 
-  // Derive the "collapsed" value that consumers see
-  const collapsed = isMobile ? !mobileOpen : desktopCollapsed;
+  if (
+    nextState.desktopCollapsed === currentState.desktopCollapsed &&
+    nextState.isMobile === currentState.isMobile &&
+    nextState.mobileOpen === currentState.mobileOpen
+  ) {
+    return;
+  }
 
-  // Initial CSS var
-  useEffect(() => {
-    applyCssVar(collapsed, isMobile);
-  }, []);
+  currentState = nextState;
+  emitChange();
+}
 
-  // Resize handler
-  useEffect(() => {
-    let rafId: number;
+function syncViewportState() {
+  const isMobile = getViewportIsMobile();
 
-    const handleResize = () => {
-      cancelAnimationFrame(rafId);
-      rafId = requestAnimationFrame(() => {
-        const mobile = window.innerWidth < MOBILE_BREAKPOINT;
-        
-        if (mobile !== isMobileRef.current) {
-          setIsMobile(mobile);
-          isMobileRef.current = mobile;
+  setState((state) => {
+    if (state.isMobile === isMobile) {
+      return state;
+    }
 
-          // Close mobile drawer when switching to mobile
-          if (mobile) {
-            setMobileOpen(false);
-          }
-
-          applyCssVar(
-            mobile ? true : desktopCollapsed,
-            mobile
-          );
-        }
-      });
+    return {
+      ...state,
+      isMobile,
+      mobileOpen: isMobile ? false : state.mobileOpen,
     };
+  });
+}
 
-    window.addEventListener("resize", handleResize);
+function startResizeListener() {
+  if (!canUseDOM() || stopResizeListening) {
+    return;
+  }
+
+  const handleResize = () => {
+    if (resizeFrame !== null) {
+      window.cancelAnimationFrame(resizeFrame);
+    }
+
+    resizeFrame = window.requestAnimationFrame(() => {
+      resizeFrame = null;
+      syncViewportState();
+    });
+  };
+
+  window.addEventListener("resize", handleResize);
+  stopResizeListening = () => {
+    window.removeEventListener("resize", handleResize);
+
+    if (resizeFrame !== null) {
+      window.cancelAnimationFrame(resizeFrame);
+      resizeFrame = null;
+    }
+
+    stopResizeListening = null;
+  };
+
+  syncViewportState();
+  applyCssVar(getSnapshot(currentState));
+}
+
+const sidebarStore = {
+  get(): SidebarSnapshot {
+    return currentSnapshot;
+  },
+
+  toggle() {
+    setState((state) =>
+      state.isMobile
+        ? { ...state, mobileOpen: !state.mobileOpen }
+        : { ...state, desktopCollapsed: !state.desktopCollapsed }
+    );
+  },
+
+  subscribe(listener: Listener) {
+    listeners.add(listener);
+
+    if (listeners.size === 1) {
+      startResizeListener();
+    }
+
     return () => {
-      window.removeEventListener("resize", handleResize);
-      cancelAnimationFrame(rafId);
-    };
-  }, [desktopCollapsed]);
+      listeners.delete(listener);
 
-  // Keep CSS var in sync
-  useEffect(() => {
-    applyCssVar(collapsed, isMobile);
-  }, [collapsed, isMobile]);
-
-  // Toggle dispatches event for cross-shadow-DOM communication
-  const toggle = useCallback(() => {
-    window.dispatchEvent(new CustomEvent(COLLAPSE_EVENT));
-  }, []);
-
-  // Event handler - this is what actually changes the state
-  // Runs in BOTH Navbar and Sidebar providers when event is dispatched
-  useEffect(() => {
-    const handleToggle = () => {
-      if (isMobileRef.current) {
-        setMobileOpen((prev) => !prev);
-      } else {
-        setDesktopCollapsed((prev) => {
-          const next = !prev;
-          applyCssVar(next, false);
-          return next;
-        });
+      if (listeners.size === 0) {
+        stopResizeListening?.();
       }
     };
+  },
+};
 
-    window.addEventListener(COLLAPSE_EVENT, handleToggle);
-    return () => window.removeEventListener(COLLAPSE_EVENT, handleToggle);
-  }, []); // Empty deps - handler uses ref for current isMobile
+if (canUseDOM()) {
+  applyCssVar(currentSnapshot);
+}
 
-  const sidebarWidth = getSidebarWidth(collapsed, isMobile);
+const defaultSnapshot = sidebarStore.get();
+
+const SidebarContext = createContext<SidebarContextValue>({
+  ...defaultSnapshot,
+  toggle: () => {},
+});
+
+export function SidebarProvider({ children }: { children: ReactNode }) {
+  const snapshot = useSyncExternalStore(
+    sidebarStore.subscribe,
+    sidebarStore.get,
+    sidebarStore.get
+  );
+
+  const toggle = useCallback(() => {
+    sidebarStore.toggle();
+  }, []);
 
   return (
-    <SidebarContext.Provider 
-      value={{ 
-        collapsed, 
-        toggle, 
-        isMobile, 
-        sidebarWidth,
-        mobileOpen,
-      }}
-    >
+    <SidebarContext.Provider value={{ ...snapshot, toggle }}>
       {children}
     </SidebarContext.Provider>
   );
@@ -149,7 +215,6 @@ export function useSidebar() {
   return useContext(SidebarContext);
 }
 
-// Helper to dispatch toggle event from anywhere (e.g., from outside React)
 export function dispatchSidebarToggle() {
-  window.dispatchEvent(new CustomEvent(COLLAPSE_EVENT));
+  sidebarStore.toggle();
 }

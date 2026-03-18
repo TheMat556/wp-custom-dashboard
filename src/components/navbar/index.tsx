@@ -17,7 +17,7 @@ import {
 import { useTheme } from "../../context/ThemeContext";
 import { useSidebar } from "../../context/SidebarContext";
 import { useMenu } from "../../hooks/useMenu";
-import { useMemo, useRef } from "react";
+import { useMemo, useRef, useState } from "react";
 import "../../types/wp";
 import { getActiveKey, navigate, navigateHome } from "../../utils/wp";
 import UserDropdown from "./UserDropdown";
@@ -33,10 +33,42 @@ export default function Navbar() {
   const { token } = theme.useToken();
   const isDark = appTheme === "dark";
   const activeKey = useMemo(() => getActiveKey(), []);
+  const [isToggleHovered, setIsToggleHovered] = useState(false);
+  const [isTogglePressed, setIsTogglePressed] = useState(false);
+  const [isThemeHovered, setIsThemeHovered] = useState(false);
+  const [isThemePressed, setIsThemePressed] = useState(false);
 
   // Ref for dropdown container (renders popups inside this element)
   const containerRef = useRef<HTMLDivElement>(null);
   const getPopupContainer = () => containerRef.current || document.body;
+
+  const headerBackground = isDark
+    ? `linear-gradient(180deg, ${token.colorBgElevated} 0%, ${token.colorBgContainer} 100%)`
+    : token.colorBgContainer;
+  const headerBorderColor = isDark
+    ? token.colorSplit
+    : token.colorBorderSecondary;
+  const breadcrumbShellStyle = {
+    marginTop: 4,
+    padding: 0,
+    borderRadius: 0,
+    backgroundColor: "transparent",
+    border: "none",
+    transition: "color 200ms ease",
+    boxShadow: "none",
+  };
+  const toggleButtonBackground = isTogglePressed
+    ? token.controlItemBgActive
+    : isToggleHovered
+      ? token.controlItemBgHover
+      : isDark
+        ? token.colorFillAlter
+        : "transparent";
+  const themeButtonBackground = isThemePressed
+    ? token.controlItemBgActive
+    : isThemeHovered
+      ? token.controlItemBgHover
+      : "transparent";
 
   const breadcrumbItems = useMemo(() => {
     const items: { title: React.ReactNode }[] = [
@@ -47,8 +79,11 @@ export default function Navbar() {
             style={{ cursor: "pointer" }}
             onClick={navigateHome}
           >
-            <HomeOutlined className="mr-1" style={{ fontSize: 16 }} />
-            <Text type="secondary" className="hover:text-current">
+            <HomeOutlined
+              className="mr-1"
+              style={{ fontSize: 16, color: token.colorTextTertiary }}
+            />
+            <Text style={{ color: token.colorTextSecondary }}>
               Home
             </Text>
           </Space>
@@ -64,7 +99,7 @@ export default function Navbar() {
         title: (
           <Text
             strong
-            style={{ cursor: "pointer" }}
+            style={{ cursor: "pointer", color: token.colorTextHeading }}
             onClick={() => navigate(topLevel.slug)}
           >
             {topLevel.label}
@@ -80,8 +115,7 @@ export default function Navbar() {
         items.push({
           title: (
             <Text
-              type="secondary"
-              style={{ cursor: "pointer" }}
+              style={{ cursor: "pointer", color: token.colorTextSecondary }}
               onClick={() => navigate(parent.slug)}
             >
               {parent.label}
@@ -89,7 +123,11 @@ export default function Navbar() {
           ),
         });
         items.push({
-          title: <Text strong>{child.label}</Text>,
+          title: (
+            <Text strong style={{ color: token.colorTextHeading }}>
+              {child.label}
+            </Text>
+          ),
         });
         return items;
       }
@@ -97,14 +135,26 @@ export default function Navbar() {
 
     items.push({
       title: (
-        <Text strong style={{ textTransform: "capitalize" }}>
+        <Text
+          strong
+          style={{
+            textTransform: "capitalize",
+            color: token.colorTextHeading,
+          }}
+        >
           {activeKey.replace(/-/g, " ")}
         </Text>
       ),
     });
 
     return items;
-  }, [activeKey, menuItems]);
+  }, [
+    activeKey,
+    menuItems,
+    token.colorTextHeading,
+    token.colorTextSecondary,
+    token.colorTextTertiary,
+  ]);
 
   // Choose the right icon for the toggle button
   const getToggleIcon = () => {
@@ -127,29 +177,62 @@ export default function Navbar() {
         width: "100%",
         height: 64,
         flexShrink: 0,
-        backgroundColor: token.colorBgContainer,
+        background: headerBackground,
         paddingRight: 24,
         paddingLeft: 0,
-        borderBottom: `1px solid ${token.colorBorderSecondary}`,
-        transition: "background-color 300ms ease",
+        borderBottom: `1px solid ${headerBorderColor}`,
+        boxShadow: isDark ? token.boxShadowTertiary : "none",
+        transition:
+          "background 300ms ease, border-color 300ms ease, box-shadow 300ms ease",
       }}
     >
       {/* ── Left: Burger + Breadcrumb ── */}
-      <Space size={8} align="center">
+      <Space size={12} align="center">
         <Button
           type="text"
           icon={getToggleIcon()}
           onClick={toggleSidebar}
-          title={isMobile ? "Open menu" : (collapsed ? "Expand sidebar" : "Collapse sidebar")}
+          title={
+            isMobile ? "Open menu" : collapsed ? "Expand sidebar" : "Collapse sidebar"
+          }
+          onMouseEnter={() => setIsToggleHovered(true)}
+          onMouseLeave={() => {
+            setIsToggleHovered(false);
+            setIsTogglePressed(false);
+          }}
+          onMouseDown={() => setIsTogglePressed(true)}
+          onMouseUp={() => setIsTogglePressed(false)}
+          onBlur={() => setIsTogglePressed(false)}
           style={{
             width: 64,
             height: 64,
             borderRadius: 0,
             fontSize: 18,
+            color:
+              isToggleHovered || isTogglePressed
+                ? token.colorText
+                : token.colorTextSecondary,
+            backgroundColor: toggleButtonBackground,
+            borderInlineEnd: `1px solid ${headerBorderColor}`,
+            boxShadow:
+              isDark && (isToggleHovered || isTogglePressed)
+                ? `inset 0 -1px 0 ${token.colorSplit}`
+                : "none",
+            transition:
+              "background-color 180ms ease, color 180ms ease, box-shadow 180ms ease",
           }}
         />
         {!isMobile && (
-          <Breadcrumb items={breadcrumbItems} style={{ marginTop: "4px" }} />
+          <div style={breadcrumbShellStyle}>
+            <Breadcrumb
+              items={breadcrumbItems}
+              separator={
+                <Text style={{ color: token.colorTextTertiary, fontSize: 12 }}>
+                  /
+                </Text>
+              }
+            />
+          </div>
         )}
       </Space>
 
@@ -158,7 +241,14 @@ export default function Navbar() {
         size={12}
         align="center"
         split={
-          <Divider type="vertical" style={{ height: 28, margin: 0 }} />
+          <Divider
+            type="vertical"
+            style={{
+              height: 28,
+              margin: 0,
+              borderInlineStartColor: token.colorSplit,
+            }}
+          />
         }
       >
         {/* Theme toggle */}
@@ -169,12 +259,42 @@ export default function Navbar() {
             isDark ? (
               <BulbFilled style={{ color: token.colorPrimary, fontSize: 18 }} />
             ) : (
-              <BulbOutlined style={{ fontSize: 18 }} />
+              <BulbOutlined
+                style={{
+                  color:
+                    isThemeHovered || isThemePressed
+                      ? token.colorText
+                      : token.colorTextSecondary,
+                  fontSize: 18,
+                }}
+              />
             )
           }
           onClick={toggleTheme}
           title={isDark ? "Switch to light mode" : "Switch to dark mode"}
-          style={{ width: 36, height: 36 }}
+          onMouseEnter={() => setIsThemeHovered(true)}
+          onMouseLeave={() => {
+            setIsThemeHovered(false);
+            setIsThemePressed(false);
+          }}
+          onMouseDown={() => setIsThemePressed(true)}
+          onMouseUp={() => setIsThemePressed(false)}
+          onBlur={() => setIsThemePressed(false)}
+          style={{
+            width: 38,
+            height: 38,
+            color:
+              isThemeHovered || isThemePressed
+                ? token.colorText
+                : token.colorTextSecondary,
+            backgroundColor: themeButtonBackground,
+            boxShadow:
+              isDark && (isThemeHovered || isThemePressed)
+                ? `inset 0 0 0 1px ${token.colorSplit}`
+                : "none",
+            transition:
+              "background-color 180ms ease, color 180ms ease, box-shadow 180ms ease",
+          }}
         />
 
         {/* User dropdown */}

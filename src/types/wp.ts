@@ -1,5 +1,16 @@
 import type { MenuItem } from "../hooks/useMenu";
 
+interface WpReactUiBrandingLogos {
+  lightUrl: string | null;
+  darkUrl: string | null;
+  defaultUrl: string;
+}
+
+interface WpReactUiBranding {
+  siteName: string;
+  logos: WpReactUiBrandingLogos;
+}
+
 declare global {
   interface Window {
     wpReactUi?: {
@@ -9,16 +20,17 @@ declare global {
       restUrl?: string;
       nonce?: string;
       siteName?: string;
+      branding?: WpReactUiBranding;
       theme?: string;
       assetsUrl?: string;
       publicUrl?: string;
       cssUrls?: string[];
+      sidebarShellHtml?: string;
       logoutUrl?: string;
       logoutNonce?: string;
       user?: {
         name: string;
         role: string;
-        avatar: string;
       };
     };
   }
