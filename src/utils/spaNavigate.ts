@@ -53,9 +53,7 @@ export function useActiveKey(): string | undefined {
 
 // ── SPA navigation core ──────────────────────────────────────────────────────
 
-//const EDITOR_PAGES = ["post.php", "post-new.php", "site-editor.php"];
 const EDITOR_PAGES = ["post.php", "post-new.php", "site-editor.php"];
-
 
 function isAdminUrl(url: string): boolean {
   try {

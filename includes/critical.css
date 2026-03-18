@@ -84,17 +84,18 @@ html, body {
     grid-area: content !important;
     margin-left: 0 !important;
     min-width: 0 !important;
-    overflow-y: scroll !important;
+    overflow-y: auto !important;
+    visibility: hidden !important;
     opacity: 0 !important;
-    pointer-events: none !important;
     transition: opacity 0.08s ease !important;
+    will-change: opacity;
 }
 
 /* ── Reveal content once React is ready ── */
 #wpwrap.react-ready #wpcontent,
 #wpwrap.react-ready #wpfooter {
+    visibility: visible !important;
     opacity: 1 !important;
-    pointer-events: auto !important;
 }
 
 /* ── Skeleton shimmer ── */
