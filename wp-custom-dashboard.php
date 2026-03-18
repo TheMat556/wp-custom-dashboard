@@ -92,14 +92,20 @@ add_action('admin_head', function () {
     echo 'd.style.setProperty("--sidebar-width",c?"64px":"240px");}catch(e){}';
     // Theme: apply server-known theme to data-theme attributes
     echo 'var t=' . wp_json_encode($theme) . ';';
-    echo 'b.setAttribute("data-theme",t);';
-    echo 'if(t==="dark")b.classList.add("wp-react-dark");';
+    // b may be null when this script runs in <head> before <body> is parsed.
+    echo 'if(b){b.setAttribute("data-theme",t);';
+    echo 'if(t==="dark")b.classList.add("wp-react-dark");}';
     // Create React root elements as early as possible so skeleton CSS and
     // view-transition captures see real elements rather than pseudo-element fallbacks.
     // _wpRR is idempotent — safe to call multiple times.
     echo 'function _wpRR(){';
     echo 'var w=document.getElementById("wpwrap");if(!w)return;';
-    echo 'var th=b.getAttribute("data-theme")||"light";';
+    // Re-read document.body directly — b was captured before <body> existed.
+    // Also apply theme to body here in case the <head> guard skipped it.
+    echo 'var bd=document.body;';
+    echo 'var th=(bd&&bd.getAttribute("data-theme"))||t;';
+    echo 'if(bd&&!bd.getAttribute("data-theme")){bd.setAttribute("data-theme",th);';
+    echo 'if(th==="dark")bd.classList.add("wp-react-dark");}';
     echo 'if(!document.getElementById("react-navbar-root")){';
     echo 'var n=document.createElement("div");n.id="react-navbar-root";';
     echo 'n.setAttribute("data-theme",th);w.insertBefore(n,w.firstChild);}';

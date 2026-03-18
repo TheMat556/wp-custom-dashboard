@@ -65,7 +65,9 @@ function isAdminUrl(url: string): boolean {
 
 function hasUnsafePageParam(parsed: URL): boolean {
   const page = parsed.searchParams.get("page");
-  return page === "site-health";
+  // Pages that rely on server-side wp_enqueue_media() or other hook-driven
+  // script bootstrapping must do a full reload so PHP hooks fire correctly.
+  return page === "site-health" || page === "wp-react-ui-branding";
 }
 
 export function isSpaEligibleUrl(url: string): boolean {

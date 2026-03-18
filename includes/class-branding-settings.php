@@ -178,7 +178,7 @@ class WP_React_UI_Branding_Settings {
     public static function print_media_script(): void {
         ?>
         <script>
-            document.addEventListener('DOMContentLoaded', function () {
+            (function () {
                 const updatePreview = function (preview, imageUrl) {
                     preview.innerHTML = '';
 
@@ -255,7 +255,7 @@ class WP_React_UI_Branding_Settings {
                         button.style.display = 'none';
                     });
                 });
-            });
+            })();
         </script>
         <?php
     }
