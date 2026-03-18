@@ -1,4 +1,4 @@
-import Navbar from "./components/Navbar";
+import Navbar from "./components/navbar";
 import Sidebar from "./components/Sidebar";
 import { mountInShadow } from "./shadow-mount";
 import { SidebarProvider } from "./context/SidebarContext";
