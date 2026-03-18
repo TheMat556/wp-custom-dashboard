@@ -48,6 +48,8 @@ function setupDOM() {
 
   const initialTheme = window.wpReactUi?.theme ?? "light";
 
+  // Roots may already exist (created by the early-state DOMContentLoaded script).
+  // Just ensure correct data-theme; don't create duplicates.
   if (!document.getElementById("react-navbar-root")) {
     const navbarRoot = document.createElement("div");
     navbarRoot.id = "react-navbar-root";
@@ -64,6 +66,9 @@ function setupDOM() {
       ? wpwrap.insertBefore(sidebarRoot, wpcontent)
       : wpwrap.appendChild(sidebarRoot);
   }
+
+  // Mark shell as ready (may already be set by early-state script)
+  wpwrap.classList.add("has-react-shell");
 }
 
 setupDOM();

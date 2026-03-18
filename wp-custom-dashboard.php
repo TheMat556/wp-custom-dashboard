@@ -94,6 +94,26 @@ add_action('admin_head', function () {
     echo 'var t=' . wp_json_encode($theme) . ';';
     echo 'b.setAttribute("data-theme",t);';
     echo 'if(t==="dark")b.classList.add("wp-react-dark");';
+    // Create React root elements as early as possible so skeleton CSS and
+    // view-transition captures see real elements rather than pseudo-element fallbacks.
+    // _wpRR is idempotent — safe to call multiple times.
+    echo 'function _wpRR(){';
+    echo 'var w=document.getElementById("wpwrap");if(!w)return;';
+    echo 'var th=b.getAttribute("data-theme")||"light";';
+    echo 'if(!document.getElementById("react-navbar-root")){';
+    echo 'var n=document.createElement("div");n.id="react-navbar-root";';
+    echo 'n.setAttribute("data-theme",th);w.insertBefore(n,w.firstChild);}';
+    echo 'if(!document.getElementById("react-sidebar-root")){';
+    echo 'var s=document.createElement("div");s.id="react-sidebar-root";';
+    echo 's.setAttribute("data-theme",th);';
+    echo 'var cc=document.getElementById("wpcontent");';
+    echo 'cc?w.insertBefore(s,cc):w.appendChild(s);}';
+    echo 'w.classList.add("has-react-shell");}';
+    // pagereveal fires before first paint (Chrome 126+) — roots exist when the
+    // view-transition snapshot is taken, so named transitions work on real elements.
+    echo 'window.addEventListener("pagereveal",_wpRR);';
+    // DOMContentLoaded fallback for browsers without pagereveal support.
+    echo 'document.addEventListener("DOMContentLoaded",_wpRR);';
     echo '})();</script>';
 
     // Preload branding logo images

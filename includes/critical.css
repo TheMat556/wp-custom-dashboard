@@ -44,6 +44,65 @@ html, body {
     transition: grid-template-columns var(--sidebar-transition) !important;
 }
 
+/* ── Pre-root shell skeleton (visible before JS inserts React roots) ── */
+/* No animation here — a stable snapshot is needed for view-transition captures. */
+#wpwrap:not(.has-react-shell)::before,
+#wpwrap:not(.has-react-shell)::after {
+    content: "";
+    display: block;
+    pointer-events: none;
+}
+
+#wpwrap:not(.has-react-shell)::before {
+    grid-area: sidebar;
+    position: relative;
+    background:
+        linear-gradient(90deg, #f1f5f9 25%, #e2e8f0 50%, #f1f5f9 75%) 32px 32px / 48px 48px no-repeat,
+        linear-gradient(90deg, #f1f5f9 25%, #e2e8f0 50%, #f1f5f9 75%) 96px 36px / 92px 16px no-repeat,
+        linear-gradient(90deg, #f1f5f9 25%, #e2e8f0 50%, #f1f5f9 75%) 96px 62px / 128px 12px no-repeat,
+        linear-gradient(90deg, #f1f5f9 25%, #e2e8f0 50%, #f1f5f9 75%) 16px 120px / 18px 18px no-repeat,
+        linear-gradient(90deg, #f1f5f9 25%, #e2e8f0 50%, #f1f5f9 75%) 48px 122px / calc(100% - 92px) 14px no-repeat,
+        linear-gradient(90deg, #f1f5f9 25%, #e2e8f0 50%, #f1f5f9 75%) 16px 164px / 18px 18px no-repeat,
+        linear-gradient(90deg, #f1f5f9 25%, #e2e8f0 50%, #f1f5f9 75%) 48px 166px / calc(100% - 108px) 14px no-repeat,
+        linear-gradient(90deg, #f1f5f9 25%, #e2e8f0 50%, #f1f5f9 75%) 16px 208px / 18px 18px no-repeat,
+        linear-gradient(90deg, #f1f5f9 25%, #e2e8f0 50%, #f1f5f9 75%) 48px 210px / calc(100% - 80px) 14px no-repeat,
+        linear-gradient(90deg, #f1f5f9 25%, #e2e8f0 50%, #f1f5f9 75%) 16px 268px / calc(100% - 64px) 12px no-repeat,
+        linear-gradient(90deg, #f1f5f9 25%, #e2e8f0 50%, #f1f5f9 75%) 16px 308px / calc(100% - 88px) 12px no-repeat,
+        linear-gradient(90deg, #f1f5f9 25%, #e2e8f0 50%, #f1f5f9 75%) 16px 348px / calc(100% - 72px) 12px no-repeat,
+        #ffffff;
+    border-right: 1px solid #e2e8f0 !important;
+}
+
+#wpwrap:not(.has-react-shell)::after {
+    grid-area: navbar;
+    height: 64px;
+    background: linear-gradient(90deg, #f1f5f9 25%, #e2e8f0 50%, #f1f5f9 75%);
+    background-size: 200% 100%;
+}
+
+body[data-theme="dark"] #wpwrap:not(.has-react-shell)::before {
+    background:
+        linear-gradient(90deg, #1f1f1f 25%, #303030 50%, #1f1f1f 75%) 32px 32px / 48px 48px no-repeat,
+        linear-gradient(90deg, #1f1f1f 25%, #303030 50%, #1f1f1f 75%) 96px 36px / 92px 16px no-repeat,
+        linear-gradient(90deg, #1f1f1f 25%, #303030 50%, #1f1f1f 75%) 96px 62px / 128px 12px no-repeat,
+        linear-gradient(90deg, #1f1f1f 25%, #303030 50%, #1f1f1f 75%) 16px 120px / 18px 18px no-repeat,
+        linear-gradient(90deg, #1f1f1f 25%, #303030 50%, #1f1f1f 75%) 48px 122px / calc(100% - 92px) 14px no-repeat,
+        linear-gradient(90deg, #1f1f1f 25%, #303030 50%, #1f1f1f 75%) 16px 164px / 18px 18px no-repeat,
+        linear-gradient(90deg, #1f1f1f 25%, #303030 50%, #1f1f1f 75%) 48px 166px / calc(100% - 108px) 14px no-repeat,
+        linear-gradient(90deg, #1f1f1f 25%, #303030 50%, #1f1f1f 75%) 16px 208px / 18px 18px no-repeat,
+        linear-gradient(90deg, #1f1f1f 25%, #303030 50%, #1f1f1f 75%) 48px 210px / calc(100% - 80px) 14px no-repeat,
+        linear-gradient(90deg, #1f1f1f 25%, #303030 50%, #1f1f1f 75%) 16px 268px / calc(100% - 64px) 12px no-repeat,
+        linear-gradient(90deg, #1f1f1f 25%, #303030 50%, #1f1f1f 75%) 16px 308px / calc(100% - 88px) 12px no-repeat,
+        linear-gradient(90deg, #1f1f1f 25%, #303030 50%, #1f1f1f 75%) 16px 348px / calc(100% - 72px) 12px no-repeat,
+        #141414;
+    border-right-color: #303030 !important;
+}
+
+body[data-theme="dark"] #wpwrap:not(.has-react-shell)::after {
+    background: linear-gradient(90deg, #1f1f1f 25%, #303030 50%, #1f1f1f 75%);
+    background-size: 200% 100%;
+}
+
 /* ── Sidebar ── */
 #react-sidebar-root {
     grid-area: sidebar !important;
@@ -155,3 +214,52 @@ html, body {
 #react-sidebar-root.mounted::after {
     display: none !important;
 }
+
+/* ─────────────────────────────────────────────────────────────────────────────
+   Cross-document View Transitions  (Chrome 126+, progressive enhancement)
+   The `pagereveal` event (registered in the early-state inline script) creates
+   #react-sidebar-root and #react-navbar-root before the browser's first paint,
+   so the view-transition snapshot always captures real named elements — no
+   pseudo-element fallbacks needed, no navbar regression.
+
+   Effect: the old page's sidebar/navbar screenshot holds in place while the
+   new page's content fades in on top, making the shell appear stationary.
+   ───────────────────────────────────────────────────────────────────────────── */
+
+@view-transition {
+    navigation: auto;
+}
+
+@supports (view-transition-name: none) {
+    /* Named captures on real elements only. */
+    #react-sidebar-root { view-transition-name: wp-sidebar; }
+    #react-navbar-root  { view-transition-name: wp-navbar;  }
+
+    /*
+     * OLD screenshot: hold visible (opacity 1) for the full duration so it acts
+     *     as a stable backdrop while new content appears over it.
+     * NEW content: fade in from transparent — if React has already mounted by
+     *     the time the animation runs (likely on cached pages) the real sidebar
+     *     fades straight in; otherwise the skeleton fades in and React replaces
+     *     it quickly enough to be imperceptible.
+     */
+    ::view-transition-old(wp-sidebar),
+    ::view-transition-old(wp-navbar) {
+        animation: 180ms linear both wp-vt-hold;
+        mix-blend-mode: normal;
+    }
+    ::view-transition-new(wp-sidebar),
+    ::view-transition-new(wp-navbar) {
+        animation: 180ms ease-in both wp-vt-in;
+        mix-blend-mode: normal;
+    }
+
+    /* Content area: standard cross-fade. */
+    ::view-transition-old(root) { animation: 120ms ease-out both wp-vt-out; }
+    ::view-transition-new(root) { animation: 120ms ease-in  both wp-vt-in;  }
+
+    @keyframes wp-vt-hold { from { opacity: 1; } to { opacity: 1; } }
+    @keyframes wp-vt-out  { to   { opacity: 0; } }
+    @keyframes wp-vt-in   { from { opacity: 0; } }
+}
+
