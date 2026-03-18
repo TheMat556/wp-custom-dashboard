@@ -7,6 +7,9 @@ class WP_React_UI_REST_API {
     public static function register(): void {
 
         // ── Menu endpoint ────────────────────────────────────────────────────
+        // Initial menu data is inlined via wp_localize_script.
+        // This endpoint enables client-side refresh without full page reload.
+        // Permission: 'read' (any authenticated dashboard user).
         register_rest_route('wp-react-ui/v1', '/menu', [
             'methods'             => 'GET',
             'callback'            => function () {
@@ -14,7 +17,7 @@ class WP_React_UI_REST_API {
                     'menu' => WP_React_UI_Asset_Loader::get_menu_data(),
                 ]);
             },
-            'permission_callback' => fn() => current_user_can('manage_options'),
+            'permission_callback' => fn() => current_user_can('read'),
         ]);
 
         // ── Theme preference ─────────────────────────────────────────────────

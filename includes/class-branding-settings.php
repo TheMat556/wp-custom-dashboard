@@ -31,33 +31,36 @@ class WP_React_UI_Branding_Settings {
             self::PAGE_SLUG
         );
 
-        add_settings_field(
-            'light_logo_id',
-            'Light logo',
-            [self::class, 'render_logo_field'],
-            self::PAGE_SLUG,
-            self::SECTION_ID,
-            [
-                'key'         => 'light_logo_id',
+        $fields = [
+            'light_logo_id' => [
+                'label'       => 'Light logo',
                 'description' => 'Shown on light backgrounds. If no custom logo is set, the bundled default logo remains available to the frontend.',
                 'title'       => 'Select light logo',
                 'button_text' => 'Use light logo',
-            ]
-        );
-
-        add_settings_field(
-            'dark_logo_id',
-            'Dark logo',
-            [self::class, 'render_logo_field'],
-            self::PAGE_SLUG,
-            self::SECTION_ID,
-            [
-                'key'         => 'dark_logo_id',
+            ],
+            'dark_logo_id' => [
+                'label'       => 'Dark logo',
                 'description' => 'Optional. If this is not set, the frontend should fall back to the light logo.',
                 'title'       => 'Select dark logo',
                 'button_text' => 'Use dark logo',
-            ]
-        );
+            ],
+        ];
+
+        foreach ($fields as $key => $field) {
+            add_settings_field(
+                $key,
+                $field['label'],
+                [self::class, 'render_logo_field'],
+                self::PAGE_SLUG,
+                self::SECTION_ID,
+                [
+                    'key'         => $key,
+                    'description' => $field['description'],
+                    'title'       => $field['title'],
+                    'button_text' => $field['button_text'],
+                ]
+            );
+        }
     }
 
     public static function register_page(): void {
@@ -151,7 +154,10 @@ class WP_React_UI_Branding_Settings {
 
     public static function render_page(): void {
         if (!current_user_can('manage_options')) {
-            return;
+            wp_die(
+                esc_html__('You do not have sufficient permissions to access this page.'),
+                403
+            );
         }
         ?>
         <div class="wrap">
