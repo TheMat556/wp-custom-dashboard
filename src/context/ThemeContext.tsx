@@ -5,6 +5,7 @@ import {
   useEffect,
   useCallback,
 } from "react";
+import "../types/wp";
 
 export type Theme = "light" | "dark";
 
@@ -16,7 +17,7 @@ type Listener = (theme: Theme) => void;
 const listeners = new Set<Listener>();
 
 let currentTheme: Theme =
-  ((window as any).wpReactUi?.theme ?? "light") as Theme;
+  (window.wpReactUi?.theme ?? "light") as Theme;
 
 function applyThemeToDOM(t: Theme) {
   document.getElementById("react-navbar-root")?.setAttribute("data-theme", t);
@@ -27,8 +28,8 @@ function applyThemeToDOM(t: Theme) {
 
 async function persistTheme(t: Theme) {
   const restUrl =
-    (window as any).wpReactUi?.restUrl ?? "/wp-json/wp-react-ui/v1";
-  const nonce = (window as any).wpReactUi?.nonce ?? "";
+    window.wpReactUi?.restUrl ?? "/wp-json/wp-react-ui/v1";
+  const nonce = window.wpReactUi?.nonce ?? "";
   try {
     await fetch(`${restUrl}/theme`, {
       method: "POST",

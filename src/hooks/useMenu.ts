@@ -1,4 +1,5 @@
 import { useState, useCallback, useEffect, useRef } from "react";
+import "../types/wp";
 
 export interface SubMenuItem {
   label: string;
@@ -88,11 +89,11 @@ function filterByDomVisibility(items: MenuItem[]): MenuItem[] {
 // ─── Data fetching ────────────────────────────────────────────────────────────
 
 function getInitialData(): MenuItem[] {
-  return (window as any).wpReactUi?.menu ?? [];
+  return window.wpReactUi?.menu ?? [];
 }
 
 async function fetchMenu(): Promise<MenuItem[]> {
-  const wp      = (window as any).wpReactUi ?? {};
+  const wp      = window.wpReactUi ?? {};
   const restUrl = wp.restUrl ?? "/wp-json/wp-react-ui/v1";
   const nonce   = wp.nonce ?? "";
 

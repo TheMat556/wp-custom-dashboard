@@ -1,15 +1,17 @@
 import React from "react";
 import { createRoot } from "react-dom/client";
 import { StyleProvider } from "@ant-design/cssinjs";
+import { ErrorBoundary } from "./components/ErrorBoundary";
 import { ConfigProvider, theme as antTheme } from "antd";
 import { ThemeProvider, useTheme } from "./context/ThemeContext";
 import type { Theme } from "./context/ThemeContext";
+import "./types/wp";
 
 let mountedCount = 0;
 const TOTAL_COMPONENTS = 2;
 
 function getCssUrls(): string[] {
-  const fromPhp = (window as any).wpReactUi?.cssUrls;
+  const fromPhp = window.wpReactUi?.cssUrls;
   if (Array.isArray(fromPhp) && fromPhp.length > 0) {
     return fromPhp;
   }
@@ -31,15 +33,10 @@ function onComponentReady(host: HTMLElement) {
   host.classList.add("mounted");
   mountedCount++;
 
-  console.log(
-    `[WP React UI] Mounted: ${host.id} (${mountedCount}/${TOTAL_COMPONENTS})`
-  );
-
   if (mountedCount >= TOTAL_COMPONENTS) {
     const wpwrap = document.getElementById("wpwrap");
     if (wpwrap) {
       wpwrap.classList.add("react-ready");
-      console.log("[WP React UI] All components ready — revealing wp-content");
     }
   }
 }
@@ -86,7 +83,7 @@ export function mountInShadow(
 
   const shadow = host.attachShadow({ mode: "open" });
   const initialTheme: Theme =
-    ((window as any).wpReactUi?.theme ?? "light") as Theme;
+    (window.wpReactUi?.theme ?? "light") as Theme;
   host.setAttribute("data-theme", initialTheme);
 
   const mountPoint = document.createElement("div");
@@ -113,11 +110,13 @@ export function mountInShadow(
   const renderApp = () => {
     createRoot(mountPoint).render(
       <React.StrictMode>
-        <StyleProvider container={shadow}>
-          <ThemeProvider>
-            <ThemedWrapper Component={Component} />
-          </ThemeProvider>
-        </StyleProvider>
+        <ErrorBoundary name={hostId}>
+          <StyleProvider container={shadow}>
+            <ThemeProvider>
+              <ThemedWrapper Component={Component} />
+            </ThemeProvider>
+          </StyleProvider>
+        </ErrorBoundary>
       </React.StrictMode>
     );
   };

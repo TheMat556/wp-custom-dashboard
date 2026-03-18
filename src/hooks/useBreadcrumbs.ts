@@ -1,15 +1,12 @@
 import { useMemo } from "react";
 import type { MenuItem } from "./useMenu";
+import "../types/wp";
+import { getAdminBaseUrl, getActiveKey } from "../utils/wp";
 
 export interface BreadcrumbItem {
   label: string;
   slug:  string;
   url:   string;
-}
-
-function getAdminBaseUrl(): string {
-  const adminUrl = (window as any).wpReactUi?.adminUrl ?? "/wp-admin/";
-  return adminUrl.replace(/\/$/, "");
 }
 
 function slugToUrl(slug: string): string {
@@ -18,13 +15,6 @@ function slugToUrl(slug: string): string {
   return normalizedSlug.includes("?") || normalizedSlug.includes(".php")
     ? `${base}/${normalizedSlug}`
     : `${base}/admin.php?page=${normalizedSlug}`;
-}
-
-function getActiveKey(): string | undefined {
-  if (typeof window === "undefined") return undefined;
-  const page = new URLSearchParams(window.location.search).get("page");
-  if (page) return page;
-  return window.location.pathname.split("/").filter(Boolean).pop();
 }
 
 /**
