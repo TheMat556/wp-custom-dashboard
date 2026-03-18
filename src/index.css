@@ -1,0 +1,9 @@
+@import "tailwindcss";
+
+@layer base {
+  :host {
+    font-family: "Inter", -apple-system, BlinkMacSystemFont, sans-serif;
+    line-height: 1.5;
+    font-size: 14px;
+  }
+}

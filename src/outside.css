@@ -1,0 +1,52 @@
+.wp-list-table {
+    width: auto !important;
+    border-radius: 8px !important;
+    overflow: hidden;
+}
+
+.wp-list-table > td {
+    border-radius: 8px !important;
+}
+
+.media-toolbar {
+    border-radius: 8px !important;
+}
+
+.media-toolbar-secondary {
+    padding-bottom: 8px !important;
+}
+
+.attachment {
+    border-top-left-radius: 8px !important;
+    border-top-right-radius: 8px !important;
+    overflow: hidden !important;
+}
+
+.attachment::before {
+    border-top-left-radius: 8px !important;
+    border-top-right-radius: 8px !important;
+}
+
+.attachment .attachment-preview {
+    border-top-left-radius: 8px !important;
+    border-top-right-radius: 8px !important;
+    overflow: hidden !important;
+}
+
+#drag-drop-area {
+    border-radius: 8px !important;
+}
+
+#wpbody {
+    padding-top: 0px !important;
+}
+
+.interface-interface-skeleton {
+    position: relative !important;
+    top: revert-layer !important;
+    left: 0px; 
+}
+
+.media-toolbar {
+    z-index: 1 !important;
+}
