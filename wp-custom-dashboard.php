@@ -8,6 +8,7 @@
 defined('ABSPATH') || exit;
 
 require_once __DIR__ . '/includes/class-asset-loader.php';
+require_once __DIR__ . '/includes/class-rest-api.php';
 
 // ─── Admin Init ───────────────────────────────────────────────────────────────
 
@@ -26,7 +27,8 @@ add_action('admin_init', function () {
         }
     }
 
-    if (isset($_GET['flush_react_cache']) && current_user_can('manage_options')) {
+    if (isset($_GET['flush_react_cache']) && current_user_can('manage_options')
+        && wp_verify_nonce($_GET['_wpnonce'] ?? '', 'flush_react_cache')) {
         WP_React_UI_Asset_Loader::clear_cache();
         wp_redirect(admin_url());
         exit;
@@ -80,173 +82,13 @@ add_action('admin_head', function () {
         }
     }
 
-    echo '<style id="wp-react-ui-critical">
-
-        /* ── Inter font everywhere ── */
-        html, body, input, button, select, textarea {
-            font-family: "Inter", -apple-system, BlinkMacSystemFont, sans-serif !important;
-        }
-
-        /* ── Hide native WordPress chrome ── */
-        #adminmenuback,
-        #adminmenuwrap,
-        #adminmenumain,
-        #wpadminbar {
-            display: none !important;
-        }
-
-        html.wp-toolbar {
-            padding-top: 0 !important;
-        }
-
-        html, body {
-            margin: 0 !important;
-            padding: 0 !important;
-            height: 100% !important;
-            overflow: hidden !important;
-            font-family: "Inter", -apple-system, BlinkMacSystemFont, sans-serif !important;
-        }
-
-        /* ── CSS variable driven by JS on collapse/expand ── */
-        :root {
-            --sidebar-width: 240px;
-            --sidebar-transition: 0.3s ease;
-        }
-
-        #wpwrap {
-            display: grid !important;
-            grid-template-columns: var(--sidebar-width, 240px) 1fr !important;
-            grid-template-rows: 64px 1fr !important;
-            grid-template-areas:
-                "sidebar navbar"
-                "sidebar content" !important;
-            height: 100vh !important;
-            min-height: 100vh !important;
-            padding: 0 !important;
-            overflow: hidden !important;
-            transition: grid-template-columns var(--sidebar-transition) !important;
-        }
-
-        /* ── Sidebar ── */
-        #react-sidebar-root {
-            grid-area: sidebar !important;
-            display: flex !important;
-            flex-direction: column !important;
-            height: 100% !important;
-            width: 100% !important;
-            min-width: 0 !important;
-            overflow: hidden !important;
-        }
-
-        /* ── Navbar ── */
-        #react-navbar-root {
-            grid-area: navbar !important;
-            display: flex !important;
-            flex-direction: column !important;
-            width: 100% !important;
-            min-height: 64px !important;
-            min-width: 0 !important;
-            background: transparent !important;
-            z-index: 100 !important;
-        }
-
-        /* ── Content ── */
-        #wpcontent,
-        #wpfooter {
-            grid-area: content !important;
-            margin-left: 0 !important;
-            min-width: 0 !important;
-            overflow-y: auto !important;
-            visibility: hidden !important;
-            opacity: 0 !important;
-            transition: opacity 0.15s ease !important;
-        }
-
-        /* ── Reveal content once React is ready ── */
-        #wpwrap.react-ready #wpcontent,
-        #wpwrap.react-ready #wpfooter {
-            visibility: visible !important;
-            opacity: 1 !important;
-        }
-
-        /* ── Skeleton shimmer ── */
-        @keyframes wp-react-skeleton {
-            0%, 100% { opacity: 0.5; }
-            50%       { opacity: 1;   }
-        }
-
-        #react-navbar-root:not(.mounted)::before {
-            content: "";
-            display: block;
-            height: 64px;
-            background: linear-gradient(90deg, #f1f5f9 25%, #e2e8f0 50%, #f1f5f9 75%);
-            background-size: 200% 100%;
-            animation: wp-react-skeleton 1.5s ease-in-out infinite;
-        }
-
-        #react-sidebar-root:not(.mounted)::before {
-            content: "";
-            display: block;
-            margin: 20px 16px;
-            height: 18px;
-            width: 60%;
-            border-radius: 6px;
-            background: linear-gradient(90deg, #f1f5f9 25%, #e2e8f0 50%, #f1f5f9 75%);
-            background-size: 200% 100%;
-            animation: wp-react-skeleton 1.5s ease-in-out infinite;
-        }
-
-        #react-navbar-root.mounted::before,
-        #react-sidebar-root.mounted::before {
-            display: none !important;
-        }
-
-    </style>';
+    echo '<style id="wp-react-ui-critical">' . file_get_contents(__DIR__ . '/includes/critical.css') . '</style>';
 
 }, 1);
 
 // ─── REST API ─────────────────────────────────────────────────────────────────
 
-add_action('rest_api_init', function () {
-
-    // ── Menu endpoint ────────────────────────────────────────────────────────
-    register_rest_route('wp-react-ui/v1', '/menu', [
-        'methods'             => 'GET',
-        'callback'            => function () {
-            return rest_ensure_response([
-                'menu' => WP_React_UI_Asset_Loader::get_menu_data(),
-            ]);
-        },
-        'permission_callback' => fn() => current_user_can('manage_options'),
-    ]);
-
-    // ── Theme preference ─────────────────────────────────────────────────────
-    register_rest_route('wp-react-ui/v1', '/theme', [
-        [
-            'methods'             => 'GET',
-            'callback'            => function () {
-                $theme = get_user_meta(get_current_user_id(), 'wp_react_ui_theme', true);
-                return rest_ensure_response(['theme' => $theme ?: 'light']);
-            },
-            'permission_callback' => fn() => is_user_logged_in(),
-        ],
-        [
-            'methods'             => 'POST',
-            'callback'            => function (WP_REST_Request $request) {
-                $theme = $request->get_param('theme') === 'dark' ? 'dark' : 'light';
-                update_user_meta(get_current_user_id(), 'wp_react_ui_theme', $theme);
-                return rest_ensure_response(['theme' => $theme]);
-            },
-            'permission_callback' => fn() => is_user_logged_in(),
-            'args'                => [
-                'theme' => [
-                    'required'          => true,
-                    'sanitize_callback' => 'sanitize_text_field',
-                ],
-            ],
-        ],
-    ]);
-});
+add_action('rest_api_init', ['WP_React_UI_REST_API', 'register']);
 
 // ─── Enqueue Scripts + Localize Data ─────────────────────────────────────────
 

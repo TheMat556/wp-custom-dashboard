@@ -61,10 +61,15 @@ class WP_React_UI_Asset_Loader {
     public static function clear_menu_cache(): void {
         global $wpdb;
 
+        $prefix = self::CACHE_MENU;
         $wpdb->query(
-            "DELETE FROM {$wpdb->options}
-             WHERE option_name LIKE '_transient_" . self::CACHE_MENU . "_%'
-             OR    option_name LIKE '_transient_timeout_" . self::CACHE_MENU . "_%'"
+            $wpdb->prepare(
+                "DELETE FROM {$wpdb->options}
+                 WHERE option_name LIKE %s
+                 OR    option_name LIKE %s",
+                '_transient_' . $prefix . '_%',
+                '_transient_timeout_' . $prefix . '_%'
+            )
         );
     }
 
