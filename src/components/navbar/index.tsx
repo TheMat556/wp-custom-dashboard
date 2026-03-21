@@ -1,6 +1,7 @@
 import {
   BulbOutlined,
   BulbFilled,
+  ExportOutlined,
   MenuFoldOutlined,
   MenuUnfoldOutlined,
   MenuOutlined,
@@ -34,6 +35,7 @@ export default function Navbar() {
   const { token } = theme.useToken();
   const isDark = appTheme === "dark";
   const activeKey = useActiveKey();
+  const publicUrl = window.wpReactUi?.publicUrl ?? "/";
 
   const containerRef = useRef<HTMLDivElement>(null);
   const getPopupContainer = () => containerRef.current || document.body;
@@ -212,6 +214,32 @@ export default function Navbar() {
           />
         }
       >
+        <Button
+          type="text"
+          shape="circle"
+          icon={
+            <ExportOutlined
+              style={{
+                color: token.colorTextSecondary,
+                fontSize: 18,
+              }}
+            />
+          }
+          onClick={(event) => {
+            window.open(publicUrl, "_blank", "noopener,noreferrer");
+            event.currentTarget.blur();
+          }}
+          title="Open frontend"
+          aria-label="Open frontend"
+          style={{
+            width: 38,
+            height: 38,
+            color: token.colorTextSecondary,
+            transition:
+              "background-color 180ms ease, color 180ms ease",
+          }}
+        />
+
         {/* Theme toggle */}
         <Button
           type="text"

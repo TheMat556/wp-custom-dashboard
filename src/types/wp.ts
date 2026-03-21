@@ -31,6 +31,12 @@ declare global {
         role: string;
       };
     };
+    __wpReactUiTransitionState?: {
+      active: boolean;
+      id: number;
+      startedAt: number;
+      targetUrl: string;
+    };
   }
 }
 

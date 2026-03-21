@@ -30,6 +30,16 @@ html, body {
     --sidebar-transition: 0.2s ease;
 }
 
+/* On mobile the sidebar is a fixed overlay — zero grid column, no skeleton. */
+@media (max-width: 767px) {
+    :root { --sidebar-width: 0px; }
+
+    #react-sidebar-root:not(.mounted)::before,
+    #react-sidebar-root:not(.mounted)::after {
+        display: none !important;
+    }
+}
+
 #wpwrap {
     display: grid !important;
     grid-template-columns: var(--sidebar-width, 240px) 1fr !important;
@@ -236,6 +246,25 @@ body[data-theme="dark"] #wpwrap:not(.has-react-shell)::after {
     #react-navbar-root  { view-transition-name: wp-navbar;  }
 
     /*
+     * View-transition layers are purely visual. Never let them intercept
+     * pointer input while the real DOM remains interactive underneath.
+     */
+    ::view-transition-group(root),
+    ::view-transition-image-pair(root),
+    ::view-transition-old(root),
+    ::view-transition-new(root),
+    ::view-transition-group(wp-sidebar),
+    ::view-transition-image-pair(wp-sidebar),
+    ::view-transition-old(wp-sidebar),
+    ::view-transition-new(wp-sidebar),
+    ::view-transition-group(wp-navbar),
+    ::view-transition-image-pair(wp-navbar),
+    ::view-transition-old(wp-navbar),
+    ::view-transition-new(wp-navbar) {
+        pointer-events: none;
+    }
+
+    /*
      * OLD screenshot: hold visible (opacity 1) for the full duration so it acts
      *     as a stable backdrop while new content appears over it.
      * NEW content: fade in from transparent — if React has already mounted by
@@ -262,4 +291,3 @@ body[data-theme="dark"] #wpwrap:not(.has-react-shell)::after {
     @keyframes wp-vt-out  { to   { opacity: 0; } }
     @keyframes wp-vt-in   { from { opacity: 0; } }
 }
-

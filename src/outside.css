@@ -50,3 +50,7 @@
 .media-toolbar {
     z-index: 1 !important;
 }
+
+#wpfooter {
+    display: none;
+}

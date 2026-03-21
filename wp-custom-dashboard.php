@@ -89,7 +89,8 @@ add_action('admin_head', function () {
     echo 'var d=document.documentElement,b=document.body;';
     // Sidebar: read localStorage to set correct grid column width immediately
     echo 'try{var c=localStorage.getItem("wp-react-sidebar-collapsed")==="true";';
-    echo 'd.style.setProperty("--sidebar-width",c?"64px":"240px");}catch(e){}';
+    echo 'var m=window.innerWidth<768;';
+    echo 'd.style.setProperty("--sidebar-width",m?"0px":c?"64px":"240px");}catch(e){}';
     // Theme: apply server-known theme to data-theme attributes
     echo 'var t=' . wp_json_encode($theme) . ';';
     // b may be null when this script runs in <head> before <body> is parsed.
@@ -158,6 +159,7 @@ add_action('admin_enqueue_scripts', function () {
         'branding'    => $branding,
         'theme'       => $theme,
         'adminUrl'    => admin_url(),
+        'publicUrl'   => home_url('/'),
         'nonce'       => wp_create_nonce('wp_rest'),
         'restUrl'     => rest_url('wp-react-ui/v1'),
         'logoutUrl'   => wp_logout_url(admin_url()),

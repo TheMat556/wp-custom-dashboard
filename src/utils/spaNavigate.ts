@@ -16,6 +16,7 @@ import { useSyncExternalStore } from "react";
 
 type Listener = () => void;
 const listeners = new Set<Listener>();
+let transitionSequence = 0;
 
 function computeActiveKey(url?: string): string | undefined {
   const loc = url ? new URL(url, window.location.origin) : window.location;
@@ -171,7 +172,47 @@ export async function spaNavigate(url: string): Promise<boolean> {
     };
 
     if (document.startViewTransition) {
-      document.startViewTransition(doSwap);
+      // The sidebar and navbar don't change during SPA navigation — only
+      // #wpcontent is swapped. If their view-transition-name is set when
+      // startViewTransition() is called, the browser captures them as named
+      // pseudo-elements and hides the real DOM nodes for the full 180ms
+      // animation duration, making all sidebar clicks silently swallowed.
+      // Clear the names before the capture, restore once the transition is done.
+      const sidebar = document.getElementById("react-sidebar-root");
+      const navbar  = document.getElementById("react-navbar-root");
+      const transitionId = ++transitionSequence;
+      const startedAt = performance.now();
+      window.__wpReactUiTransitionState = {
+        active: true,
+        id: transitionId,
+        startedAt,
+        targetUrl: url,
+      };
+      console.debug("[WP React UI][spa-transition:start]", {
+        id: transitionId,
+        targetUrl: url,
+      });
+      sidebar?.style.setProperty("view-transition-name", "none");
+      navbar?.style.setProperty("view-transition-name", "none");
+
+      const restore = () => {
+        sidebar?.style.removeProperty("view-transition-name");
+        navbar?.style.removeProperty("view-transition-name");
+        window.__wpReactUiTransitionState = {
+          active: false,
+          id: transitionId,
+          startedAt,
+          targetUrl: url,
+        };
+        console.debug("[WP React UI][spa-transition:finish]", {
+          id: transitionId,
+          targetUrl: url,
+          durationMs: Math.round(performance.now() - startedAt),
+        });
+      };
+
+      const transition = document.startViewTransition(doSwap);
+      transition.finished.then(restore, restore);
     } else {
       doSwap();
     }

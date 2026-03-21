@@ -1,5 +1,9 @@
 import { Flex, Menu, theme } from "antd";
-import { useMemo } from "react";
+import {
+  useMemo,
+  type MouseEventHandler,
+  type PointerEventHandler,
+} from "react";
 import type { MenuItem } from "../../hooks/useMenu";
 import { Logo } from "./Logo";
 import { BottomActions } from "./BottomActions";
@@ -17,6 +21,8 @@ export function SidebarContent({
   onRefresh,
   showClose,
   onClose,
+  onMenuPointerDownCapture,
+  onMenuClickCapture,
 }: {
   collapsed: boolean;
   menuItems: MenuItem[];
@@ -29,6 +35,8 @@ export function SidebarContent({
   onRefresh: () => void;
   showClose?: boolean;
   onClose?: () => void;
+  onMenuPointerDownCapture?: PointerEventHandler<HTMLDivElement>;
+  onMenuClickCapture?: MouseEventHandler<HTMLDivElement>;
 }) {
   const { token } = theme.useToken();
 
@@ -44,24 +52,33 @@ export function SidebarContent({
         height: "100%",
         backgroundColor: token.colorBgContainer,
       }}
-    >
-      <Logo collapsed={collapsed} showClose={showClose} onClose={onClose} />
+      >
+        <Logo collapsed={collapsed} showClose={showClose} onClose={onClose} />
 
-      <Menu
-        mode="inline"
-        selectedKeys={activeKey ? [activeKey] : []}
-        openKeys={collapsed ? [] : openKeys}
-        onOpenChange={onOpenChange}
-        onClick={({ key }) => onMenuClick(key)}
-        items={transformedItems}
-        inlineCollapsed={collapsed}
+      <div
         style={{
           flex: 1,
-          borderRight: 0,
-          overflow: "auto",
-          padding: "12px 8px",
+          minHeight: 0,
         }}
-      />
+        onPointerDownCapture={onMenuPointerDownCapture}
+        onClickCapture={onMenuClickCapture}
+      >
+        <Menu
+          mode="inline"
+          selectedKeys={activeKey ? [activeKey] : []}
+          openKeys={collapsed ? [] : openKeys}
+          onOpenChange={onOpenChange}
+          onClick={({ key }) => onMenuClick(key)}
+          items={transformedItems}
+          inlineCollapsed={collapsed}
+          style={{
+            height: "100%",
+            borderRight: 0,
+            overflow: "auto",
+            padding: "12px 8px",
+          }}
+        />
+      </div>
 
       <BottomActions
         collapsed={collapsed}

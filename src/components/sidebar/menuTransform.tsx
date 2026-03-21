@@ -29,14 +29,6 @@ export function transformMenuItems(
           width: "100%",
           height: "100%",
         }}
-        onClick={
-          hasChildren && onParentClick
-            ? (e) => {
-                e.stopPropagation();
-                onParentClick(item.slug);
-              }
-            : undefined
-        }
       >
         <IconWithBadge
           icon={resolveIcon(item.icon)}
@@ -58,6 +50,14 @@ export function transformMenuItems(
         icon: iconElement,
         title: item.label,
         label: parentLabel,
+        onTitleClick:
+          collapsed && onParentClick
+            ? ({ domEvent }) => {
+                domEvent.preventDefault();
+                domEvent.stopPropagation();
+                onParentClick(item.slug);
+              }
+            : undefined,
         children: item.children?.map((child: SubMenuItem) => {
           const childBadgeType = getBadgeTypeForItem(child.slug);
           return {
