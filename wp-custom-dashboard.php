@@ -15,6 +15,45 @@ require_once __DIR__ . '/includes/class-wp-react-ui-rest-api.php';
 
 WP_React_UI_Branding_Settings::init();
 
+/**
+ * Returns the admin screens that need special handling.
+ *
+ * Shell_disabled_pagenow:
+ * - Do not bootstrap the React shell on these core editors.
+ *
+ * full_reload_page_params:
+ * - Keep the shell active, but force a real page load when navigating to these
+ *   admin.php?page=... screens so their PHP-driven bootstrapping runs normally.
+ *
+ * @return array{shell_disabled_pagenow: string[], full_reload_page_params: string[]}
+ */
+function wp_react_ui_get_special_page_config(): array {
+	return array(
+		'shell_disabled_pagenow' => array(
+			'post.php',
+			'post-new.php',
+			'site-editor.php',
+		),
+		'full_reload_page_params' => array(
+			'site-health',
+			'wp-react-ui-branding',
+			'h-bricks-elements',
+		),
+	);
+}
+
+/**
+ * Determines whether the React shell should bootstrap on the current admin screen.
+ *
+ * @param string|null $pagenow Current admin filename.
+ */
+function wp_react_ui_should_boot_shell( ?string $pagenow = null ): bool {
+	$current_page = is_string( $pagenow ) ? $pagenow : ( $GLOBALS['pagenow'] ?? '' );
+	$config       = wp_react_ui_get_special_page_config();
+
+	return ! in_array( $current_page, $config['shell_disabled_pagenow'], true );
+}
+
 // ─── Admin Init ───────────────────────────────────────────────────────────────
 
 add_action(
@@ -82,8 +121,7 @@ add_action(
 		);
 
 		global $pagenow;
-		$editor_pages = array( 'post.php', 'post-new.php', 'site-editor.php' );
-		if ( in_array( $pagenow, $editor_pages, true ) ) {
+		if ( ! wp_react_ui_should_boot_shell( $pagenow ) ) {
 			return;
 		}
 
@@ -177,7 +215,7 @@ add_action(
 	'admin_enqueue_scripts',
 	function () {
 		global $pagenow;
-		if ( in_array( $pagenow, array( 'post.php', 'post-new.php' ), true ) ) {
+		if ( ! wp_react_ui_should_boot_shell( $pagenow ) ) {
 			return;
 		}
 
@@ -188,7 +226,8 @@ add_action(
 		if ( ! $theme ) {
 			$theme = 'light';
 		}
-		$branding = WP_React_UI_Branding_Settings::get_frontend_branding();
+		$branding      = WP_React_UI_Branding_Settings::get_frontend_branding();
+		$special_pages = wp_react_ui_get_special_page_config();
 
 		wp_localize_script(
 			'wp-react-ui',
@@ -200,6 +239,10 @@ add_action(
 				'theme'       => $theme,
 				'adminUrl'    => admin_url(),
 				'publicUrl'   => home_url( '/' ),
+				'navigation'  => array(
+					'fullReloadPageParams' => array_values( $special_pages['full_reload_page_params'] ),
+					'shellDisabledPagenow' => array_values( $special_pages['shell_disabled_pagenow'] ),
+				),
 				'nonce'       => wp_create_nonce( 'wp_rest' ),
 				'restUrl'     => rest_url( 'wp-react-ui/v1' ),
 				'logoutUrl'   => wp_logout_url( admin_url() ),

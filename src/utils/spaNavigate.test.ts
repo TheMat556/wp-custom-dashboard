@@ -63,6 +63,18 @@ describe("isSpaEligibleUrl", () => {
     );
   });
 
+  it("rejects pages configured for full reload via localized navigation config", () => {
+    window.wpReactUi = {
+      ...window.wpReactUi,
+      navigation: {
+        ...window.wpReactUi?.navigation,
+        fullReloadPageParams: ["my-plugin"],
+      },
+    };
+
+    expect(isSpaEligibleUrl("http://localhost/wp-admin/admin.php?page=my-plugin")).toBe(false);
+  });
+
   it("rejects index.php (not admin.php)", () => {
     expect(isSpaEligibleUrl("http://localhost/wp-admin/index.php")).toBe(false);
   });

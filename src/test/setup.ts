@@ -9,6 +9,11 @@ import "@testing-library/jest-dom/vitest";
 import { cleanup } from "@testing-library/react";
 import { afterEach, vi } from "vitest";
 
+const DEFAULT_NAVIGATION = {
+  fullReloadPageParams: ["site-health", "wp-react-ui-branding", "h-bricks-elements"],
+  shellDisabledPagenow: ["post.php", "post-new.php", "site-editor.php"],
+};
+
 // Minimal wpReactUi stub — must exist before any module-level code in
 // ThemeContext.tsx runs (it reads window.wpReactUi?.theme at import time).
 Object.defineProperty(window, "wpReactUi", {
@@ -26,6 +31,7 @@ Object.defineProperty(window, "wpReactUi", {
       siteName: "Test Site",
       logos: { lightUrl: null, darkUrl: null, defaultUrl: "/logo.svg" },
     },
+    navigation: DEFAULT_NAVIGATION,
     logoutUrl: "http://localhost/wp-login.php?action=logout",
     logoutNonce: "logout-nonce",
     menu: [],
@@ -41,4 +47,7 @@ afterEach(() => {
   document.body.innerHTML = "";
   document.title = "";
   (window.wpReactUi as { theme: string }).theme = "light";
+  (window.wpReactUi as { navigation: typeof DEFAULT_NAVIGATION }).navigation = {
+    ...DEFAULT_NAVIGATION,
+  };
 });

@@ -12,6 +12,12 @@
 
 import { useSyncExternalStore } from "react";
 
+const DEFAULT_FULL_RELOAD_PAGE_PARAMS = [
+  "site-health",
+  "wp-react-ui-branding",
+  "h-bricks-elements",
+] as const;
+
 // ── Navigation store (reactive activeKey for React) ──────────────────────────
 
 type Listener = () => void;
@@ -61,11 +67,27 @@ export function isAdminUrl(url: string): boolean {
   }
 }
 
+function getFullReloadPageParams(): Set<string> {
+  const configuredPages = window.wpReactUi?.navigation?.fullReloadPageParams;
+
+  if (!Array.isArray(configuredPages)) {
+    return new Set(DEFAULT_FULL_RELOAD_PAGE_PARAMS);
+  }
+
+  return new Set(
+    configuredPages.filter((page): page is string => typeof page === "string" && page.length > 0)
+  );
+}
+
 function hasUnsafePageParam(parsed: URL): boolean {
   const page = parsed.searchParams.get("page");
-  // Pages that rely on server-side wp_enqueue_media() or other hook-driven
-  // script bootstrapping must do a full reload so PHP hooks fire correctly.
-  return page === "site-health" || page === "wp-react-ui-branding" || page === "h-bricks-elements";
+  if (!page) {
+    return false;
+  }
+
+  // Pages that rely on PHP-side bootstrapping do a full reload so all hooks
+  // and enqueues run exactly as WordPress expects.
+  return getFullReloadPageParams().has(page);
 }
 
 export function isSpaEligibleUrl(url: string): boolean {

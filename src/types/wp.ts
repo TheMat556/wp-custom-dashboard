@@ -11,6 +11,11 @@ interface WpReactUiBranding {
   logos: WpReactUiBrandingLogos;
 }
 
+interface WpReactUiNavigationConfig {
+  fullReloadPageParams?: string[];
+  shellDisabledPagenow?: string[];
+}
+
 declare global {
   interface Window {
     wpReactUi?: {
@@ -24,6 +29,7 @@ declare global {
       theme?: string;
       assetsUrl?: string;
       publicUrl?: string;
+      navigation?: WpReactUiNavigationConfig;
       logoutUrl?: string;
       logoutNonce?: string;
       user?: {
