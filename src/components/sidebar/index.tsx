@@ -149,7 +149,9 @@ export default function Sidebar() {
     if (isMobile || !collapsed) return;
 
     const handleDocumentPointerDown = (event: PointerEvent) => {
-      const sidebarRoot = document.getElementById("react-sidebar-root");
+      const sidebarRoot = document.querySelector<HTMLElement>(
+        "#react-shell-root .ant-layout-sider"
+      );
       if (!sidebarRoot) return;
 
       const rect = sidebarRoot.getBoundingClientRect();

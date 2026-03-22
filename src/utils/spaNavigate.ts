@@ -167,14 +167,13 @@ export async function spaNavigate(url: string): Promise<boolean> {
     };
 
     if (document.startViewTransition) {
-      // The sidebar and navbar don't change during SPA navigation — only
-      // #wpcontent is swapped. If their view-transition-name is set when
-      // startViewTransition() is called, the browser captures them as named
+      // The shell doesn't change during SPA navigation — only #wpcontent is
+      // swapped. If its view-transition-name is set when startViewTransition()
+      // is called, the browser captures it as a named
       // pseudo-elements and hides the real DOM nodes for the full 180ms
       // animation duration, making all sidebar clicks silently swallowed.
       // Clear the names before the capture, restore once the transition is done.
-      const sidebar = document.getElementById("react-sidebar-root");
-      const navbar = document.getElementById("react-navbar-root");
+      const shell = document.getElementById("react-shell-root");
       const transitionId = ++transitionSequence;
       const startedAt = performance.now();
       window.__wpReactUiTransitionState = {
@@ -187,12 +186,10 @@ export async function spaNavigate(url: string): Promise<boolean> {
         id: transitionId,
         targetUrl: url,
       });
-      sidebar?.style.setProperty("view-transition-name", "none");
-      navbar?.style.setProperty("view-transition-name", "none");
+      shell?.style.setProperty("view-transition-name", "none");
 
       const restore = () => {
-        sidebar?.style.removeProperty("view-transition-name");
-        navbar?.style.removeProperty("view-transition-name");
+        shell?.style.removeProperty("view-transition-name");
         window.__wpReactUiTransitionState = {
           active: false,
           id: transitionId,

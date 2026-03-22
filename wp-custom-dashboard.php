@@ -109,11 +109,8 @@ add_action('admin_head', function () {
     echo 'var th=(bd&&bd.getAttribute("data-theme"))||t;';
     echo 'if(bd&&!bd.getAttribute("data-theme")){bd.setAttribute("data-theme",th);';
     echo 'if(th==="dark")bd.classList.add("wp-react-dark");}';
-    echo 'if(!document.getElementById("react-navbar-root")){';
-    echo 'var n=document.createElement("div");n.id="react-navbar-root";';
-    echo 'n.setAttribute("data-theme",th);w.insertBefore(n,w.firstChild);}';
-    echo 'if(!document.getElementById("react-sidebar-root")){';
-    echo 'var s=document.createElement("div");s.id="react-sidebar-root";';
+    echo 'if(!document.getElementById("react-shell-root")){';
+    echo 'var s=document.createElement("div");s.id="react-shell-root";';
     echo 's.setAttribute("data-theme",th);';
     echo 'var cc=document.getElementById("wpcontent");';
     echo 'cc?w.insertBefore(s,cc):w.appendChild(s);}';

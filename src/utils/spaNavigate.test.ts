@@ -14,8 +14,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { isAdminUrl, isSpaEligibleUrl, spaNavigate } from "./spaNavigate";
 
-// ── isAdminUrl ────────────────────────────────────────────────────────────────
-
 describe("isAdminUrl", () => {
   it("accepts a standard wp-admin URL", () => {
     expect(isAdminUrl("http://localhost/wp-admin/admin.php?page=my-plugin")).toBe(true);
@@ -112,12 +110,14 @@ describe("spaNavigate", () => {
     document.body.innerHTML = `
       <div id="wpcontent"><p>old content</p></div>
       <div id="wpfooter"><p>old footer</p></div>
-      <div id="react-sidebar-root"></div>
-      <div id="react-navbar-root"></div>
+      <div id="react-shell-root"></div>
     `;
 
     // Disable View Transition API so tests run the synchronous doSwap() path
-    (document as DocumentWithViewTransition).startViewTransition = undefined;
+    Object.defineProperty(document, "startViewTransition", {
+      configurable: true,
+      value: undefined,
+    });
   });
 
   afterEach(() => {

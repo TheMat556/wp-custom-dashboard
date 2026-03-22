@@ -1,6 +1,5 @@
 /* Base styles — loaded globally via wp_enqueue_style */
-#react-navbar-root,
-#react-sidebar-root {
+#react-shell-root {
   font-family: "Inter", -apple-system, BlinkMacSystemFont, sans-serif;
   line-height: 1.5;
   font-size: 14px;

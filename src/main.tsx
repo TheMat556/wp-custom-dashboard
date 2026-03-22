@@ -1,16 +1,15 @@
 import { theme as antTheme, ConfigProvider } from "antd";
 import React from "react";
 import { createRoot } from "react-dom/client";
+import App from "./App";
 import { ErrorBoundary } from "./components/ErrorBoundary";
-import Navbar from "./components/navbar";
-import Sidebar from "./components/sidebar";
 import { SidebarProvider } from "./context/SidebarContext";
 import { ThemeProvider, useTheme } from "./context/ThemeContext";
 import "./types/wp";
 import "./index.css";
 import { initSpaNavigation } from "./utils/spaNavigate";
 
-function ThemedApp({ children }: { children: React.ReactNode }) {
+function AntConfigProvider({ children }: { children: React.ReactNode }) {
   const { theme } = useTheme();
 
   return (
@@ -31,51 +30,45 @@ function ThemedApp({ children }: { children: React.ReactNode }) {
 function Providers({ children }: { children: React.ReactNode }) {
   return (
     <ThemeProvider>
-      <SidebarProvider>
-        <ThemedApp>{children}</ThemedApp>
-      </SidebarProvider>
+      <AntConfigProvider>
+        <SidebarProvider>{children}</SidebarProvider>
+      </AntConfigProvider>
     </ThemeProvider>
   );
 }
 
 function setupDOM() {
   const wpwrap = document.getElementById("wpwrap");
-  if (!wpwrap) return;
+  if (!wpwrap) return null;
 
-  const initialTheme = window.wpReactUi?.theme ?? "light";
+  const initialTheme =
+    document.body.getAttribute("data-theme") ?? window.wpReactUi?.theme ?? "light";
+  const wpcontent = document.getElementById("wpcontent");
 
-  // Roots may already exist (created by the early-state DOMContentLoaded script).
-  // Just ensure correct data-theme; don't create duplicates.
-  if (!document.getElementById("react-navbar-root")) {
-    const navbarRoot = document.createElement("div");
-    navbarRoot.id = "react-navbar-root";
-    navbarRoot.setAttribute("data-theme", initialTheme);
-    wpwrap.insertBefore(navbarRoot, wpwrap.firstChild);
+  document.getElementById("react-navbar-root")?.remove();
+  document.getElementById("react-sidebar-root")?.remove();
+
+  let shellRoot = document.getElementById("react-shell-root");
+  if (!shellRoot) {
+    shellRoot = document.createElement("div");
+    shellRoot.id = "react-shell-root";
+    wpcontent ? wpwrap.insertBefore(shellRoot, wpcontent) : wpwrap.appendChild(shellRoot);
   }
 
-  if (!document.getElementById("react-sidebar-root")) {
-    const sidebarRoot = document.createElement("div");
-    sidebarRoot.id = "react-sidebar-root";
-    sidebarRoot.setAttribute("data-theme", initialTheme);
-    const wpcontent = document.getElementById("wpcontent");
-    wpcontent ? wpwrap.insertBefore(sidebarRoot, wpcontent) : wpwrap.appendChild(sidebarRoot);
-  }
-
-  // Mark shell as ready (may already be set by early-state script)
+  shellRoot.setAttribute("data-theme", initialTheme);
   wpwrap.classList.add("has-react-shell");
+
+  return shellRoot;
 }
 
-setupDOM();
+const host = setupDOM();
 
-function mount(hostId: string, Component: React.ComponentType) {
-  const host = document.getElementById(hostId);
-  if (!host) return;
-
+if (host) {
   createRoot(host).render(
     <React.StrictMode>
-      <ErrorBoundary name={hostId}>
+      <ErrorBoundary name="react-shell-root">
         <Providers>
-          <Component />
+          <App />
         </Providers>
       </ErrorBoundary>
     </React.StrictMode>
@@ -83,9 +76,6 @@ function mount(hostId: string, Component: React.ComponentType) {
 
   host.classList.add("mounted");
 }
-
-mount("react-navbar-root", Navbar);
-mount("react-sidebar-root", Sidebar);
 
 document.getElementById("wpwrap")?.classList.add("react-ready");
 initSpaNavigation();

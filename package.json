@@ -20,7 +20,8 @@
     "@ant-design/icons": "6.x",
     "antd": "^6.3.3",
     "react": "^19.2.4",
-    "react-dom": "^19.2.4"
+    "react-dom": "^19.2.4",
+    "zustand": "^5.0.12"
   },
   "devDependencies": {
     "@biomejs/biome": "^2.4.8",

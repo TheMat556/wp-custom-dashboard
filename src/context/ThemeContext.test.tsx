@@ -1,5 +1,5 @@
 /**
- * Tests for ThemeContext.tsx
+ * Tests for themeStore.ts and ThemeContext.tsx
  *
  * The module-level store runs applyThemeToDOM() immediately on import.
  * Strategy: set up DOM + wpReactUi BEFORE the dynamic import so the
@@ -13,8 +13,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 function setupDom() {
   document.body.innerHTML = `
-    <div id="react-navbar-root"></div>
-    <div id="react-sidebar-root"></div>
+    <div id="react-shell-root"></div>
   `;
 }
 
@@ -41,27 +40,27 @@ describe("applyThemeToDOM", () => {
 
   it("sets data-theme='light' on body and roots when server theme is light", async () => {
     setServerTheme("light");
-    await import("../context/ThemeContext");
+    await import("../store/themeStore");
 
     expect(document.body.getAttribute("data-theme")).toBe("light");
-    expect(document.getElementById("react-navbar-root")?.getAttribute("data-theme")).toBe("light");
-    expect(document.getElementById("react-sidebar-root")?.getAttribute("data-theme")).toBe("light");
+    expect(document.getElementById("react-shell-root")?.getAttribute("data-theme")).toBe("light");
   });
 
   it("sets data-theme='dark' when server theme is dark", async () => {
     setServerTheme("dark");
-    await import("../context/ThemeContext");
+    await import("../store/themeStore");
 
     expect(document.body.getAttribute("data-theme")).toBe("dark");
-    expect(document.getElementById("react-navbar-root")?.getAttribute("data-theme")).toBe("dark");
+    expect(document.getElementById("react-shell-root")?.getAttribute("data-theme")).toBe("dark");
   });
 
   it("prefers localStorage over server theme", async () => {
     setServerTheme("light");
     localStorage.setItem("wp-react-ui-theme", "dark");
-    await import("../context/ThemeContext");
+    await import("../store/themeStore");
 
     expect(document.body.getAttribute("data-theme")).toBe("dark");
+    expect(document.getElementById("react-shell-root")?.getAttribute("data-theme")).toBe("dark");
   });
 });
 
