@@ -52,22 +52,11 @@ jobs:
         uses: shivammathur/setup-php@v2
         with:
           php-version: "8.2"
-          tools: composer, phpcs
+          tools: composer
           coverage: none
 
-      - name: Install PHP_CodeSniffer + WordPress standards
-        run: |
-          composer require --dev \
-            squizlabs/php_codesniffer \
-            wp-coding-standards/wpcs \
-            --no-interaction --no-progress
-          vendor/bin/phpcs --config-set installed_paths vendor/wp-coding-standards/wpcs
+      - name: Install PHP dependencies
+        run: composer install --no-interaction --no-progress
 
       - name: Run PHPCS
-        run: |
-          vendor/bin/phpcs \
-            --standard=WordPress \
-            --extensions=php \
-            --ignore=vendor/,node_modules/ \
-            --report=summary \
-            wp-custom-dashboard.php includes/
+        run: composer run lint
