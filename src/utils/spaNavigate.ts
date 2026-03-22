@@ -68,7 +68,11 @@ function hasUnsafePageParam(parsed: URL): boolean {
   const page = parsed.searchParams.get("page");
   // Pages that rely on server-side wp_enqueue_media() or other hook-driven
   // script bootstrapping must do a full reload so PHP hooks fire correctly.
-  return page === "site-health" || page === "wp-react-ui-branding";
+  return (
+    page === "site-health" ||
+    page === "wp-react-ui-branding" ||
+    page === "h-bricks-elements"
+  );
 }
 
 export function isSpaEligibleUrl(url: string): boolean {

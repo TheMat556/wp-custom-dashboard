@@ -15,15 +15,40 @@ export type Theme = "light" | "dark";
 type Listener = (theme: Theme) => void;
 
 const listeners = new Set<Listener>();
+const THEME_STORAGE_KEY = "wp-react-ui-theme";
+const THEME_CHANGE_EVENT = "wp-react-ui-theme-change";
 
+function isTheme(value: unknown): value is Theme {
+  return value === "light" || value === "dark";
+}
+
+function readStoredTheme(): Theme | null {
+  try {
+    const storedTheme = localStorage.getItem(THEME_STORAGE_KEY);
+    return isTheme(storedTheme) ? storedTheme : null;
+  } catch {
+    return null;
+  }
+}
+
+function writeStoredTheme(theme: Theme) {
+  try {
+    localStorage.setItem(THEME_STORAGE_KEY, theme);
+  } catch {
+    // Private browsing or disabled storage — ignore
+  }
+}
+
+const serverTheme = window.wpReactUi?.theme;
 let currentTheme: Theme =
-  (window.wpReactUi?.theme ?? "light") as Theme;
+  readStoredTheme() ?? (isTheme(serverTheme) ? serverTheme : "light");
 
 function applyThemeToDOM(t: Theme) {
   document.getElementById("react-navbar-root")?.setAttribute("data-theme", t);
   document.getElementById("react-sidebar-root")?.setAttribute("data-theme", t);
   document.body.setAttribute("data-theme", t);
   document.body.classList.toggle("wp-react-dark", t === "dark");
+  writeStoredTheme(t);
 }
 
 async function persistTheme(t: Theme) {
@@ -54,6 +79,11 @@ const themeStore = {
     currentTheme = next;
     applyThemeToDOM(next);
     listeners.forEach((fn) => fn(next));
+    window.dispatchEvent(
+      new CustomEvent(THEME_CHANGE_EVENT, {
+        detail: { theme: next },
+      })
+    );
     await persistTheme(next);
   },
 

@@ -93,6 +93,8 @@ add_action('admin_head', function () {
     echo 'd.style.setProperty("--sidebar-width",m?"0px":c?"64px":"240px");}catch(e){}';
     // Theme: apply server-known theme to data-theme attributes
     echo 'var t=' . wp_json_encode($theme) . ';';
+    echo 'try{var st=localStorage.getItem("wp-react-ui-theme");';
+    echo 'if(st==="dark"||st==="light"){t=st;}}catch(e){}';
     // b may be null when this script runs in <head> before <body> is parsed.
     echo 'if(b){b.setAttribute("data-theme",t);';
     echo 'if(t==="dark")b.classList.add("wp-react-dark");}';
