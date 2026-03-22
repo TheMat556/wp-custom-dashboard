@@ -1,15 +1,5 @@
-import {
-  EditOutlined,
-  LogoutOutlined,
-} from "@ant-design/icons";
-import {
-  Dropdown,
-  Avatar,
-  Flex,
-  Typography,
-  theme,
-  type MenuProps,
-} from "antd";
+import { EditOutlined, LogoutOutlined } from "@ant-design/icons";
+import { Avatar, Dropdown, Flex, type MenuProps, Typography, theme } from "antd";
 import { useMemo } from "react";
 import { getAdminBaseUrl, navigate } from "../../utils/wp";
 import "../../types/wp";
@@ -22,13 +12,14 @@ function getWpUser() {
   const wp = window.wpReactUi;
   const name = wp?.user?.name?.trim() || "Admin User";
   const role = wp?.user?.role ?? "Super Admin";
-  const initials = name
-    .split(/\s+/)
-    .filter(Boolean)
-    .map((w: string) => w[0] ?? "")
-    .join("")
-    .slice(0, 2)
-    .toUpperCase() || "AU";
+  const initials =
+    name
+      .split(/\s+/)
+      .filter(Boolean)
+      .map((w: string) => w[0] ?? "")
+      .join("")
+      .slice(0, 2)
+      .toUpperCase() || "AU";
   return { name, role, initials };
 }
 
@@ -44,9 +35,7 @@ export default function UserDropdown({
   const user = useMemo(() => getWpUser(), []);
   const { token } = theme.useToken();
 
-  const avatarBackground = isDark
-    ? token.colorPrimaryBgHover
-    : token.colorPrimaryBg;
+  const avatarBackground = isDark ? token.colorPrimaryBgHover : token.colorPrimaryBg;
   const avatarColor = isDark ? token.colorPrimaryTextHover : token.colorPrimaryText;
 
   const goEditProfile = () => {
@@ -55,8 +44,7 @@ export default function UserDropdown({
 
   const goLogout = () => {
     const wp = window.wpReactUi;
-    const url =
-      wp?.logoutUrl ?? `${getAdminBaseUrl()}/wp-login.php?action=logout`;
+    const url = wp?.logoutUrl ?? `${getAdminBaseUrl()}/wp-login.php?action=logout`;
     window.location.href = url;
   };
 
@@ -160,9 +148,7 @@ export default function UserDropdown({
           >
             {user.name}
           </Text>
-          <Text style={{ fontSize: 11, color: token.colorTextSecondary }}>
-            {user.role}
-          </Text>
+          <Text style={{ fontSize: 11, color: token.colorTextSecondary }}>{user.role}</Text>
         </div>
         <Avatar
           size={38}

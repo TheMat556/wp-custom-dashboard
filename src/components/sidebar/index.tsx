@@ -1,20 +1,20 @@
 import { Layout, theme } from "antd";
 import {
-  useState,
-  useCallback,
-  useEffect,
   type MouseEvent as ReactMouseEvent,
   type PointerEvent as ReactPointerEvent,
+  useCallback,
+  useEffect,
+  useState,
 } from "react";
-import { useTheme } from "../../context/ThemeContext";
 import { useSidebar } from "../../context/SidebarContext";
-import { useMenu } from "../../hooks/useMenu";
+import { useTheme } from "../../context/ThemeContext";
 import type { MenuItem } from "../../hooks/useMenu";
+import { useMenu } from "../../hooks/useMenu";
 import "../../types/wp";
-import { buildAdminUrl, navigate } from "../../utils/wp";
 import { useActiveKey } from "../../utils/spaNavigate";
-import { SidebarContent } from "./SidebarContent";
+import { buildAdminUrl, navigate } from "../../utils/wp";
 import { MobileDrawer } from "./MobileDrawer";
+import { SidebarContent } from "./SidebarContent";
 
 const { Sider } = Layout;
 
@@ -35,15 +35,10 @@ function describeElement(element: Element | null): string | null {
   return `${tag}${id}${className}`;
 }
 
-function getInitialOpenKeys(
-  menuItems: MenuItem[],
-  activeKey?: string
-): string[] {
+function getInitialOpenKeys(menuItems: MenuItem[], activeKey?: string): string[] {
   if (!activeKey) return [];
   const parent = menuItems.find(
-    (item) =>
-      item.slug === activeKey ||
-      item.children?.some((c) => c.slug === activeKey)
+    (item) => item.slug === activeKey || item.children?.some((c) => c.slug === activeKey)
   );
   return parent?.children?.length ? [parent.slug] : [];
 }
@@ -73,9 +68,7 @@ export default function Sidebar() {
         transitionActive: transition?.active ?? false,
         transitionId: transition?.id ?? null,
         transitionTargetUrl: transition?.targetUrl ?? null,
-        transitionAgeMs: transition
-          ? Math.round(performance.now() - transition.startedAt)
-          : null,
+        transitionAgeMs: transition ? Math.round(performance.now() - transition.startedAt) : null,
         ...details,
       });
     },

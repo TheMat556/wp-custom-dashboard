@@ -1,12 +1,8 @@
 import { Flex, Menu, theme } from "antd";
-import {
-  useMemo,
-  type MouseEventHandler,
-  type PointerEventHandler,
-} from "react";
+import { type MouseEventHandler, type PointerEventHandler, useMemo } from "react";
 import type { MenuItem } from "../../hooks/useMenu";
-import { Logo } from "./Logo";
 import { BottomActions } from "./BottomActions";
+import { Logo } from "./Logo";
 import { transformMenuItems } from "./menuTransform";
 
 export function SidebarContent({
@@ -52,8 +48,8 @@ export function SidebarContent({
         height: "100%",
         backgroundColor: token.colorBgContainer,
       }}
-      >
-        <Logo collapsed={collapsed} showClose={showClose} onClose={onClose} />
+    >
+      <Logo collapsed={collapsed} showClose={showClose} onClose={onClose} />
 
       <div
         style={{
@@ -80,11 +76,7 @@ export function SidebarContent({
         />
       </div>
 
-      <BottomActions
-        collapsed={collapsed}
-        loading={loading}
-        onRefresh={onRefresh}
-      />
+      <BottomActions collapsed={collapsed} loading={loading} onRefresh={onRefresh} />
     </Flex>
   );
 }

@@ -37,7 +37,7 @@ const navigationStore = {
   },
   notify(url: string) {
     currentActiveKey = computeActiveKey(url);
-    listeners.forEach((fn) => fn());
+    for (const fn of listeners) fn();
   },
 };
 
@@ -52,13 +52,10 @@ export function useActiveKey(): string | undefined {
 
 // ── SPA navigation core ──────────────────────────────────────────────────────
 
-function isAdminUrl(url: string): boolean {
+export function isAdminUrl(url: string): boolean {
   try {
     const parsed = new URL(url, window.location.origin);
-    return (
-      parsed.origin === window.location.origin &&
-      parsed.pathname.startsWith("/wp-admin")
-    );
+    return parsed.origin === window.location.origin && parsed.pathname.startsWith("/wp-admin");
   } catch {
     return false;
   }
@@ -68,11 +65,7 @@ function hasUnsafePageParam(parsed: URL): boolean {
   const page = parsed.searchParams.get("page");
   // Pages that rely on server-side wp_enqueue_media() or other hook-driven
   // script bootstrapping must do a full reload so PHP hooks fire correctly.
-  return (
-    page === "site-health" ||
-    page === "wp-react-ui-branding" ||
-    page === "h-bricks-elements"
-  );
+  return page === "site-health" || page === "wp-react-ui-branding" || page === "h-bricks-elements";
 }
 
 export function isSpaEligibleUrl(url: string): boolean {
@@ -170,9 +163,7 @@ export async function spaNavigate(url: string): Promise<boolean> {
       navigationStore.notify(url);
 
       // Dispatch event for other plugins
-      window.dispatchEvent(
-        new CustomEvent("wp-spa-navigate", { detail: { url } })
-      );
+      window.dispatchEvent(new CustomEvent("wp-spa-navigate", { detail: { url } }));
     };
 
     if (document.startViewTransition) {
@@ -183,7 +174,7 @@ export async function spaNavigate(url: string): Promise<boolean> {
       // animation duration, making all sidebar clicks silently swallowed.
       // Clear the names before the capture, restore once the transition is done.
       const sidebar = document.getElementById("react-sidebar-root");
-      const navbar  = document.getElementById("react-navbar-root");
+      const navbar = document.getElementById("react-navbar-root");
       const transitionId = ++transitionSequence;
       const startedAt = performance.now();
       window.__wpReactUiTransitionState = {

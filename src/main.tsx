@@ -1,11 +1,11 @@
+import { theme as antTheme, ConfigProvider } from "antd";
 import React from "react";
 import { createRoot } from "react-dom/client";
-import { ConfigProvider, theme as antTheme } from "antd";
 import { ErrorBoundary } from "./components/ErrorBoundary";
-import { ThemeProvider, useTheme } from "./context/ThemeContext";
-import { SidebarProvider } from "./context/SidebarContext";
 import Navbar from "./components/navbar";
 import Sidebar from "./components/sidebar";
+import { SidebarProvider } from "./context/SidebarContext";
+import { ThemeProvider, useTheme } from "./context/ThemeContext";
 import "./types/wp";
 import "./index.css";
 import { initSpaNavigation } from "./utils/spaNavigate";
@@ -16,13 +16,9 @@ function ThemedApp({ children }: { children: React.ReactNode }) {
   return (
     <ConfigProvider
       theme={{
-        algorithm:
-          theme === "dark"
-            ? antTheme.darkAlgorithm
-            : antTheme.defaultAlgorithm,
+        algorithm: theme === "dark" ? antTheme.darkAlgorithm : antTheme.defaultAlgorithm,
         token: {
-          fontFamily:
-            '"Inter", -apple-system, BlinkMacSystemFont, sans-serif',
+          fontFamily: '"Inter", -apple-system, BlinkMacSystemFont, sans-serif',
           colorPrimary: "#4f46e5",
         },
       }}
@@ -62,9 +58,7 @@ function setupDOM() {
     sidebarRoot.id = "react-sidebar-root";
     sidebarRoot.setAttribute("data-theme", initialTheme);
     const wpcontent = document.getElementById("wpcontent");
-    wpcontent
-      ? wpwrap.insertBefore(sidebarRoot, wpcontent)
-      : wpwrap.appendChild(sidebarRoot);
+    wpcontent ? wpwrap.insertBefore(sidebarRoot, wpcontent) : wpwrap.appendChild(sidebarRoot);
   }
 
   // Mark shell as ready (may already be set by early-state script)

@@ -21,13 +21,11 @@ export function Logo({
   const siteName = branding?.siteName ?? window.wpReactUi?.siteName ?? "Site";
   const fallbackLogoUrl = `${assetsUrl}logo.svg`;
   const logoUrl = isDark
-    ? branding?.logos.darkUrl ??
+    ? (branding?.logos.darkUrl ??
       branding?.logos.lightUrl ??
       branding?.logos.defaultUrl ??
-      fallbackLogoUrl
-    : branding?.logos.lightUrl ??
-      branding?.logos.defaultUrl ??
-      fallbackLogoUrl;
+      fallbackLogoUrl)
+    : (branding?.logos.lightUrl ?? branding?.logos.defaultUrl ?? fallbackLogoUrl);
 
   return (
     <Flex

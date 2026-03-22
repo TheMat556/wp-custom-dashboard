@@ -1,0 +1,73 @@
+name: Lint
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main, develop]
+
+jobs:
+  # ── 1. Biome lint + format check ─────────────────────────────────────────────
+  biome:
+    name: Biome (lint + format)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
+      - name: Install dependencies
+        run: bun install --frozen-lockfile
+
+      - name: Biome check
+        run: bunx @biomejs/biome ci --diagnostic-level=error ./src
+
+  # ── 2. TypeScript type check ──────────────────────────────────────────────────
+  typecheck:
+    name: TypeScript
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
+      - name: Install dependencies
+        run: bun install --frozen-lockfile
+
+      - name: Type check
+        run: bunx tsc --noEmit
+
+  # ── 3. PHP lint (WordPress coding standards) ──────────────────────────────────
+  php:
+    name: PHP lint
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: "8.2"
+          tools: composer, phpcs
+          coverage: none
+
+      - name: Install PHP_CodeSniffer + WordPress standards
+        run: |
+          composer require --dev \
+            squizlabs/php_codesniffer \
+            wp-coding-standards/wpcs \
+            --no-interaction --no-progress
+          vendor/bin/phpcs --config-set installed_paths vendor/wp-coding-standards/wpcs
+
+      - name: Run PHPCS
+        run: |
+          vendor/bin/phpcs \
+            --standard=WordPress \
+            --extensions=php \
+            --ignore=vendor/,node_modules/ \
+            --report=summary \
+            wp-custom-dashboard.php includes/

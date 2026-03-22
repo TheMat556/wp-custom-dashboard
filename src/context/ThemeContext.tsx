@@ -1,10 +1,4 @@
-import {
-  createContext,
-  useContext,
-  useState,
-  useEffect,
-  useCallback,
-} from "react";
+import { createContext, useCallback, useContext, useEffect, useState } from "react";
 import "../types/wp";
 
 export type Theme = "light" | "dark";
@@ -40,8 +34,7 @@ function writeStoredTheme(theme: Theme) {
 }
 
 const serverTheme = window.wpReactUi?.theme;
-let currentTheme: Theme =
-  readStoredTheme() ?? (isTheme(serverTheme) ? serverTheme : "light");
+let currentTheme: Theme = readStoredTheme() ?? (isTheme(serverTheme) ? serverTheme : "light");
 
 function applyThemeToDOM(t: Theme) {
   document.getElementById("react-navbar-root")?.setAttribute("data-theme", t);
@@ -52,8 +45,7 @@ function applyThemeToDOM(t: Theme) {
 }
 
 async function persistTheme(t: Theme) {
-  const restUrl =
-    window.wpReactUi?.restUrl ?? "/wp-json/wp-react-ui/v1";
+  const restUrl = window.wpReactUi?.restUrl ?? "/wp-json/wp-react-ui/v1";
   const nonce = window.wpReactUi?.nonce ?? "";
   try {
     await fetch(`${restUrl}/theme`, {
@@ -78,7 +70,7 @@ const themeStore = {
     const next: Theme = currentTheme === "light" ? "dark" : "light";
     currentTheme = next;
     applyThemeToDOM(next);
-    listeners.forEach((fn) => fn(next));
+    for (const fn of listeners) fn(next);
     window.dispatchEvent(
       new CustomEvent(THEME_CHANGE_EVENT, {
         detail: { theme: next },
@@ -126,9 +118,5 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
     themeStore.toggle();
   }, []);
 
-  return (
-    <ThemeContext.Provider value={{ theme, toggle }}>
-      {children}
-    </ThemeContext.Provider>
-  );
+  return <ThemeContext.Provider value={{ theme, toggle }}>{children}</ThemeContext.Provider>;
 }

@@ -1,27 +1,20 @@
 import {
-  BulbOutlined,
   BulbFilled,
+  BulbOutlined,
   ExportOutlined,
-  MenuFoldOutlined,
-  MenuUnfoldOutlined,
-  MenuOutlined,
   HomeOutlined,
+  MenuFoldOutlined,
+  MenuOutlined,
+  MenuUnfoldOutlined,
 } from "@ant-design/icons";
-import {
-  Breadcrumb,
-  Button,
-  Divider,
-  Space,
-  Typography,
-  theme,
-} from "antd";
+import { Breadcrumb, Button, Divider, Space, Typography, theme } from "antd";
 import { useMemo, useRef } from "react";
-import { useTheme } from "../../context/ThemeContext";
 import { useSidebar } from "../../context/SidebarContext";
+import { useTheme } from "../../context/ThemeContext";
 import { useMenu } from "../../hooks/useMenu";
 import "../../types/wp";
-import { navigate, navigateHome } from "../../utils/wp";
 import { useActiveKey } from "../../utils/spaNavigate";
+import { navigate, navigateHome } from "../../utils/wp";
 import UserDropdown from "./UserDropdown";
 
 const { Text } = Typography;
@@ -43,25 +36,17 @@ export default function Navbar() {
   const headerBackground = isDark
     ? `linear-gradient(180deg, ${token.colorBgElevated} 0%, ${token.colorBgContainer} 100%)`
     : token.colorBgContainer;
-  const headerBorderColor = isDark
-    ? token.colorSplit
-    : token.colorBorderSecondary;
+  const headerBorderColor = isDark ? token.colorSplit : token.colorBorderSecondary;
 
   const breadcrumbItems = useMemo(() => {
     const items: { title: React.ReactNode }[] = [
       {
         title: (
-          <Space
-            size={4}
-            style={{ cursor: "pointer" }}
-            onClick={navigateHome}
-          >
+          <Space size={4} style={{ cursor: "pointer" }} onClick={navigateHome}>
             <HomeOutlined
               style={{ fontSize: 16, color: token.colorTextTertiary, marginRight: 4 }}
             />
-            <Text style={{ color: token.colorTextSecondary }}>
-              Home
-            </Text>
+            <Text style={{ color: token.colorTextSecondary }}>Home</Text>
           </Space>
         ),
       },
@@ -153,8 +138,7 @@ export default function Navbar() {
         paddingLeft: 0,
         borderBottom: `1px solid ${headerBorderColor}`,
         boxShadow: isDark ? token.boxShadowTertiary : "none",
-        transition:
-          "background 300ms ease, border-color 300ms ease, box-shadow 300ms ease",
+        transition: "background 300ms ease, border-color 300ms ease, box-shadow 300ms ease",
       }}
     >
       {/* ── Left: Burger + Breadcrumb ── */}
@@ -163,9 +147,7 @@ export default function Navbar() {
           type="text"
           icon={getToggleIcon()}
           onClick={toggleSidebar}
-          title={
-            isMobile ? "Open menu" : collapsed ? "Expand sidebar" : "Collapse sidebar"
-          }
+          title={isMobile ? "Open menu" : collapsed ? "Expand sidebar" : "Collapse sidebar"}
           style={{
             width: 64,
             height: 64,
@@ -173,27 +155,24 @@ export default function Navbar() {
             fontSize: 18,
             color: token.colorTextSecondary,
             borderInlineEnd: `1px solid ${headerBorderColor}`,
-            transition:
-              "background-color 180ms ease, color 180ms ease",
+            transition: "background-color 180ms ease, color 180ms ease",
           }}
         />
         {!isMobile && (
-          <div style={{
-            marginTop: 4,
-            padding: 0,
-            borderRadius: 0,
-            backgroundColor: "transparent",
-            border: "none",
-            transition: "color 200ms ease",
-            boxShadow: "none",
-          }}>
+          <div
+            style={{
+              marginTop: 4,
+              padding: 0,
+              borderRadius: 0,
+              backgroundColor: "transparent",
+              border: "none",
+              transition: "color 200ms ease",
+              boxShadow: "none",
+            }}
+          >
             <Breadcrumb
               items={breadcrumbItems}
-              separator={
-                <Text style={{ color: token.colorTextTertiary, fontSize: 12 }}>
-                  /
-                </Text>
-              }
+              separator={<Text style={{ color: token.colorTextTertiary, fontSize: 12 }}>/</Text>}
             />
           </div>
         )}
@@ -235,8 +214,7 @@ export default function Navbar() {
             width: 38,
             height: 38,
             color: token.colorTextSecondary,
-            transition:
-              "background-color 180ms ease, color 180ms ease",
+            transition: "background-color 180ms ease, color 180ms ease",
           }}
         />
 
@@ -262,8 +240,7 @@ export default function Navbar() {
             width: 38,
             height: 38,
             color: token.colorTextSecondary,
-            transition:
-              "background-color 180ms ease, color 180ms ease",
+            transition: "background-color 180ms ease, color 180ms ease",
           }}
         />
 

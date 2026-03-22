@@ -1,0 +1,15 @@
+{
+  "require-dev": {
+    "squizlabs/php_codesniffer": "^3.10",
+    "wp-coding-standards/wpcs": "^3.1"
+  },
+  "scripts": {
+    "lint": "phpcs --standard=WordPress --extensions=php --ignore=vendor/,node_modules/ wp-custom-dashboard.php includes/",
+    "lint-fix": "phpcbf --standard=WordPress --extensions=php --ignore=vendor/,node_modules/ wp-custom-dashboard.php includes/"
+  },
+  "config": {
+    "allow-plugins": {
+      "dealerdirect/phpcodesniffer-composer-installer": true
+    }
+  }
+}

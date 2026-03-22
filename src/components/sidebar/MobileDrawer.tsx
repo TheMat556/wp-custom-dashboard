@@ -1,6 +1,6 @@
-import { createPortal } from "react-dom";
 import { theme } from "antd";
 import type { ReactNode } from "react";
+import { createPortal } from "react-dom";
 
 const SIDEBAR_FULL = 240;
 
@@ -18,8 +18,11 @@ export function MobileDrawer({
   return createPortal(
     <>
       {/* Backdrop */}
-      <div
+      <button
+        type="button"
+        aria-label="Close menu"
         onClick={onClose}
+        onKeyDown={(e) => e.key === "Escape" && onClose()}
         style={{
           position: "fixed",
           inset: 0,
@@ -28,6 +31,9 @@ export function MobileDrawer({
           opacity: open ? 1 : 0,
           visibility: open ? "visible" : "hidden",
           transition: "opacity 0.3s ease, visibility 0.3s ease",
+          border: "none",
+          cursor: "default",
+          padding: 0,
         }}
       />
       {/* Drawer panel */}

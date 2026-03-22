@@ -1,9 +1,9 @@
 import {
   createContext,
+  type ReactNode,
   useCallback,
   useContext,
   useSyncExternalStore,
-  type ReactNode,
 } from "react";
 
 const MOBILE_BREAKPOINT = 768;
@@ -65,10 +65,7 @@ function getSnapshot(state: SidebarStoreState): SidebarSnapshot {
 function applyCssVar(snapshot: SidebarSnapshot) {
   if (!canUseDOM()) return;
 
-  document.documentElement.style.setProperty(
-    "--sidebar-width",
-    `${snapshot.sidebarWidth}px`
-  );
+  document.documentElement.style.setProperty("--sidebar-width", `${snapshot.sidebarWidth}px`);
 }
 
 const LS_KEY = "wp-react-sidebar-collapsed";
@@ -99,16 +96,11 @@ let currentSnapshot: SidebarSnapshot = getSnapshot(currentState);
 function emitChange() {
   currentSnapshot = getSnapshot(currentState);
   applyCssVar(currentSnapshot);
-  listeners.forEach((listener) => listener());
+  for (const listener of listeners) listener();
 }
 
-function setState(
-  updater:
-    | SidebarStoreState
-    | ((state: SidebarStoreState) => SidebarStoreState)
-) {
-  const nextState =
-    typeof updater === "function" ? updater(currentState) : updater;
+function setState(updater: SidebarStoreState | ((state: SidebarStoreState) => SidebarStoreState)) {
+  const nextState = typeof updater === "function" ? updater(currentState) : updater;
 
   if (
     nextState.desktopCollapsed === currentState.desktopCollapsed &&
@@ -213,20 +205,14 @@ const SidebarContext = createContext<SidebarContextValue>({
 });
 
 export function SidebarProvider({ children }: { children: ReactNode }) {
-  const snapshot = useSyncExternalStore(
-    sidebarStore.subscribe,
-    sidebarStore.get,
-    sidebarStore.get
-  );
+  const snapshot = useSyncExternalStore(sidebarStore.subscribe, sidebarStore.get, sidebarStore.get);
 
   const toggle = useCallback(() => {
     sidebarStore.toggle();
   }, []);
 
   return (
-    <SidebarContext.Provider value={{ ...snapshot, toggle }}>
-      {children}
-    </SidebarContext.Provider>
+    <SidebarContext.Provider value={{ ...snapshot, toggle }}>{children}</SidebarContext.Provider>
   );
 }
 

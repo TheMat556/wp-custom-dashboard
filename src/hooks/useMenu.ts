@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect, useRef, useMemo } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import "../types/wp";
 
 export interface SubMenuItem {
@@ -31,18 +31,18 @@ export interface MenuItem {
 function isNativeMenuItemVisible(slug: string, adminMenu: HTMLElement): boolean {
   // 1. Well-known slug → ID mappings
   const knownIds: Record<string, string> = {
-    "index.php":                  "menu-dashboard",
-    "edit.php":                   "menu-posts",
-    "upload.php":                 "menu-media",
-    "link-manager.php":           "menu-links",
-    "edit-comments.php":          "menu-comments",
-    "edit.php?post_type=page":    "menu-pages",
-    "themes.php":                 "menu-appearance",
-    "plugins.php":                "menu-plugins",
-    "users.php":                  "menu-users",
-    "profile.php":                "menu-users",
-    "tools.php":                  "menu-tools",
-    "options-general.php":        "menu-settings",
+    "index.php": "menu-dashboard",
+    "edit.php": "menu-posts",
+    "upload.php": "menu-media",
+    "link-manager.php": "menu-links",
+    "edit-comments.php": "menu-comments",
+    "edit.php?post_type=page": "menu-pages",
+    "themes.php": "menu-appearance",
+    "plugins.php": "menu-plugins",
+    "users.php": "menu-users",
+    "profile.php": "menu-users",
+    "tools.php": "menu-tools",
+    "options-general.php": "menu-settings",
   };
 
   const candidateIds: string[] = [];
@@ -52,7 +52,7 @@ function isNativeMenuItemVisible(slug: string, adminMenu: HTMLElement): boolean 
   }
 
   // 2. Generic toplevel_page_{slug} pattern used by plugins/CPTs
-  const genericId = "toplevel_page_" + slug.replace(/[./?=&]/g, "-");
+  const genericId = `toplevel_page_${slug.replace(/[./?=&]/g, "-")}`;
   candidateIds.push(genericId);
 
   for (const id of candidateIds) {
@@ -93,9 +93,9 @@ function getInitialData(): MenuItem[] {
 }
 
 async function fetchMenu(): Promise<MenuItem[]> {
-  const wp      = window.wpReactUi ?? {};
+  const wp = window.wpReactUi ?? {};
   const restUrl = wp.restUrl ?? "/wp-json/wp-react-ui/v1";
-  const nonce   = wp.nonce ?? "";
+  const nonce = wp.nonce ?? "";
 
   const res = await fetch(`${restUrl}/menu`, {
     headers: { "X-WP-Nonce": nonce },
@@ -111,12 +111,14 @@ async function fetchMenu(): Promise<MenuItem[]> {
 
 export function useMenu() {
   const [allItems, setAllItems] = useState<MenuItem[]>(() => getInitialData());
-  const [loading, setLoading]   = useState(false);
-  const mountedRef               = useRef(true);
+  const [loading, setLoading] = useState(false);
+  const mountedRef = useRef(true);
 
   useEffect(() => {
     mountedRef.current = true;
-    return () => { mountedRef.current = false; };
+    return () => {
+      mountedRef.current = false;
+    };
   }, []);
 
   const refresh = useCallback(async () => {

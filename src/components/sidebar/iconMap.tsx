@@ -1,21 +1,21 @@
 import {
   AppstoreOutlined,
-  SettingOutlined,
-  UserOutlined,
-  FileOutlined,
+  BarChartOutlined,
+  BellOutlined,
+  CommentOutlined,
   DashboardOutlined,
+  FileOutlined,
+  GlobalOutlined,
+  InboxOutlined,
+  LinkOutlined,
+  LockOutlined,
+  PictureOutlined,
+  SettingOutlined,
   ShopOutlined,
   TagOutlined,
   TeamOutlined,
-  BarChartOutlined,
-  BellOutlined,
-  LockOutlined,
   ToolOutlined,
-  GlobalOutlined,
-  InboxOutlined,
-  PictureOutlined,
-  CommentOutlined,
-  LinkOutlined,
+  UserOutlined,
 } from "@ant-design/icons";
 import type { ReactNode } from "react";
 
@@ -57,12 +57,7 @@ export function resolveIcon(icon?: string): ReactNode {
       />
     );
 
-  if (icon.startsWith("dashicons-"))
-    return dashiconMap[icon] ?? <AppstoreOutlined />;
+  if (icon.startsWith("dashicons-")) return dashiconMap[icon] ?? <AppstoreOutlined />;
 
-  return (
-    <span style={{ fontSize: 12, fontWeight: 600, lineHeight: 1 }}>
-      {icon.slice(0, 2)}
-    </span>
-  );
+  return <span style={{ fontSize: 12, fontWeight: 600, lineHeight: 1 }}>{icon.slice(0, 2)}</span>;
 }

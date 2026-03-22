@@ -28,8 +28,12 @@
   animation: wp-spa-fade-in 120ms ease-in;
 }
 @keyframes wp-spa-fade-out {
-  to { opacity: 0; }
+  to {
+    opacity: 0;
+  }
 }
 @keyframes wp-spa-fade-in {
-  from { opacity: 0; }
+  from {
+    opacity: 0;
+  }
 }

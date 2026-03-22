@@ -36,12 +36,7 @@ export function MenuLabel({
   const hasCount = count != null && count > 0;
 
   return (
-    <Flex
-      justify="space-between"
-      align="center"
-      gap={8}
-      style={{ width: "100%", minWidth: 0 }}
-    >
+    <Flex justify="space-between" align="center" gap={8} style={{ width: "100%", minWidth: 0 }}>
       <span
         style={{
           overflow: "hidden",
@@ -58,11 +53,7 @@ export function MenuLabel({
           count={count}
           overflowCount={99}
           size="small"
-          color={
-            isSubmenu
-              ? token.colorPrimaryBg
-              : getBadgeColor(badgeType, token)
-          }
+          color={isSubmenu ? token.colorPrimaryBg : getBadgeColor(badgeType, token)}
           style={{
             color: isSubmenu ? token.colorPrimary : "#fff",
             fontWeight: 600,
@@ -80,11 +71,7 @@ export interface IconWithBadgeProps {
   badgeType?: BadgeType;
 }
 
-export function IconWithBadge({
-  icon,
-  count,
-  badgeType = "primary",
-}: IconWithBadgeProps) {
+export function IconWithBadge({ icon, count, badgeType = "primary" }: IconWithBadgeProps) {
   const { token } = theme.useToken();
   const hasCount = count != null && count > 0;
 
