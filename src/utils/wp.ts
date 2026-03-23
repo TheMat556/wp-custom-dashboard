@@ -5,7 +5,7 @@
 import { navigationStore } from "../store/navigationStore";
 
 export function getAdminBaseUrl(adminUrl: string): string {
-  return adminUrl.replace(/\/$/, "");
+  return adminUrl.replace(/\/+$/, "");
 }
 
 export function buildAdminUrl(slug: string, adminUrl: string): string {

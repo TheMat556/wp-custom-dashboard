@@ -1,7 +1,13 @@
 import { describe, expect, it } from "vitest";
-import { buildAdminUrl } from "./wp";
+import { buildAdminUrl, getAdminBaseUrl } from "./wp";
 
 describe("buildAdminUrl", () => {
+  it("removes any number of trailing slashes from the admin base URL", () => {
+    expect(getAdminBaseUrl("http://localhost/wp-admin/")).toBe("http://localhost/wp-admin");
+    expect(getAdminBaseUrl("https://example.com//")).toBe("https://example.com");
+    expect(getAdminBaseUrl("https://example.com/wp-admin")).toBe("https://example.com/wp-admin");
+  });
+
   it("builds admin.php?page= URLs for plain plugin slugs", () => {
     expect(buildAdminUrl("my-plugin", "http://localhost/wp-admin/")).toBe(
       "http://localhost/wp-admin/admin.php?page=my-plugin"

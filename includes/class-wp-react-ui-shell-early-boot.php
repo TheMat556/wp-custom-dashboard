@@ -99,8 +99,20 @@ class WP_React_UI_Shell_Early_Boot {
 		static $critical_css = null;
 
 		if ( null === $critical_css ) {
-			// phpcs:ignore WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents
-			$critical_css = file_get_contents( __DIR__ . '/critical.css' );
+			$critical_css_path = __DIR__ . '/critical.css';
+
+			if ( is_readable( $critical_css_path ) ) {
+				// phpcs:ignore WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents
+				$critical_css = file_get_contents( $critical_css_path );
+				$critical_css = false === $critical_css ? '' : $critical_css;
+			} else {
+				$critical_css = '';
+
+				if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+					// phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log
+					error_log( 'WP React UI: critical.css is not readable at ' . $critical_css_path );
+				}
+			}
 		}
 
 		// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
