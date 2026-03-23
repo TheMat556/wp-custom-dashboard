@@ -13,10 +13,25 @@ import {
   toEmbedUrl,
 } from "./embedUrl";
 
+function setAdminLocation(url: string) {
+  history.replaceState({}, "", url);
+}
+
 describe("isAdminUrl", () => {
+  beforeEach(() => {
+    setAdminLocation("http://localhost/wp-admin/admin.php");
+  });
+
   it("accepts same-origin wp-admin URLs", () => {
     expect(isAdminUrl("http://localhost/wp-admin/plugins.php")).toBe(true);
     expect(isAdminUrl("http://localhost/wp-admin/admin.php?page=my-plugin")).toBe(true);
+  });
+
+  it("accepts same-origin wp-admin URLs on subdirectory installs", () => {
+    setAdminLocation("http://localhost/subsite/wp-admin/admin.php");
+    expect(isAdminUrl("plugins.php")).toBe(true);
+    expect(isAdminUrl("http://localhost/subsite/wp-admin/admin.php?page=my-plugin")).toBe(true);
+    expect(isAdminUrl("http://localhost/wp-admin/plugins.php")).toBe(false);
   });
 
   it("rejects frontend URLs", () => {
@@ -34,6 +49,10 @@ describe("isAdminUrl", () => {
 });
 
 describe("toEmbedUrl", () => {
+  beforeEach(() => {
+    setAdminLocation("http://localhost/wp-admin/admin.php");
+  });
+
   it("adds wp_shell_embed=1 to an admin URL", () => {
     const result = toEmbedUrl("http://localhost/wp-admin/plugins.php");
     expect(new URL(result).searchParams.get("wp_shell_embed")).toBe("1");
@@ -57,6 +76,13 @@ describe("toEmbedUrl", () => {
     // becomes "http://localhost/not-a-url" and gets the embed param added.
     const result = toEmbedUrl("not-a-url");
     expect(new URL(result).searchParams.get("wp_shell_embed")).toBe("1");
+  });
+
+  it("resolves relative admin paths against the current admin document", () => {
+    setAdminLocation("http://localhost/subsite/wp-admin/admin.php?page=dashboard");
+    const result = toEmbedUrl("plugins.php");
+
+    expect(result).toBe("http://localhost/subsite/wp-admin/plugins.php?wp_shell_embed=1");
   });
 });
 
@@ -114,7 +140,7 @@ describe("normalizeToMenuKey", () => {
 
 describe("isBreakoutUrl", () => {
   beforeEach(() => {
-    // Ensure breakoutPagenow is set from the test setup stub.
+    setAdminLocation("http://localhost/wp-admin/admin.php");
   });
 
   it("flags post.php as a breakout URL", () => {
@@ -142,5 +168,10 @@ describe("isBreakoutUrl", () => {
       isBreakoutUrl("http://localhost/wp-admin/custom-editor.php", ["custom-editor.php"])
     ).toBe(true);
     expect(isBreakoutUrl("http://localhost/wp-admin/post.php", ["custom-editor.php"])).toBe(false);
+  });
+
+  it("resolves breakout URLs correctly on subdirectory installs", () => {
+    setAdminLocation("http://localhost/subsite/wp-admin/admin.php");
+    expect(isBreakoutUrl("post.php?post=1&action=edit")).toBe(true);
   });
 });

@@ -80,7 +80,7 @@ class WP_React_UI_Asset_Loader {
 			self::$dev_url . '/@vite/client',
 			array( 'timeout' => 1 )
 		);
-		$is_dev   = ! is_wp_error( $response );
+		$is_dev   = ! is_wp_error( $response ) && 200 === (int) wp_remote_retrieve_response_code( $response );
 
 		set_transient( self::CACHE_DEV, $is_dev ? '1' : '0', 10 );
 		return $is_dev;
@@ -185,14 +185,9 @@ class WP_React_UI_Asset_Loader {
 
 		$js_urls[] = self::$dist_url . $entry['file'];
 
-		foreach ( ( $entry['imports'] ?? array() ) as $import_key ) {
-			$import = $manifest[ $import_key ] ?? null;
-			if ( empty( $import['file'] ) || ! str_ends_with( $import['file'], '.js' ) ) {
-				continue;
-			}
-
-			$js_urls[] = self::$dist_url . $import['file'];
-		}
+		$import_assets = self::collect_import_assets( $manifest, $entry['imports'] ?? array() );
+		$css_urls      = array_merge( $css_urls, $import_assets['css'] );
+		$js_urls       = array_merge( $js_urls, $import_assets['js'] );
 
 		return array(
 			'css' => array_values( array_unique( $css_urls ) ),
@@ -289,9 +284,14 @@ class WP_React_UI_Asset_Loader {
 			false
 		);
 
-		// Enqueue entry CSS globally (no shadow DOM).
+		// Enqueue entry and imported CSS globally (no shadow DOM).
 		$css_index = 0;
-		foreach ( ( $entry['css'] ?? array() ) as $css_file ) {
+		$css_files = array_merge(
+			$entry['css'] ?? array(),
+			self::collect_import_assets( $manifest, $entry['imports'] ?? array() )['css']
+		);
+
+		foreach ( array_values( array_unique( $css_files ) ) as $css_file ) {
 			wp_enqueue_style(
 				'wp-react-ui-css-' . $css_index,
 				self::$dist_url . $css_file,
@@ -327,5 +327,49 @@ class WP_React_UI_Asset_Loader {
 			10,
 			2
 		);
+	}
+
+	/**
+	 * Recursively collects CSS and JS assets from imported manifest chunks.
+	 *
+	 * @param array $manifest Parsed Vite manifest.
+	 * @param array $import_keys Import keys from a manifest entry.
+	 * @param array $seen Internal seen-map to avoid duplicate recursion.
+	 * @return array{ css: string[], js: string[] }
+	 */
+	private static function collect_import_assets( array $manifest, array $import_keys, array &$seen = array() ): array {
+		$assets = array(
+			'css' => array(),
+			'js'  => array(),
+		);
+
+		foreach ( $import_keys as $import_key ) {
+			if ( isset( $seen[ $import_key ] ) ) {
+				continue;
+			}
+
+			$seen[ $import_key ] = true;
+			$import             = $manifest[ $import_key ] ?? null;
+
+			if ( ! is_array( $import ) ) {
+				continue;
+			}
+
+			if ( ! empty( $import['file'] ) && str_ends_with( $import['file'], '.js' ) ) {
+				$assets['js'][] = self::$dist_url . $import['file'];
+			}
+
+			foreach ( ( $import['css'] ?? array() ) as $css_file ) {
+				$assets['css'][] = self::$dist_url . $css_file;
+			}
+
+			if ( ! empty( $import['imports'] ) && is_array( $import['imports'] ) ) {
+				$nested_assets = self::collect_import_assets( $manifest, $import['imports'], $seen );
+				$assets['css'] = array_merge( $assets['css'], $nested_assets['css'] );
+				$assets['js']  = array_merge( $assets['js'], $nested_assets['js'] );
+			}
+		}
+
+		return $assets;
 	}
 }

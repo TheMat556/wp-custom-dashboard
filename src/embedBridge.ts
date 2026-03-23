@@ -33,8 +33,14 @@ function sendTitleChange() {
 
 function addEmbedParam(url: string) {
   try {
-    const parsed = new URL(url, window.location.origin);
-    if (parsed.origin !== window.location.origin || !parsed.pathname.startsWith("/wp-admin")) {
+    const parsed = new URL(url, window.location.href);
+    const adminPathMatch = window.location.pathname.match(/^(.*\/wp-admin)(?:\/|$)/);
+    const adminPathPrefix = adminPathMatch ? adminPathMatch[1] : "/wp-admin";
+
+    if (
+      parsed.origin !== window.location.origin ||
+      (parsed.pathname !== adminPathPrefix && !parsed.pathname.startsWith(`${adminPathPrefix}/`))
+    ) {
       return url;
     }
 

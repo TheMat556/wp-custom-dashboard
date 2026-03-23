@@ -90,8 +90,10 @@ html, body { margin: 0 !important; padding: 0 !important; height: 100% !importan
 			return $location;
 		}
 
-		$path = wp_parse_url( $location, PHP_URL_PATH );
-		if ( $path && str_starts_with( (string) $path, '/wp-admin' ) ) {
+		$path              = wp_parse_url( $location, PHP_URL_PATH );
+		$admin_path_prefix = wp_react_ui_get_admin_path_prefix();
+
+		if ( is_string( $path ) && ( $path === $admin_path_prefix || str_starts_with( $path, $admin_path_prefix . '/' ) ) ) {
 			return add_query_arg( 'wp_shell_embed', '1', $location );
 		}
 

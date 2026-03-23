@@ -12,9 +12,15 @@ export function buildAdminUrl(slug: string, adminUrl: string): string {
   const base = getAdminBaseUrl(adminUrl);
   const normalizedSlug = slug.replace(/^\/+/, "");
 
-  return normalizedSlug.includes("?") || normalizedSlug.includes(".php")
-    ? `${base}/${normalizedSlug}`
-    : `${base}/admin.php?page=${normalizedSlug}`;
+  if (normalizedSlug.includes("?")) {
+    return `${base}/${normalizedSlug}`;
+  }
+
+  if (normalizedSlug.endsWith(".php") && !normalizedSlug.includes("/")) {
+    return `${base}/${normalizedSlug}`;
+  }
+
+  return `${base}/admin.php?page=${normalizedSlug}`;
 }
 
 export function navigate(slug: string, adminUrl: string): void {

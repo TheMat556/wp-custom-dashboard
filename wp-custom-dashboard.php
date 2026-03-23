@@ -3,6 +3,7 @@
  * Plugin Name: WP React UI
  * Description: Replaces Navbar and Sidebar with React + Ant Design
  * Version: 1.0.0
+ * Requires PHP: 8.0
  *
  * @package WP_React_UI
  */
@@ -61,6 +62,21 @@ function wp_react_ui_get_special_page_config(): array {
 }
 
 /**
+ * Returns the current site's wp-admin path prefix without a trailing slash.
+ *
+ * @return string
+ */
+function wp_react_ui_get_admin_path_prefix(): string {
+	$admin_path = wp_parse_url( admin_url(), PHP_URL_PATH );
+
+	if ( ! is_string( $admin_path ) || '' === $admin_path ) {
+		return '/wp-admin';
+	}
+
+	return untrailingslashit( $admin_path );
+}
+
+/**
  * Returns true when the current request is loading inside the shell iframe.
  *
  * @return bool
@@ -91,8 +107,14 @@ function wp_react_ui_is_shell_page( ?string $pagenow = null ): bool {
 
 	$current_page = is_string( $pagenow ) ? $pagenow : ( $GLOBALS['pagenow'] ?? '' );
 	$config       = wp_react_ui_get_special_page_config();
+	$disabled     = array_unique(
+		array_merge(
+			$config['shell_disabled_pagenow'],
+			$config['breakout_pagenow']
+		)
+	);
 
-	return ! in_array( $current_page, $config['shell_disabled_pagenow'], true );
+	return ! in_array( $current_page, $disabled, true );
 }
 
 /**

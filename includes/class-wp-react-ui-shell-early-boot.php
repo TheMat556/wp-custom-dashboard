@@ -32,13 +32,6 @@ class WP_React_UI_Shell_Early_Boot {
 			return;
 		}
 
-		wp_enqueue_style(
-			'wp-react-ui-inter-font',
-			'https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap',
-			array(),
-			null // phpcs:ignore WordPress.WP.EnqueuedResourceParameters.MissingVersion
-		);
-
 		self::render_preload_tags();
 		self::render_critical_css();
 		self::render_boot_config_script();
