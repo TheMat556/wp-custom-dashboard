@@ -1,11 +1,11 @@
 import { Flex, Menu, theme } from "antd";
-import { type MouseEventHandler, type PointerEventHandler, useMemo } from "react";
+import { memo, useMemo } from "react";
 import type { MenuItem } from "../../hooks/useMenu";
 import { BottomActions } from "./BottomActions";
 import { Logo } from "./Logo";
 import { transformMenuItems } from "./menuTransform";
 
-export function SidebarContent({
+export const SidebarContent = memo(function SidebarContent({
   collapsed,
   menuItems,
   activeKey,
@@ -17,8 +17,6 @@ export function SidebarContent({
   onRefresh,
   showClose,
   onClose,
-  onMenuPointerDownCapture,
-  onMenuClickCapture,
 }: {
   collapsed: boolean;
   menuItems: MenuItem[];
@@ -31,8 +29,6 @@ export function SidebarContent({
   onRefresh: () => void;
   showClose?: boolean;
   onClose?: () => void;
-  onMenuPointerDownCapture?: PointerEventHandler<HTMLDivElement>;
-  onMenuClickCapture?: MouseEventHandler<HTMLDivElement>;
 }) {
   const { token } = theme.useToken();
 
@@ -56,8 +52,6 @@ export function SidebarContent({
           flex: 1,
           minHeight: 0,
         }}
-        onPointerDownCapture={onMenuPointerDownCapture}
-        onClickCapture={onMenuClickCapture}
       >
         <Menu
           mode="inline"
@@ -79,4 +73,4 @@ export function SidebarContent({
       <BottomActions collapsed={collapsed} loading={loading} onRefresh={onRefresh} />
     </Flex>
   );
-}
+});

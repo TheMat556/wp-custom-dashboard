@@ -126,6 +126,7 @@ export default function Navbar() {
     <header
       ref={containerRef}
       style={{
+        boxSizing: "border-box",
         position: "relative",
         display: "flex",
         alignItems: "center",

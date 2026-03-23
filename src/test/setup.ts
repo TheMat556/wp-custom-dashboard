@@ -12,6 +12,7 @@ import { afterEach, vi } from "vitest";
 const DEFAULT_NAVIGATION = {
   fullReloadPageParams: ["site-health", "wp-react-ui-branding", "h-bricks-elements"],
   shellDisabledPagenow: ["post.php", "post-new.php", "site-editor.php"],
+  breakoutPagenow: ["post.php", "post-new.php", "site-editor.php", "customize.php", "export.php"],
 };
 
 // Minimal wpReactUi stub — must exist before any module-level code in

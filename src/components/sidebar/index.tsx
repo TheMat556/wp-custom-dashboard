@@ -1,18 +1,12 @@
 import { Layout, theme } from "antd";
-import {
-  type MouseEvent as ReactMouseEvent,
-  type PointerEvent as ReactPointerEvent,
-  useCallback,
-  useEffect,
-  useState,
-} from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useSidebar } from "../../context/SidebarContext";
 import { useTheme } from "../../context/ThemeContext";
 import type { MenuItem } from "../../hooks/useMenu";
 import { useMenu } from "../../hooks/useMenu";
 import "../../types/wp";
 import { useActiveKey } from "../../utils/spaNavigate";
-import { buildAdminUrl, navigate } from "../../utils/wp";
+import { navigate } from "../../utils/wp";
 import { MobileDrawer } from "./MobileDrawer";
 import { SidebarContent } from "./SidebarContent";
 
@@ -20,20 +14,6 @@ const { Sider } = Layout;
 
 const SIDEBAR_FULL = 240;
 const SIDEBAR_COLLAPSED = 64;
-
-function describeElement(element: Element | null): string | null {
-  if (!element) return null;
-
-  const htmlElement = element as HTMLElement;
-  const tag = htmlElement.tagName.toLowerCase();
-  const id = htmlElement.id ? `#${htmlElement.id}` : "";
-  const className =
-    typeof htmlElement.className === "string" && htmlElement.className.trim() !== ""
-      ? `.${htmlElement.className.trim().split(/\s+/).slice(0, 3).join(".")}`
-      : "";
-
-  return `${tag}${id}${className}`;
-}
 
 function getInitialOpenKeys(menuItems: MenuItem[], activeKey?: string): string[] {
   if (!activeKey) return [];
@@ -56,26 +36,11 @@ export default function Sidebar() {
     getInitialOpenKeys(menuItems, activeKey)
   );
 
-  const logCollapsedDebug = useCallback(
-    (eventName: string, details: Record<string, unknown> = {}) => {
-      if (isMobile || !collapsed) return;
+  // Keep a ref to openKeys so callbacks don't need it in their deps.
+  const openKeysRef = useRef(openKeys);
+  openKeysRef.current = openKeys;
 
-      const transition = window.__wpReactUiTransitionState;
-      console.debug("[WP React UI][collapsed-sidebar]", {
-        event: eventName,
-        activeKey,
-        openKeys,
-        transitionActive: transition?.active ?? false,
-        transitionId: transition?.id ?? null,
-        transitionTargetUrl: transition?.targetUrl ?? null,
-        transitionAgeMs: transition ? Math.round(performance.now() - transition.startedAt) : null,
-        ...details,
-      });
-    },
-    [activeKey, collapsed, isMobile, openKeys]
-  );
-
-  // Sync open submenu when activeKey changes (SPA navigation)
+  // Sync open submenu when activeKey changes (iframe navigation)
   useEffect(() => {
     const keys = getInitialOpenKeys(menuItems, activeKey);
     if (keys.length > 0) {
@@ -83,102 +48,34 @@ export default function Sidebar() {
     }
   }, [activeKey, menuItems]);
 
-  const handleOpenChange = (keys: string[]) => {
-    const newlyOpened = keys.find((k) => !openKeys.includes(k));
-    logCollapsedDebug("open-change", {
-      keys,
-      newlyOpened: newlyOpened ?? null,
-    });
+  const handleOpenChange = useCallback((keys: string[]) => {
+    const newlyOpened = keys.find((k) => !openKeysRef.current.includes(k));
     if (keys.length === 0) {
       setOpenKeys([]);
     } else if (newlyOpened) {
       setOpenKeys([newlyOpened]);
     }
-  };
+  }, []);
 
   const handleParentClick = useCallback(
     (key: string) => {
-      logCollapsedDebug("parent-click", { key });
       toggle();
       setOpenKeys([key]);
     },
-    [logCollapsedDebug, toggle]
+    [toggle]
   );
 
-  // Called for all menu item clicks (leaf items only reach here when expanded,
-  // or any item on mobile)
-  const handleMenuClick = (key: string) => {
-    logCollapsedDebug("menu-click", {
-      key,
-      targetUrl: buildAdminUrl(key),
-    });
-    if (isMobile) {
-      toggle();
+  const handleMenuClick = useCallback(
+    (key: string) => {
+      if (isMobile) {
+        toggle();
+        navigate(key);
+        return;
+      }
       navigate(key);
-      return;
-    }
-    // Collapsed leaf item or expanded item — just navigate
-    navigate(key);
-  };
-
-  const handleMenuPointerDownCapture = useCallback(
-    (event: ReactPointerEvent<HTMLDivElement>) => {
-      const target = event.target instanceof Element ? event.target : null;
-      logCollapsedDebug("menu-pointerdown-capture", {
-        button: event.button,
-        detail: event.detail,
-        target: describeElement(target),
-      });
     },
-    [logCollapsedDebug]
+    [isMobile, toggle]
   );
-
-  const handleMenuClickCapture = useCallback(
-    (event: ReactMouseEvent<HTMLDivElement>) => {
-      const target = event.target instanceof Element ? event.target : null;
-      logCollapsedDebug("menu-click-capture", {
-        detail: event.detail,
-        defaultPrevented: event.defaultPrevented,
-        target: describeElement(target),
-      });
-    },
-    [logCollapsedDebug]
-  );
-
-  useEffect(() => {
-    if (isMobile || !collapsed) return;
-
-    const handleDocumentPointerDown = (event: PointerEvent) => {
-      const sidebarRoot = document.querySelector<HTMLElement>(
-        "#react-shell-root .ant-layout-sider"
-      );
-      if (!sidebarRoot) return;
-
-      const rect = sidebarRoot.getBoundingClientRect();
-      const insideSidebar =
-        event.clientX >= rect.left &&
-        event.clientX <= rect.right &&
-        event.clientY >= rect.top &&
-        event.clientY <= rect.bottom;
-
-      if (!insideSidebar) return;
-
-      const target = event.target instanceof Element ? event.target : null;
-      const topElement = document.elementFromPoint(event.clientX, event.clientY);
-
-      logCollapsedDebug("document-pointerdown", {
-        clientX: event.clientX,
-        clientY: event.clientY,
-        target: describeElement(target),
-        topElement: describeElement(topElement),
-      });
-    };
-
-    document.addEventListener("pointerdown", handleDocumentPointerDown, true);
-    return () => {
-      document.removeEventListener("pointerdown", handleDocumentPointerDown, true);
-    };
-  }, [collapsed, isMobile, logCollapsedDebug]);
 
   // Mobile
   if (isMobile) {
@@ -195,8 +92,6 @@ export default function Sidebar() {
           onRefresh={refresh}
           showClose={true}
           onClose={toggle}
-          onMenuPointerDownCapture={handleMenuPointerDownCapture}
-          onMenuClickCapture={handleMenuClickCapture}
         />
       </MobileDrawer>
     );
@@ -228,8 +123,6 @@ export default function Sidebar() {
           onParentClick={collapsed ? handleParentClick : undefined}
           loading={loading}
           onRefresh={refresh}
-          onMenuPointerDownCapture={handleMenuPointerDownCapture}
-          onMenuClickCapture={handleMenuClickCapture}
         />
       </Sider>
     </div>

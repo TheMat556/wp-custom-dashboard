@@ -4,7 +4,7 @@
  */
 
 import "../types/wp";
-import { isSpaEligibleUrl, spaNavigate } from "./spaNavigate";
+import { navigationStore } from "../store/navigationStore";
 
 export function getWpConfig() {
   return window.wpReactUi ?? {};
@@ -31,17 +31,11 @@ export function buildAdminUrl(slug: string): string {
 }
 
 export function navigate(slug: string): void {
-  const target = buildAdminUrl(slug);
-  if (!isSpaEligibleUrl(target)) {
-    window.location.assign(target);
-    return;
-  }
-
-  spaNavigate(target);
+  navigationStore.getState().navigate(buildAdminUrl(slug));
 }
 
 export function navigateHome(): void {
-  window.location.assign(`${getAdminBaseUrl()}/index.php`);
+  navigate("index.php");
 }
 
 export function getWpUser() {

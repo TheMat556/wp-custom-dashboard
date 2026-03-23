@@ -1,3 +1,4 @@
+import ContentFrame from "./components/ContentFrame";
 import Navbar from "./components/navbar";
 import Sidebar from "./components/sidebar";
 
@@ -8,7 +9,8 @@ export default function App() {
         display: "grid",
         gridTemplateColumns: "var(--sidebar-width, 240px) minmax(0, 1fr)",
         gridTemplateRows: "64px 1fr",
-        gridTemplateAreas: '"sidebar navbar" "sidebar ."',
+        gridTemplateAreas: '"sidebar navbar" "sidebar content"',
+        transition: "grid-template-columns 0.2s ease",
         width: "100%",
         height: "100%",
         minHeight: "100%",
@@ -34,6 +36,8 @@ export default function App() {
       >
         <Navbar />
       </div>
+
+      <ContentFrame />
     </div>
   );
 }

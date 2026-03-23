@@ -22,10 +22,14 @@ WP_React_UI_Branding_Settings::init();
  * - Do not bootstrap the React shell on these core editors.
  *
  * full_reload_page_params:
- * - Keep the shell active, but force a real page load when navigating to these
- *   admin.php?page=... screens so their PHP-driven bootstrapping runs normally.
+ * - Legacy field, kept for backward compat. With the iframe shell every page
+ *   gets a fresh execution context so forced full-reloads are no longer needed.
  *
- * @return array{shell_disabled_pagenow: string[], full_reload_page_params: string[]}
+ * breakout_pagenow:
+ * - Pages that must load as the top-level document (not inside the iframe).
+ *   JS reads this list to decide between iframe navigation and window.location.
+ *
+ * @return array{shell_disabled_pagenow: string[], full_reload_page_params: string[], breakout_pagenow: string[]}
  */
 function wp_react_ui_get_special_page_config(): array {
 	return array(
@@ -39,7 +43,24 @@ function wp_react_ui_get_special_page_config(): array {
 			'wp-react-ui-branding',
 			'h-bricks-elements',
 		),
+		'breakout_pagenow' => array(
+			'post.php',
+			'post-new.php',
+			'site-editor.php',
+			'customize.php',
+			'export.php',
+		),
 	);
+}
+
+/**
+ * Returns true when the current request is loading inside the shell iframe.
+ * PHP suppresses native chrome and injects the postMessage script in this mode.
+ */
+function wp_react_ui_is_embed_mode(): bool {
+	// phpcs:ignore WordPress.Security.NonceVerification.Recommended
+	return ( isset( $_GET['wp_shell_embed'] ) && '1' === $_GET['wp_shell_embed'] )
+		|| ( isset( $_POST['wp_shell_embed'] ) && '1' === $_POST['wp_shell_embed'] );
 }
 
 /**
@@ -48,11 +69,92 @@ function wp_react_ui_get_special_page_config(): array {
  * @param string|null $pagenow Current admin filename.
  */
 function wp_react_ui_should_boot_shell( ?string $pagenow = null ): bool {
+	// Never bootstrap the shell inside the embed iframe.
+	if ( wp_react_ui_is_embed_mode() ) {
+		return false;
+	}
+
 	$current_page = is_string( $pagenow ) ? $pagenow : ( $GLOBALS['pagenow'] ?? '' );
 	$config       = wp_react_ui_get_special_page_config();
 
 	return ! in_array( $current_page, $config['shell_disabled_pagenow'], true );
 }
+
+// ─── Embed mode (iframe content) ─────────────────────────────────────────────
+
+// Suppress all native WordPress chrome when the page is requested via iframe.
+add_action(
+'admin_head',
+function () {
+if ( ! wp_react_ui_is_embed_mode() ) {
+return;
+}
+// Minimal CSS: remove all WP chrome so only page content renders.
+echo '<style id="wp-react-ui-embed-reset">
+html, body { margin: 0 !important; padding: 0 !important; height: auto !important; overflow: auto !important; background: transparent !important; }
+#adminmenuback, #adminmenuwrap, #adminmenumain, #wpadminbar, #wpfooter { display: none !important; }
+#wpcontent { margin-left: 0 !important; float: none !important; }
+#wpwrap { display: block !important; }
+</style>';
+},
+0
+);
+
+// Inject the postMessage communication script at footer of every embed page.
+add_action(
+'admin_footer',
+function () {
+if ( ! wp_react_ui_is_embed_mode() ) {
+return;
+}
+$origin = esc_js( home_url() );
+// phpcs:disable WordPress.Security.EscapeOutput.OutputNotEscaped
+echo '<script id="wp-react-ui-embed-comm">';
+echo '(function(){';
+echo 'var origin=' . wp_json_encode( home_url() ) . ';';
+echo 'function send(type,data){if(window.parent===window)return;';
+echo 'window.parent.postMessage(Object.assign({source:"wp-shell-embed",type:type},data),origin);}';
+// Send initial page-ready signal.
+echo 'send("page-ready",{url:location.href,title:document.title});';
+// Monitor <title> changes (some WP screens update it via JS).
+echo 'try{new MutationObserver(function(ms){ms.forEach(function(m){';
+echo 'if(m.target.nodeName==="TITLE")send("title-change",{title:document.title});';
+echo '});}).observe(document.head,{subtree:true,characterData:true,childList:true});}catch(e){}';
+// Add wp_shell_embed=1 to every admin link and form action so navigation
+// within the iframe preserves embed mode automatically.
+echo 'function addEmbed(u){try{';
+echo 'var p=new URL(u,location.origin);';
+echo 'if(p.origin!==location.origin||!p.pathname.startsWith("/wp-admin"))return u;';
+echo 'p.searchParams.set("wp_shell_embed","1");return p.toString();}catch(e){return u;}}';
+// Patch existing links.
+echo 'function patchLinks(root){';
+echo 'root.querySelectorAll("a[href]").forEach(function(a){a.href=addEmbed(a.href);});';
+echo 'root.querySelectorAll("form").forEach(function(f){f.action=addEmbed(f.action||location.href);});}';
+echo 'patchLinks(document);';
+// Patch dynamically-added nodes.
+echo 'new MutationObserver(function(ms){ms.forEach(function(m){';
+echo 'm.addedNodes.forEach(function(n){if(n.nodeType===1)patchLinks(n);});';
+echo '});}).observe(document.body,{childList:true,subtree:true});';
+echo '})();</script>';
+// phpcs:enable
+}
+);
+
+// When a form submits inside embed mode, WordPress may redirect to a new URL.
+// Keep the embed param on that redirect so the next page also runs in embed mode.
+add_filter(
+'wp_redirect',
+function ( $location ) {
+if ( ! wp_react_ui_is_embed_mode() ) {
+return $location;
+}
+$parsed = wp_parse_url( $location, PHP_URL_PATH );
+if ( $parsed && str_starts_with( (string) $parsed, '/wp-admin' ) ) {
+return add_query_arg( 'wp_shell_embed', '1', $location );
+}
+return $location;
+}
+);
 
 // ─── Admin Init ───────────────────────────────────────────────────────────────
 
@@ -242,6 +344,7 @@ add_action(
 				'navigation'  => array(
 					'fullReloadPageParams' => array_values( $special_pages['full_reload_page_params'] ),
 					'shellDisabledPagenow' => array_values( $special_pages['shell_disabled_pagenow'] ),
+					'breakoutPagenow'     => array_values( $special_pages['breakout_pagenow'] ),
 				),
 				'nonce'       => wp_create_nonce( 'wp_rest' ),
 				'restUrl'     => rest_url( 'wp-react-ui/v1' ),

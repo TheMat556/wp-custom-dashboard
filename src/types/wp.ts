@@ -12,8 +12,12 @@ interface WpReactUiBranding {
 }
 
 interface WpReactUiNavigationConfig {
+  /** Pages that the shell loads in the iframe and handles normally. */
   fullReloadPageParams?: string[];
+  /** Pages where the React shell should not bootstrap (e.g. classic admin). */
   shellDisabledPagenow?: string[];
+  /** Pages that must be the top-level document (cannot run in the iframe). */
+  breakoutPagenow?: string[];
 }
 
 declare global {
@@ -36,12 +40,6 @@ declare global {
         name: string;
         role: string;
       };
-    };
-    __wpReactUiTransitionState?: {
-      active: boolean;
-      id: number;
-      startedAt: number;
-      targetUrl: string;
     };
   }
 }

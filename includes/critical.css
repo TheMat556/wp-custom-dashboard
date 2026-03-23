@@ -135,23 +135,17 @@ body[data-theme="dark"] #wpwrap:not(.has-react-shell)::after {
     overflow: hidden !important;
 }
 
-/* ── Content ── */
+/* ── Content area (iframe shell) ──────────────────────────────────────────────
+   Content is served by the iframe inside #react-shell-root.
+   The native WordPress #wpcontent / #wpfooter remain in the DOM (PHP renders
+   them) but are hidden — users never interact with them directly.
+   ─────────────────────────────────────────────────────────────────────────── */
 #wpcontent,
 #wpfooter {
     grid-area: content !important;
     margin-left: 0 !important;
-    min-width: 0 !important;
-    overflow-y: auto !important;
-    opacity: 0 !important;
+    visibility: hidden !important;
     pointer-events: none !important;
-    transition: opacity 0.08s ease !important;
-}
-
-/* ── Reveal content once React is ready ── */
-#wpwrap.react-ready #wpcontent,
-#wpwrap.react-ready #wpfooter {
-    opacity: 1 !important;
-    pointer-events: auto !important;
 }
 
 /* ── Skeleton shimmer ── */
