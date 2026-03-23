@@ -20,28 +20,30 @@ The plugin now uses a **single React shell root**:
 
 ```text
 #wpwrap
-├── #react-shell-root   -> React shell (sidebar + navbar + iframe)
+├── #react-shell-root   -> single React root for sidebar + navbar + iframe
 ├── #wpcontent          -> still rendered by WordPress, hidden from the user
 └── #wpfooter           -> still rendered by WordPress, hidden from the user
 ```
 
-The shell stays mounted while the iframe navigates between admin pages. WordPress still renders each target page normally, but when `wp_shell_embed=1` is present the plugin strips native chrome and injects a small `postMessage` bridge.
+The shell stays mounted while the iframe navigates between admin pages. WordPress still renders each target page normally, but when `wp_shell_embed=1` is present the plugin strips native chrome, forces the embedded document to fill the iframe height, and injects a small `postMessage` bridge.
 
 If the shell bundle cannot be resolved, the plugin falls back to native WordPress admin instead of trying to boot a broken shell.
 
 ### Boot sequence
 
 1. PHP inlines critical CSS and an early-state script in `admin_head`.
-2. The early-state script restores theme and sidebar width before first paint.
-3. PHP creates or preserves `#react-shell-root`.
-4. React bootstraps explicit stores for theme, sidebar, and navigation.
-5. The shell renders `<Sidebar />`, `<Navbar />`, and `<ContentFrame />`.
-6. The iframe loads the current admin URL with `wp_shell_embed=1`.
+2. The early-state script restores theme and sidebar width before first paint and ensures `#react-shell-root` exists.
+3. `src/main.tsx` removes any legacy `react-navbar-root` / `react-sidebar-root` nodes left over from older builds.
+4. `src/main.tsx` normalizes `window.wpReactUi`, tears down any previous shell instance, and calls `bootstrapShell(host, config)`.
+5. `bootstrapShell()` bootstraps the menu, theme, sidebar, and navigation stores and mounts one React root.
+6. The shell renders `<Sidebar />`, `<Navbar />`, and `<ContentFrame />`.
+7. The iframe loads the current admin URL with `wp_shell_embed=1`.
 
 ### Source of truth
 
 - PHP is the source of truth for menu structure.
-- The React app consumes the localized `window.wpReactUi` payload and optional REST refreshes.
+- The React app consumes the localized `window.wpReactUi` payload once at boot and uses shared stores for runtime state.
+- `window.wpReactUi` is boot config, not a mutable runtime store.
 - The navigation store is the source of truth for iframe URL, browser URL, and loading state.
 
 ## File layout
@@ -104,5 +106,6 @@ Before deploying:
 
 ## Notes
 
+- The plugin does not use separate navbar/sidebar React roots anymore. Everything mounts under `#react-shell-root`.
 - `src/utils/spaNavigate.ts` is retained only as a compatibility shim around active-key subscription.
 - The plugin no longer uses the old fetch-and-swap SPA approach.

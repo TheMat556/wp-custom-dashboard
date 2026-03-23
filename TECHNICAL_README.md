@@ -5,9 +5,10 @@
 WP React UI is an iframe-shell plugin, not a fetch-and-swap SPA.
 
 - The React shell is mounted once into `#react-shell-root`.
+- Any legacy `#react-navbar-root` / `#react-sidebar-root` nodes are removed during boot.
 - WordPress continues rendering real admin pages server-side.
 - The content area is shown through an iframe whose URL is the current admin URL plus `wp_shell_embed=1`.
-- In embed mode, PHP removes native admin chrome and injects a `postMessage` bridge so the parent shell can react to title changes and navigation.
+- In embed mode, PHP removes native admin chrome, forces the embedded document to fill the iframe height, and injects a `postMessage` bridge so the parent shell can react to title changes and navigation.
 
 ## PHP responsibilities
 
@@ -33,6 +34,7 @@ Thin orchestrator only:
 Owns iframe-rendered admin screens:
 
 - Reset CSS for embed mode.
+- Height normalization for the embedded HTML/body/WP wrappers.
 - Enqueue of the embed bridge asset.
 - Redirect rewriting to preserve `wp_shell_embed=1`.
 
@@ -98,6 +100,7 @@ Exposes:
 Explicit application bootstrap:
 
 - Creates or finds the shell root.
+- Removes legacy two-root mount nodes if they still exist.
 - Normalizes `window.wpReactUi`.
 - Tears down any prior shell instance before remount.
 - Calls `bootstrapShell(host, config)`.
@@ -107,7 +110,7 @@ Explicit application bootstrap:
 Owns frontend composition:
 
 - Bootstraps menu, theme, sidebar, and navigation stores.
-- Mounts the React root.
+- Mounts the single React root.
 - Returns teardown for remount safety.
 
 ### Store startup
@@ -128,7 +131,7 @@ The stores no longer rely on import-time side effects.
 
 - [src/context/ThemeContext.tsx](/var/www/html/wordpress/wp-content/plugins/wp-custom-dashboard/src/context/ThemeContext.tsx) and [src/context/SidebarContext.tsx](/var/www/html/wordpress/wp-content/plugins/wp-custom-dashboard/src/context/SidebarContext.tsx) are store-backed hooks, not fake providers.
 - [src/components/ContentFrame/index.tsx](/var/www/html/wordpress/wp-content/plugins/wp-custom-dashboard/src/components/ContentFrame/index.tsx) renders the iframe and loading overlay.
-- [src/components/navbar/index.tsx](/var/www/html/wordpress/wp-content/plugins/wp-custom-dashboard/src/components/navbar/index.tsx) and [src/components/sidebar/index.tsx](/var/www/html/wordpress/wp-content/plugins/wp-custom-dashboard/src/components/sidebar/index.tsx) render shell chrome.
+- [src/components/navbar/index.tsx](/var/www/html/wordpress/wp-content/plugins/wp-custom-dashboard/src/components/navbar/index.tsx) and [src/components/sidebar/index.tsx](/var/www/html/wordpress/wp-content/plugins/wp-custom-dashboard/src/components/sidebar/index.tsx) render shell chrome inside that one root.
 - [src/hooks/useMenu.ts](/var/www/html/wordpress/wp-content/plugins/wp-custom-dashboard/src/hooks/useMenu.ts) reads the canonical PHP menu payload and refreshes it over REST when requested.
 
 ## Operational tradeoffs
