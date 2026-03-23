@@ -10,11 +10,11 @@
  *   url: "http://localhost/wp-admin/admin.php"
  */
 
+import { act, renderHook } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
-import { renderHook, act } from "@testing-library/react";
-import { isAdminUrl, useActiveKey } from "./spaNavigate";
 import { navigationStore, resetNavigationStore } from "../store/navigationStore";
 import { toEmbedUrl } from "./embedUrl";
+import { isAdminUrl, useActiveKey } from "./spaNavigate";
 
 // ── isAdminUrl ────────────────────────────────────────────────────────────────
 

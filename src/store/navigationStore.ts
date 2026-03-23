@@ -3,23 +3,21 @@
  *
  * Owns all state related to which URL is loaded in the content iframe,
  * the browser address bar URL, the loading flag, and history coordination.
- *
- * Module-level side effects (popstate listener, initial history.replaceState)
- * survive SPA navigations because they live outside React.
  */
 
 import { createStore } from "zustand/vanilla";
-import { fromEmbedUrl, isBreakoutUrl, normalizeToMenuKey, toEmbedUrl } from "../utils/embedUrl";
-
-// ── Active-key store (useSyncExternalStore adapter) ─────────────────────────
+import { type EmbedMessage, isEmbedMessage } from "../types/embedMessages";
+import type { WpReactUiNavigationConfig } from "../types/wp";
+import {
+  DEFAULT_BREAKOUT_PAGENOW,
+  fromEmbedUrl,
+  isBreakoutUrl,
+  normalizeToMenuKey,
+  toEmbedUrl,
+} from "../utils/embedUrl";
 
 type Listener = () => void;
 
-/**
- * Thin adapter so `useActiveKey()` can subscribe via `useSyncExternalStore`.
- * Backed by Zustand's own subscription so any state change in navigationStore
- * automatically notifies all useActiveKey subscribers.
- */
 export const activeKeyStore = {
   getSnapshot(): string | undefined {
     return normalizeToMenuKey(navigationStore.getState().pageUrl);
@@ -29,122 +27,145 @@ export const activeKeyStore = {
   },
 };
 
-// ── postMessage types ────────────────────────────────────────────────────────
-
-interface EmbedMessage {
-  source: "wp-shell-embed";
-  type: "page-ready" | "title-change" | "breakout";
-  url?: string;
-  title?: string;
-}
-
-// ── Store ────────────────────────────────────────────────────────────────────
-
 export interface NavigationState {
-  /** URL currently loaded (or being loaded) in the iframe, including embed param. */
   iframeUrl: string;
-  /** Clean URL shown in the browser address bar (no embed param). */
   pageUrl: string;
-  /** Page title from the iframe document. */
   pageTitle: string;
-  /** True while the iframe is transitioning to a new URL. */
-  isLoading: boolean;
-  /**
-   * True when the current iframe load was initiated by the shell (via navigate()).
-   * Used to skip a redundant history.pushState when onLoad fires for that URL.
-   */
-  _shellInitiated: boolean;
+  status: "loading" | "ready";
+  breakoutPagenow: string[];
+  pendingNavigationSource: "shell" | "history" | null;
 }
 
 export interface NavigationActions {
-  /**
-   * Navigate the iframe to the given fully-qualified admin URL.
-   * Checks the breakout list first — breakout URLs do a full window navigation.
-   */
   navigate(url: string): void;
-  /** Called from ContentFrame's onLoad event. Updates URL, title, history. */
   handleIframeLoad(iframeWindow: Window): void;
-  /** Called for every window message event. Validates origin and type. */
   handleIframeMessage(event: MessageEvent): void;
 }
 
-function getInitialUrl(): string {
-  if (typeof window === "undefined") return "";
-  return fromEmbedUrl(window.location.href);
+export interface NavigationBootstrapOptions {
+  pageUrl: string;
+  pageTitle: string;
+  breakoutPagenow: string[];
 }
 
-export const navigationStore = createStore<NavigationState & NavigationActions>()(
-  (set, get) => ({
-    iframeUrl: toEmbedUrl(getInitialUrl()),
-    pageUrl: getInitialUrl(),
-    pageTitle: typeof document !== "undefined" ? document.title : "",
-    isLoading: true,
-    _shellInitiated: true, // The very first iframe load is shell-initiated.
+function getDefaultBootstrapOptions(): NavigationBootstrapOptions {
+  return {
+    pageUrl: typeof window === "undefined" ? "" : fromEmbedUrl(window.location.href),
+    pageTitle: typeof document === "undefined" ? "" : document.title,
+    breakoutPagenow: [...DEFAULT_BREAKOUT_PAGENOW],
+  };
+}
 
-    navigate(url: string) {
-      if (isBreakoutUrl(url)) {
-        window.location.href = url;
-        return;
+export const navigationStore = createStore<NavigationState & NavigationActions>()((set, get) => ({
+  iframeUrl: "",
+  pageUrl: "",
+  pageTitle: "",
+  status: "loading",
+  breakoutPagenow: [...DEFAULT_BREAKOUT_PAGENOW],
+  pendingNavigationSource: "shell",
+
+  navigate(url: string) {
+    if (isBreakoutUrl(url, get().breakoutPagenow)) {
+      window.location.href = url;
+      return;
+    }
+
+    const cleanUrl = fromEmbedUrl(url);
+    const currentPageUrl = fromEmbedUrl(get().pageUrl);
+    const embedUrl = toEmbedUrl(cleanUrl);
+
+    if (cleanUrl === currentPageUrl) {
+      set({ status: "ready", pendingNavigationSource: null });
+      return;
+    }
+
+    set({
+      iframeUrl: embedUrl,
+      pageUrl: cleanUrl,
+      status: "loading",
+      pendingNavigationSource: "shell",
+    });
+    history.pushState({ iframeUrl: embedUrl, pageUrl: cleanUrl }, "", cleanUrl);
+  },
+
+  handleIframeLoad(iframeWindow: Window) {
+    try {
+      const href = iframeWindow.location.href;
+      const cleanUrl = fromEmbedUrl(href);
+      const title = iframeWindow.document.title;
+      const pendingNavigationSource = get().pendingNavigationSource;
+
+      set({
+        iframeUrl: href,
+        pageUrl: cleanUrl,
+        pageTitle: title,
+        status: "ready",
+        pendingNavigationSource: null,
+      });
+
+      if (null === pendingNavigationSource) {
+        history.pushState({ iframeUrl: href, pageUrl: cleanUrl }, title, cleanUrl);
       }
-      const cleanUrl = fromEmbedUrl(url);
-      const embedUrl = toEmbedUrl(cleanUrl);
-      set({ iframeUrl: embedUrl, pageUrl: cleanUrl, isLoading: true, _shellInitiated: true });
-      history.pushState({ iframeUrl: embedUrl, pageUrl: cleanUrl }, "", cleanUrl);
-      },
 
-    handleIframeLoad(iframeWindow: Window) {
-      try {
-        const href = iframeWindow.location.href;
-        const cleanUrl = fromEmbedUrl(href);
-        const title = iframeWindow.document.title;
-        const wasShellInitiated = get()._shellInitiated;
-
-        set({
-          iframeUrl: href,
-          pageUrl: cleanUrl,
-          pageTitle: title,
-          isLoading: false,
-          _shellInitiated: false,
-        });
-
-        if (!wasShellInitiated) {
-          // User followed a link inside the iframe — push to parent history.
-          history.pushState({ iframeUrl: href, pageUrl: cleanUrl }, title, cleanUrl);
-        }
-
-        if (typeof document !== "undefined") {
-          document.title = title;
-        }
-
-          } catch {
-        // Cross-origin iframe — just clear the loading state.
-        set({ isLoading: false, _shellInitiated: false });
+      if (typeof document !== "undefined") {
+        document.title = title;
       }
-    },
+    } catch {
+      set({ status: "ready", pendingNavigationSource: null });
+    }
+  },
 
-    handleIframeMessage(event: MessageEvent) {
-      if (event.origin !== window.location.origin) return;
-      const msg = event.data as EmbedMessage | undefined;
-      if (msg?.source !== "wp-shell-embed") return;
+  handleIframeMessage(event: MessageEvent) {
+    if (event.origin !== window.location.origin || !isEmbedMessage(event.data)) {
+      return;
+    }
 
-      if (msg.type === "title-change" && msg.title) {
-        set({ pageTitle: msg.title });
-        document.title = msg.title;
-        return;
-      }
+    const msg = event.data as EmbedMessage;
 
-      if (msg.type === "breakout" && msg.url) {
-        window.location.href = msg.url;
-      }
-    },
-  })
-);
+    if (msg.type === "page-ready") {
+      set({
+        iframeUrl: msg.url,
+        pageUrl: fromEmbedUrl(msg.url),
+        pageTitle: msg.title,
+        status: "ready",
+      });
+      document.title = msg.title;
+      return;
+    }
 
-// ── Module-level side effects ────────────────────────────────────────────────
+    if (msg.type === "title-change") {
+      set({ pageTitle: msg.title });
+      document.title = msg.title;
+      return;
+    }
 
-if (typeof window !== "undefined") {
-  // Stamp the initial history entry with our navigation state so the back
-  // button works even before the first shell-initiated navigation.
+    window.location.href = msg.url;
+  },
+}));
+
+let teardownPopstateListener: (() => void) | null = null;
+
+export function bootstrapNavigationStore(
+  config: Pick<WpReactUiNavigationConfig, "breakoutPagenow"> & {
+    pageUrl?: string;
+    pageTitle?: string;
+  }
+) {
+  if (typeof window === "undefined") {
+    return () => {};
+  }
+
+  teardownPopstateListener?.();
+
+  resetNavigationStore({
+    pageUrl: config.pageUrl ?? getDefaultBootstrapOptions().pageUrl,
+    pageTitle: config.pageTitle ?? getDefaultBootstrapOptions().pageTitle,
+    breakoutPagenow:
+      config.breakoutPagenow.length > 0
+        ? [...config.breakoutPagenow]
+        : [...DEFAULT_BREAKOUT_PAGENOW],
+  });
+
   const initial = navigationStore.getState();
   history.replaceState(
     { iframeUrl: initial.iframeUrl, pageUrl: initial.pageUrl },
@@ -152,28 +173,41 @@ if (typeof window !== "undefined") {
     initial.pageUrl
   );
 
-  // Handle browser back/forward.
-  window.addEventListener("popstate", (e) => {
+  const handlePopstate = (e: PopStateEvent) => {
     const state = e.state as { iframeUrl?: string; pageUrl?: string } | null;
     if (state?.iframeUrl && state?.pageUrl) {
       navigationStore.setState({
         iframeUrl: state.iframeUrl,
         pageUrl: state.pageUrl,
-        isLoading: true,
-        _shellInitiated: true,
+        status: "loading",
+        pendingNavigationSource: "history",
       });
-      }
-  });
+    }
+  };
+
+  window.addEventListener("popstate", handlePopstate);
+  teardownPopstateListener = () => {
+    window.removeEventListener("popstate", handlePopstate);
+  };
+
+  return () => {
+    teardownPopstateListener?.();
+    teardownPopstateListener = null;
+  };
 }
 
-/** Reset to the current page URL — used in tests between cases. */
-export function resetNavigationStore() {
-  const url = getInitialUrl();
+export function resetNavigationStore(config: Partial<NavigationBootstrapOptions> = {}) {
+  const defaults = getDefaultBootstrapOptions();
+  const pageUrl = config.pageUrl ?? defaults.pageUrl;
+  const pageTitle = config.pageTitle ?? defaults.pageTitle;
+  const breakoutPagenow = config.breakoutPagenow ?? defaults.breakoutPagenow;
+
   navigationStore.setState({
-    iframeUrl: toEmbedUrl(url),
-    pageUrl: url,
-    pageTitle: "",
-    isLoading: true,
-    _shellInitiated: true,
+    iframeUrl: toEmbedUrl(pageUrl),
+    pageUrl,
+    pageTitle,
+    status: "loading",
+    breakoutPagenow: [...breakoutPagenow],
+    pendingNavigationSource: "shell",
   });
 }

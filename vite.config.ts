@@ -3,6 +3,7 @@ import react from "@vitejs/plugin-react-swc";
 import { resolve } from "path";
 
 export default defineConfig({
+  base: "./",
   plugins: [react() as any],
 
   publicDir: "public",
@@ -18,6 +19,7 @@ export default defineConfig({
 
     rollupOptions: {
       input: {
+        embedBridge: resolve(__dirname, "src/embedBridge.ts"),
         main: resolve(__dirname, "src/main.tsx"),
         outside: resolve(__dirname, "src/outside.css"),
       },
@@ -33,16 +35,6 @@ export default defineConfig({
             id.includes("node_modules/scheduler")
           ) {
             return "react";
-          }
-          if (id.includes("@ant-design/icons")) {
-            return "antd-icons";
-          }
-          if (
-            id.includes("node_modules/antd") ||
-            id.includes("@ant-design/") ||
-            id.includes("node_modules/rc-")
-          ) {
-            return "antd";
           }
         },
       },

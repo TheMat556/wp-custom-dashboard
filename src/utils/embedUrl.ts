@@ -10,8 +10,16 @@
 const EMBED_PARAM = "wp_shell_embed";
 const EMBED_VALUE = "1";
 
+function normalizeAdminPathname(pathname: string): string {
+  if (/\/wp-admin\/?$/.test(pathname)) {
+    return `${pathname.replace(/\/$/, "")}/index.php`;
+  }
+
+  return pathname;
+}
+
 /** Pages that must be the top-level document — they cannot run inside an iframe. */
-const DEFAULT_BREAKOUT_PAGENOW = [
+export const DEFAULT_BREAKOUT_PAGENOW = [
   "post.php",
   "post-new.php",
   "site-editor.php",
@@ -45,6 +53,7 @@ export function fromEmbedUrl(url: string): string {
   try {
     const parsed = new URL(url, window.location.origin);
     parsed.searchParams.delete(EMBED_PARAM);
+    parsed.pathname = normalizeAdminPathname(parsed.pathname);
     return parsed.toString();
   } catch {
     return url;
@@ -60,9 +69,7 @@ export function fromEmbedUrl(url: string): string {
  */
 export function normalizeToMenuKey(url: string): string | undefined {
   try {
-    const parsed = new URL(url, window.location.origin);
-    // Strip the embed param so it doesn't interfere with ?page= extraction.
-    parsed.searchParams.delete(EMBED_PARAM);
+    const parsed = new URL(fromEmbedUrl(url), window.location.origin);
     const page = parsed.searchParams.get("page");
     if (page) return page;
     return parsed.pathname.split("/").filter(Boolean).pop();
@@ -75,13 +82,14 @@ export function normalizeToMenuKey(url: string): string | undefined {
  * Returns true for pages that must break out of the iframe and load as the
  * top-level document (e.g. Gutenberg, full-site editor).
  */
-export function isBreakoutUrl(url: string): boolean {
+export function isBreakoutUrl(
+  url: string,
+  breakoutPagenow: string[] = DEFAULT_BREAKOUT_PAGENOW
+): boolean {
   try {
     const parsed = new URL(url, window.location.origin);
     const filename = parsed.pathname.split("/").filter(Boolean).pop() ?? "";
-    const configured = window.wpReactUi?.navigation?.breakoutPagenow;
-    const list = Array.isArray(configured) ? configured : DEFAULT_BREAKOUT_PAGENOW;
-    return list.includes(filename);
+    return breakoutPagenow.includes(filename);
   } catch {
     return false;
   }

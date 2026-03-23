@@ -1,9 +1,11 @@
 import { createStore } from "zustand/vanilla";
-import "../types/wp";
+import { getBootConfig } from "../config/bootConfig";
+import { createThemeService, type ThemeService } from "../services/themeApi";
+import type { WpReactUiConfig } from "../types/wp";
 
 export type Theme = "light" | "dark";
 
-export const THEME_STORAGE_KEY = "wp-react-ui-theme";
+export const THEME_STORAGE_KEY = getBootConfig().theme.storageKey;
 export const THEME_CHANGE_EVENT = "wp-react-ui-theme-change";
 
 function isTheme(value: unknown): value is Theme {
@@ -34,34 +36,19 @@ export function applyThemeToDOM(theme: Theme) {
   writeStoredTheme(theme);
 }
 
-async function persistTheme(theme: Theme) {
-  const restUrl = window.wpReactUi?.restUrl ?? "/wp-json/wp-react-ui/v1";
-  const nonce = window.wpReactUi?.nonce ?? "";
-
-  try {
-    await fetch(`${restUrl}/theme`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "X-WP-Nonce": nonce,
-      },
-      body: JSON.stringify({ theme }),
-    });
-  } catch (error) {
-    console.warn("[WP React UI] Could not save theme:", error);
-  }
+function getInitialTheme(theme: string): Theme {
+  return readStoredTheme() ?? (isTheme(theme) ? theme : "light");
 }
-
-const serverTheme = window.wpReactUi?.theme;
-const initialTheme = readStoredTheme() ?? (isTheme(serverTheme) ? serverTheme : "light");
 
 export interface ThemeStoreState {
   theme: Theme;
+  service: ThemeService | null;
   toggle: () => void;
 }
 
 export const themeStore = createStore<ThemeStoreState>((set, get) => ({
-  theme: initialTheme,
+  theme: "light",
+  service: null,
   toggle() {
     const nextTheme: Theme = get().theme === "light" ? "dark" : "light";
 
@@ -72,8 +59,31 @@ export const themeStore = createStore<ThemeStoreState>((set, get) => ({
         detail: { theme: nextTheme },
       })
     );
-    void persistTheme(nextTheme);
+
+    void get()
+      .service?.saveTheme(nextTheme)
+      .catch((error) => {
+        console.warn("[WP React UI] Could not save theme:", error);
+      });
   },
 }));
 
-applyThemeToDOM(initialTheme);
+export function bootstrapThemeStore(
+  config: Pick<WpReactUiConfig, "theme" | "restUrl" | "nonce">,
+  service: ThemeService = createThemeService(config)
+) {
+  const initialTheme = getInitialTheme(config.theme);
+
+  themeStore.setState({
+    theme: initialTheme,
+    service,
+  });
+  applyThemeToDOM(initialTheme);
+}
+
+export function resetThemeStore() {
+  themeStore.setState({
+    theme: "light",
+    service: null,
+  });
+}

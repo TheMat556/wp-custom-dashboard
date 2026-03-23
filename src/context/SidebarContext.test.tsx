@@ -22,8 +22,6 @@ describe("SidebarProvider / useSidebar", () => {
     localStorage.clear();
     vi.resetModules();
     resetViewport(1280);
-    delete (window as Window & { __wpReactUiSidebarResizeBound?: boolean })
-      .__wpReactUiSidebarResizeBound;
   });
 
   afterEach(() => {
@@ -31,7 +29,9 @@ describe("SidebarProvider / useSidebar", () => {
   });
 
   it("renders desktop sidebar state without unstable snapshot loops", async () => {
-    const { SidebarProvider, useSidebar } = await import("../context/SidebarContext");
+    const { useSidebar } = await import("../context/SidebarContext");
+    const { bootstrapSidebarStore } = await import("../store/sidebarStore");
+    bootstrapSidebarStore();
 
     function Consumer() {
       const { collapsed, isMobile, mobileOpen, sidebarWidth } = useSidebar();
@@ -43,13 +43,7 @@ describe("SidebarProvider / useSidebar", () => {
       );
     }
 
-    expect(() =>
-      render(
-        <SidebarProvider>
-          <Consumer />
-        </SidebarProvider>
-      )
-    ).not.toThrow();
+    expect(() => render(<Consumer />)).not.toThrow();
 
     expect(screen.getByTestId("sidebar-state")).toHaveTextContent(
       JSON.stringify({
@@ -63,7 +57,9 @@ describe("SidebarProvider / useSidebar", () => {
   });
 
   it("toggles desktop collapsed state and persists the new width", async () => {
-    const { SidebarProvider, useSidebar } = await import("../context/SidebarContext");
+    const { useSidebar } = await import("../context/SidebarContext");
+    const { bootstrapSidebarStore } = await import("../store/sidebarStore");
+    bootstrapSidebarStore();
 
     function ToggleButton() {
       const { collapsed, sidebarWidth, toggle } = useSidebar();
@@ -75,11 +71,7 @@ describe("SidebarProvider / useSidebar", () => {
       );
     }
 
-    render(
-      <SidebarProvider>
-        <ToggleButton />
-      </SidebarProvider>
-    );
+    render(<ToggleButton />);
 
     expect(screen.getByTestId("toggle")).toHaveTextContent("false-240");
 

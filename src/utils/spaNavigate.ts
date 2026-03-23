@@ -12,6 +12,7 @@
 
 import { useSyncExternalStore } from "react";
 import { activeKeyStore } from "../store/navigationStore";
+
 export { isAdminUrl } from "./embedUrl";
 
 /** React hook — returns the currently active sidebar menu key. Reactive. */

@@ -6,15 +6,15 @@
  * The parent shell (React) stays alive across all navigations.
  */
 
+import { Spin, theme } from "antd";
 import { useEffect, useRef } from "react";
 import { useStore } from "zustand";
-import { Spin, theme } from "antd";
 import { navigationStore } from "../../store/navigationStore";
 
 export default function ContentFrame() {
   const iframeRef = useRef<HTMLIFrameElement>(null);
   const iframeUrl = useStore(navigationStore, (s) => s.iframeUrl);
-  const isLoading = useStore(navigationStore, (s) => s.isLoading);
+  const isLoading = useStore(navigationStore, (s) => s.status === "loading");
   const handleIframeLoad = useStore(navigationStore, (s) => s.handleIframeLoad);
   const handleIframeMessage = useStore(navigationStore, (s) => s.handleIframeMessage);
   const { token } = theme.useToken();

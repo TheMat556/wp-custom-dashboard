@@ -30,7 +30,7 @@ class WP_React_UI_REST_API {
 				'callback'            => function () {
 					return rest_ensure_response(
 						array(
-							'menu' => WP_React_UI_Asset_Loader::get_menu_data(),
+							'menu' => WP_React_UI_Menu_Repository::get_menu_data(),
 						)
 					);
 				},

@@ -15,8 +15,7 @@ const DEFAULT_NAVIGATION = {
   breakoutPagenow: ["post.php", "post-new.php", "site-editor.php", "customize.php", "export.php"],
 };
 
-// Minimal wpReactUi stub — must exist before any module-level code in
-// ThemeContext.tsx runs (it reads window.wpReactUi?.theme at import time).
+// Minimal wpReactUi stub used by main/bootstrap configuration tests.
 Object.defineProperty(window, "wpReactUi", {
   writable: true,
   configurable: true,
@@ -39,6 +38,25 @@ Object.defineProperty(window, "wpReactUi", {
   },
 });
 
+Object.defineProperty(window, "wpReactUiBoot", {
+  writable: true,
+  configurable: true,
+  value: {
+    layout: {
+      mobileBreakpoint: 768,
+      collapsedStorageKey: "wp-react-sidebar-collapsed",
+      sidebarWidths: {
+        expanded: 240,
+        collapsed: 64,
+        mobile: 0,
+      },
+    },
+    theme: {
+      storageKey: "wp-react-ui-theme",
+    },
+  },
+});
+
 // Stub fetch globally — individual tests override this via vi.stubGlobal()
 vi.stubGlobal("fetch", vi.fn().mockResolvedValue({ ok: true }));
 
@@ -47,7 +65,9 @@ afterEach(() => {
   localStorage.clear();
   document.body.innerHTML = "";
   document.title = "";
+  window.__wpReactUiTeardown = undefined;
   (window.wpReactUi as { theme: string }).theme = "light";
+  (window.wpReactUi as { menu: unknown[] }).menu = [];
   (window.wpReactUi as { navigation: typeof DEFAULT_NAVIGATION }).navigation = {
     ...DEFAULT_NAVIGATION,
   };

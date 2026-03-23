@@ -4,13 +4,13 @@
  * jsdom URL: "http://localhost/wp-admin/admin.php" (set in vitest.config.ts)
  */
 
-import { describe, expect, it, beforeEach } from "vitest";
+import { beforeEach, describe, expect, it } from "vitest";
 import {
-  isAdminUrl,
-  toEmbedUrl,
   fromEmbedUrl,
-  normalizeToMenuKey,
+  isAdminUrl,
   isBreakoutUrl,
+  normalizeToMenuKey,
+  toEmbedUrl,
 } from "./embedUrl";
 
 describe("isAdminUrl", () => {
@@ -67,6 +67,12 @@ describe("fromEmbedUrl", () => {
     expect(new URL(clean).searchParams.has("wp_shell_embed")).toBe(false);
   });
 
+  it("canonicalizes the wp-admin root to index.php", () => {
+    expect(fromEmbedUrl("http://localhost/wp-admin/?wp_shell_embed=1")).toBe(
+      "http://localhost/wp-admin/index.php"
+    );
+  });
+
   it("is a no-op when embed param is absent", () => {
     const url = "http://localhost/wp-admin/plugins.php?paged=2";
     expect(fromEmbedUrl(url)).toBe(url);
@@ -88,6 +94,10 @@ describe("normalizeToMenuKey", () => {
   it("returns the PHP filename for direct file URLs", () => {
     expect(normalizeToMenuKey("http://localhost/wp-admin/plugins.php")).toBe("plugins.php");
     expect(normalizeToMenuKey("http://localhost/wp-admin/users.php")).toBe("users.php");
+  });
+
+  it("treats the wp-admin root as index.php", () => {
+    expect(normalizeToMenuKey("http://localhost/wp-admin/")).toBe("index.php");
   });
 
   it("strips the embed param before extracting the key", () => {
@@ -127,11 +137,10 @@ describe("isBreakoutUrl", () => {
     expect(isBreakoutUrl("http://localhost/wp-admin/admin.php?page=my-plugin")).toBe(false);
   });
 
-  it("uses the configured breakout list from window.wpReactUi", () => {
-    if (window.wpReactUi?.navigation) {
-      window.wpReactUi.navigation.breakoutPagenow = ["custom-editor.php"];
-    }
-    expect(isBreakoutUrl("http://localhost/wp-admin/custom-editor.php")).toBe(true);
-    expect(isBreakoutUrl("http://localhost/wp-admin/post.php")).toBe(false);
+  it("uses an explicitly provided breakout list", () => {
+    expect(
+      isBreakoutUrl("http://localhost/wp-admin/custom-editor.php", ["custom-editor.php"])
+    ).toBe(true);
+    expect(isBreakoutUrl("http://localhost/wp-admin/post.php", ["custom-editor.php"])).toBe(false);
   });
 });

@@ -8,7 +8,7 @@
 defined( 'ABSPATH' ) || exit;
 
 /**
- * Handles Vite manifest parsing, asset enqueueing, and menu data caching.
+ * Handles Vite manifest parsing and asset enqueueing.
  */
 class WP_React_UI_Asset_Loader {
 
@@ -46,13 +46,6 @@ class WP_React_UI_Asset_Loader {
 	 * @var string
 	 */
 	private const CACHE_DEV = 'wp_react_ui_is_dev';
-
-	/**
-	 * Transient key prefix for per-user menu data.
-	 *
-	 * @var string
-	 */
-	private const CACHE_MENU = 'wp_react_ui_menu';
 
 	// ─── Init ─────────────────────────────────────────────────────────────────
 
@@ -123,6 +116,41 @@ class WP_React_UI_Asset_Loader {
 	}
 
 	/**
+	 * Returns the public URL for a build entry, in either dev or production mode.
+	 *
+	 * @param string $entry_src Source entry path as used by Vite manifest keys.
+	 * @return string|null
+	 */
+	public static function get_entry_asset_url( string $entry_src ): ?string {
+		self::init();
+
+		if ( self::is_dev() ) {
+			return self::$dev_url . '/' . ltrim( $entry_src, '/' );
+		}
+
+		$manifest = self::get_manifest();
+		if ( ! $manifest ) {
+			return null;
+		}
+
+		$entry = $manifest[ $entry_src ] ?? null;
+		if ( empty( $entry['file'] ) ) {
+			return null;
+		}
+
+		return self::$dist_url . $entry['file'];
+	}
+
+	/**
+	 * Returns true when the shell entry asset can be resolved in either dev or prod mode.
+	 *
+	 * @return bool
+	 */
+	public static function can_boot_shell(): bool {
+		return null !== self::get_entry_asset_url( 'src/main.tsx' );
+	}
+
+	/**
 	 * Returns CSS and JS asset URLs to preload for the main entry point.
 	 *
 	 * @return array{ css: string[], js: string[] }
@@ -142,50 +170,37 @@ class WP_React_UI_Asset_Loader {
 		$css_urls = array();
 		$js_urls  = array();
 
+		if ( empty( $entry['file'] ) ) {
+			return array(
+				'css' => array(),
+				'js'  => array(),
+			);
+		}
+
 		if ( ! empty( $entry['css'] ) ) {
 			foreach ( $entry['css'] as $css_file ) {
 				$css_urls[] = self::$dist_url . $css_file;
 			}
 		}
 
-		foreach ( $manifest as $chunk ) {
-			if ( empty( $chunk['file'] ) || ! str_ends_with( $chunk['file'], '.js' ) ) {
+		$js_urls[] = self::$dist_url . $entry['file'];
+
+		foreach ( ( $entry['imports'] ?? array() ) as $import_key ) {
+			$import = $manifest[ $import_key ] ?? null;
+			if ( empty( $import['file'] ) || ! str_ends_with( $import['file'], '.js' ) ) {
 				continue;
 			}
 
-			$js_urls[] = self::$dist_url . $chunk['file'];
+			$js_urls[] = self::$dist_url . $import['file'];
 		}
 
 		return array(
-			'css' => $css_urls,
-			'js'  => $js_urls,
+			'css' => array_values( array_unique( $css_urls ) ),
+			'js'  => array_values( array_unique( $js_urls ) ),
 		);
 	}
 
 	// ─── Cache clearing ───────────────────────────────────────────────────────
-
-	/**
-	 * Deletes all per-user menu transients from the database.
-	 *
-	 * @return void
-	 */
-	public static function clear_menu_cache(): void {
-		global $wpdb;
-
-		$prefix = self::CACHE_MENU;
-
-		// Direct query required — no WordPress API supports wildcard transient deletion.
-		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
-		$wpdb->query(
-			$wpdb->prepare(
-				"DELETE FROM {$wpdb->options}
-				 WHERE option_name LIKE %s
-				 OR    option_name LIKE %s",
-				'_transient_' . $prefix . '_%',
-				'_transient_timeout_' . $prefix . '_%'
-			)
-		);
-	}
 
 	/**
 	 * Clears all plugin transient caches.
@@ -195,7 +210,7 @@ class WP_React_UI_Asset_Loader {
 	public static function clear_cache(): void {
 		delete_transient( self::CACHE_MANIFEST );
 		delete_transient( self::CACHE_DEV );
-		self::clear_menu_cache();
+		WP_React_UI_Menu_Cache::clear();
 	}
 
 	// ─── Enqueue ──────────────────────────────────────────────────────────────
@@ -311,123 +326,6 @@ class WP_React_UI_Asset_Loader {
 			},
 			10,
 			2
-		);
-	}
-
-	// ─── Comments enabled check ───────────────────────────────────────────────
-
-	/**
-	 * Returns true if any public post type supports comments.
-	 *
-	 * @return bool
-	 */
-	private static function are_comments_enabled(): bool {
-		$post_types = get_post_types( array( 'public' => true ) );
-
-		foreach ( $post_types as $pt ) {
-			if ( post_type_supports( $pt, 'comments' ) ) {
-				return true;
-			}
-		}
-
-		return false;
-	}
-
-	// ─── Menu data ────────────────────────────────────────────────────────────
-
-	/**
-	 * Returns the admin menu items for the current user, from cache or live.
-	 *
-	 * @return array
-	 */
-	public static function get_menu_data(): array {
-		$user_id   = get_current_user_id();
-		$cache_key = self::CACHE_MENU . '_' . $user_id;
-		$cached    = get_transient( $cache_key );
-
-		if ( false !== $cached ) {
-			return $cached;
-		}
-
-		global $menu, $submenu;
-		$items = array();
-
-		$comments_enabled = self::are_comments_enabled();
-
-		foreach ( (array) $menu as $item ) {
-			if ( empty( $item[0] ) ) {
-				continue;
-			}
-
-			if ( ! $comments_enabled && isset( $item[2] ) && 'edit-comments.php' === $item[2] ) {
-				continue;
-			}
-
-			['label' => $label, 'count' => $count] = self::parse_menu_label( $item[0] );
-			if ( empty( $label ) ) {
-				continue;
-			}
-
-			$slug     = $item[2];
-			$children = array();
-
-			if ( ! empty( $submenu[ $slug ] ) ) {
-				foreach ( $submenu[ $slug ] as $sub ) {
-					if ( empty( $sub[0] ) ) {
-						continue;
-					}
-
-					['label' => $sub_label, 'count' => $sub_count] = self::parse_menu_label( $sub[0] );
-					if ( empty( $sub_label ) ) {
-						continue;
-					}
-
-					$children[] = array(
-						'label' => $sub_label,
-						'count' => $sub_count,
-						'slug'  => $sub[2],
-						'cap'   => $sub[1],
-					);
-				}
-			}
-
-			$items[] = array(
-				'label'    => $label,
-				'count'    => $count,
-				'slug'     => $slug,
-				'icon'     => $item[6] ?? '',
-				'cap'      => $item[1],
-				'children' => $children,
-			);
-		}
-
-		set_transient( $cache_key, $items, HOUR_IN_SECONDS );
-		return $items;
-	}
-
-	/**
-	 * Parses a raw WordPress menu label into a clean label and optional count.
-	 *
-	 * @param string $raw Raw menu label string possibly containing HTML span counts.
-	 * @return array{ label: string, count: int|null }
-	 */
-	private static function parse_menu_label( string $raw ): array {
-		$count = null;
-
-		if ( preg_match( '/<span[^>]*>\s*(\d+)\s*<\/span>/i', $raw, $matches ) ) {
-			$parsed = (int) $matches[1];
-			if ( $parsed > 0 ) {
-				$count = $parsed;
-			}
-		}
-
-		$cleaned = preg_replace( '/<span[^>]*>.*?<\/span>/is', '', $raw );
-		$cleaned = wp_strip_all_tags( $cleaned );
-		$cleaned = trim( preg_replace( '/\s+/', ' ', $cleaned ) );
-
-		return array(
-			'label' => $cleaned,
-			'count' => $count,
 		);
 	}
 }

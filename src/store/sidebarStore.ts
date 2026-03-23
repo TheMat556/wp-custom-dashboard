@@ -1,10 +1,12 @@
 import { createStore } from "zustand/vanilla";
+import { getBootConfig } from "../config/bootConfig";
 
-const MOBILE_BREAKPOINT = 768;
-const SIDEBAR_FULL = 240;
-const SIDEBAR_COLLAPSED = 64;
-const SIDEBAR_MOBILE = 0;
-const LS_KEY = "wp-react-sidebar-collapsed";
+const bootConfig = getBootConfig();
+const MOBILE_BREAKPOINT = bootConfig.layout.mobileBreakpoint;
+const SIDEBAR_FULL = bootConfig.layout.sidebarWidths.expanded;
+const SIDEBAR_COLLAPSED = bootConfig.layout.sidebarWidths.collapsed;
+const SIDEBAR_MOBILE = bootConfig.layout.sidebarWidths.mobile;
+const LS_KEY = bootConfig.layout.collapsedStorageKey;
 
 function canUseDOM() {
   return typeof window !== "undefined" && typeof document !== "undefined";
@@ -40,7 +42,8 @@ function persistCollapsed(collapsed: boolean) {
   }
 }
 
-let desktopCollapsed = readPersistedCollapsed();
+let desktopCollapsed = false;
+let teardownResizeListener: (() => void) | null = null;
 
 function getSnapshot(isMobile: boolean, mobileOpen: boolean) {
   const collapsed = isMobile ? !mobileOpen : desktopCollapsed;
@@ -62,7 +65,7 @@ export interface SidebarStoreState {
   syncViewport: () => void;
 }
 
-const initialSnapshot = getSnapshot(getViewportIsMobile(), false);
+const initialSnapshot = getSnapshot(false, false);
 
 export const sidebarStore = createStore<SidebarStoreState>((set, get) => {
   const setSnapshot = (isMobile: boolean, mobileOpen: boolean) => {
@@ -100,18 +103,8 @@ export const sidebarStore = createStore<SidebarStoreState>((set, get) => {
 
 function startResizeListener() {
   if (!canUseDOM()) {
-    return;
+    return () => {};
   }
-
-  const windowWithFlag = window as Window & {
-    __wpReactUiSidebarResizeBound?: boolean;
-  };
-
-  if (windowWithFlag.__wpReactUiSidebarResizeBound) {
-    return;
-  }
-
-  windowWithFlag.__wpReactUiSidebarResizeBound = true;
 
   let resizeFrame: number | null = null;
 
@@ -128,9 +121,38 @@ function startResizeListener() {
 
   window.addEventListener("resize", handleResize);
   sidebarStore.getState().syncViewport();
+
+  return () => {
+    if (resizeFrame !== null) {
+      window.cancelAnimationFrame(resizeFrame);
+    }
+
+    window.removeEventListener("resize", handleResize);
+  };
 }
 
-if (canUseDOM()) {
-  applyCssVar(initialSnapshot.sidebarWidth);
-  startResizeListener();
+export function bootstrapSidebarStore() {
+  if (!canUseDOM()) {
+    return () => {};
+  }
+
+  teardownResizeListener?.();
+
+  desktopCollapsed = readPersistedCollapsed();
+  sidebarStore.setState(getSnapshot(getViewportIsMobile(), false));
+  applyCssVar(sidebarStore.getState().sidebarWidth);
+  teardownResizeListener = startResizeListener();
+
+  return () => {
+    teardownResizeListener?.();
+    teardownResizeListener = null;
+  };
+}
+
+export function resetSidebarStore() {
+  teardownResizeListener?.();
+  teardownResizeListener = null;
+  desktopCollapsed = false;
+  sidebarStore.setState(getSnapshot(false, false));
+  document.documentElement.style.removeProperty("--sidebar-width");
 }

@@ -1,29 +1,22 @@
 import { EditOutlined, LogoutOutlined } from "@ant-design/icons";
 import { Avatar, Dropdown, Flex, type MenuProps, Typography, theme } from "antd";
 import { useMemo } from "react";
+import { useShellConfig } from "../../context/ShellConfigContext";
 import { getAdminBaseUrl, navigate } from "../../utils/wp";
-import "../../types/wp";
 
 const { Text } = Typography;
 
-// ── Helpers ───────────────────────────────────────────────────────────────────
-
-function getWpUser() {
-  const wp = window.wpReactUi;
-  const name = wp?.user?.name?.trim() || "Admin User";
-  const role = wp?.user?.role ?? "Super Admin";
-  const initials =
+function getInitials(name: string) {
+  return (
     name
       .split(/\s+/)
       .filter(Boolean)
-      .map((w: string) => w[0] ?? "")
+      .map((part) => part[0] ?? "")
       .join("")
       .slice(0, 2)
-      .toUpperCase() || "AU";
-  return { name, role, initials };
+      .toUpperCase() || "AU"
+  );
 }
-
-// ── User Dropdown ─────────────────────────────────────────────────────────────
 
 export default function UserDropdown({
   isDark,
@@ -32,21 +25,20 @@ export default function UserDropdown({
   isDark: boolean;
   getContainer: () => HTMLElement;
 }) {
-  const user = useMemo(() => getWpUser(), []);
+  const { adminUrl, logoutUrl, user } = useShellConfig();
   const { token } = theme.useToken();
+
+  const displayUser = useMemo(
+    () => ({
+      name: user.name.trim() || "Admin User",
+      role: user.role || "Super Admin",
+      initials: getInitials(user.name.trim() || "Admin User"),
+    }),
+    [user.name, user.role]
+  );
 
   const avatarBackground = isDark ? token.colorPrimaryBgHover : token.colorPrimaryBg;
   const avatarColor = isDark ? token.colorPrimaryTextHover : token.colorPrimaryText;
-
-  const goEditProfile = () => {
-    navigate("profile.php");
-  };
-
-  const goLogout = () => {
-    const wp = window.wpReactUi;
-    const url = wp?.logoutUrl ?? `${getAdminBaseUrl()}/wp-login.php?action=logout`;
-    window.location.href = url;
-  };
 
   const menuItems: MenuProps["items"] = [
     {
@@ -64,7 +56,7 @@ export default function UserDropdown({
               flexShrink: 0,
             }}
           >
-            {user.initials}
+            {displayUser.initials}
           </Avatar>
           <div style={{ minWidth: 0 }}>
             <Text
@@ -78,7 +70,7 @@ export default function UserDropdown({
                 whiteSpace: "nowrap",
               }}
             >
-              {user.name}
+              {displayUser.name}
             </Text>
             <Text
               type="secondary"
@@ -90,7 +82,7 @@ export default function UserDropdown({
                 display: "block",
               }}
             >
-              {user.role}
+              {displayUser.role}
             </Text>
           </div>
         </Flex>
@@ -101,7 +93,7 @@ export default function UserDropdown({
       key: "edit-profile",
       icon: <EditOutlined />,
       label: "Edit Profile",
-      onClick: goEditProfile,
+      onClick: () => navigate("profile.php", adminUrl),
     },
     { type: "divider" },
     {
@@ -109,7 +101,10 @@ export default function UserDropdown({
       icon: <LogoutOutlined />,
       label: "Log Out",
       danger: true,
-      onClick: goLogout,
+      onClick: () => {
+        window.location.href =
+          logoutUrl || `${getAdminBaseUrl(adminUrl)}/wp-login.php?action=logout`;
+      },
     },
   ];
 
@@ -146,9 +141,9 @@ export default function UserDropdown({
               color: token.colorText,
             }}
           >
-            {user.name}
+            {displayUser.name}
           </Text>
-          <Text style={{ fontSize: 11, color: token.colorTextSecondary }}>{user.role}</Text>
+          <Text style={{ fontSize: 11, color: token.colorTextSecondary }}>{displayUser.role}</Text>
         </div>
         <Avatar
           size={38}
@@ -160,7 +155,7 @@ export default function UserDropdown({
             flexShrink: 0,
           }}
         >
-          {user.initials}
+          {displayUser.initials}
         </Avatar>
       </Flex>
     </Dropdown>

@@ -1,5 +1,6 @@
 import { CloseOutlined } from "@ant-design/icons";
 import { Button, Flex, Typography, theme } from "antd";
+import { useShellConfig } from "../../context/ShellConfigContext";
 import { useTheme } from "../../context/ThemeContext";
 
 const { Text } = Typography;
@@ -13,12 +14,10 @@ export function Logo({
   showClose?: boolean;
   onClose?: () => void;
 }) {
+  const { assetsUrl, branding, siteName } = useShellConfig();
   const { theme: appTheme } = useTheme();
   const { token } = theme.useToken();
   const isDark = appTheme === "dark";
-  const branding = window.wpReactUi?.branding;
-  const assetsUrl = window.wpReactUi?.assetsUrl ?? "/";
-  const siteName = branding?.siteName ?? window.wpReactUi?.siteName ?? "Site";
   const fallbackLogoUrl = `${assetsUrl}logo.svg`;
   const logoUrl = isDark
     ? (branding?.logos.darkUrl ??

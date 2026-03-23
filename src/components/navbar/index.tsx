@@ -8,27 +8,27 @@ import {
   MenuUnfoldOutlined,
 } from "@ant-design/icons";
 import { Breadcrumb, Button, Divider, Space, Typography, theme } from "antd";
-import { useMemo, useRef } from "react";
+import { lazy, Suspense, useMemo, useRef } from "react";
+import { useShellConfig } from "../../context/ShellConfigContext";
 import { useSidebar } from "../../context/SidebarContext";
 import { useTheme } from "../../context/ThemeContext";
 import { useMenu } from "../../hooks/useMenu";
-import "../../types/wp";
 import { useActiveKey } from "../../utils/spaNavigate";
 import { navigate, navigateHome } from "../../utils/wp";
-import UserDropdown from "./UserDropdown";
 
 const { Text } = Typography;
+const UserDropdown = lazy(() => import("./UserDropdown"));
 
 // ── Main Navbar ───────────────────────────────────────────────────────────────
 
 export default function Navbar() {
+  const { adminUrl, publicUrl } = useShellConfig();
   const { theme: appTheme, toggle: toggleTheme } = useTheme();
   const { collapsed, toggle: toggleSidebar, isMobile } = useSidebar();
   const { menuItems } = useMenu();
   const { token } = theme.useToken();
   const isDark = appTheme === "dark";
   const activeKey = useActiveKey();
-  const publicUrl = window.wpReactUi?.publicUrl ?? "/";
 
   const containerRef = useRef<HTMLDivElement>(null);
   const getPopupContainer = () => containerRef.current || document.body;
@@ -42,7 +42,7 @@ export default function Navbar() {
     const items: { title: React.ReactNode }[] = [
       {
         title: (
-          <Space size={4} style={{ cursor: "pointer" }} onClick={navigateHome}>
+          <Space size={4} style={{ cursor: "pointer" }} onClick={() => navigateHome(adminUrl)}>
             <HomeOutlined
               style={{ fontSize: 16, color: token.colorTextTertiary, marginRight: 4 }}
             />
@@ -61,7 +61,7 @@ export default function Navbar() {
           <Text
             strong
             style={{ cursor: "pointer", color: token.colorTextHeading }}
-            onClick={() => navigate(topLevel.slug)}
+            onClick={() => navigate(topLevel.slug, adminUrl)}
           >
             {topLevel.label}
           </Text>
@@ -77,7 +77,7 @@ export default function Navbar() {
           title: (
             <Text
               style={{ cursor: "pointer", color: token.colorTextSecondary }}
-              onClick={() => navigate(parent.slug)}
+              onClick={() => navigate(parent.slug, adminUrl)}
             >
               {parent.label}
             </Text>
@@ -111,6 +111,7 @@ export default function Navbar() {
     return items;
   }, [
     activeKey,
+    adminUrl,
     menuItems,
     token.colorTextHeading,
     token.colorTextSecondary,
@@ -246,7 +247,9 @@ export default function Navbar() {
         />
 
         {/* User dropdown */}
-        <UserDropdown isDark={isDark} getContainer={getPopupContainer} />
+        <Suspense fallback={null}>
+          <UserDropdown isDark={isDark} getContainer={getPopupContainer} />
+        </Suspense>
       </Space>
     </header>
   );

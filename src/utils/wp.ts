@@ -1,43 +1,26 @@
 /**
  * Shared WordPress admin helpers.
- * Used across Navbar, Sidebar, and breadcrumbs.
  */
 
-import "../types/wp";
 import { navigationStore } from "../store/navigationStore";
 
-export function getWpConfig() {
-  return window.wpReactUi ?? {};
-}
-
-export function getAdminBaseUrl(): string {
-  const adminUrl = getWpConfig().adminUrl ?? "/wp-admin/";
+export function getAdminBaseUrl(adminUrl: string): string {
   return adminUrl.replace(/\/$/, "");
 }
 
-export function getActiveKey(): string | undefined {
-  if (typeof window === "undefined") return undefined;
-  const page = new URLSearchParams(window.location.search).get("page");
-  if (page) return page;
-  return window.location.pathname.split("/").filter(Boolean).pop();
-}
-
-export function buildAdminUrl(slug: string): string {
-  const base = getAdminBaseUrl();
+export function buildAdminUrl(slug: string, adminUrl: string): string {
+  const base = getAdminBaseUrl(adminUrl);
   const normalizedSlug = slug.replace(/^\/+/, "");
+
   return normalizedSlug.includes("?") || normalizedSlug.includes(".php")
     ? `${base}/${normalizedSlug}`
     : `${base}/admin.php?page=${normalizedSlug}`;
 }
 
-export function navigate(slug: string): void {
-  navigationStore.getState().navigate(buildAdminUrl(slug));
+export function navigate(slug: string, adminUrl: string): void {
+  navigationStore.getState().navigate(buildAdminUrl(slug, adminUrl));
 }
 
-export function navigateHome(): void {
-  navigate("index.php");
-}
-
-export function getWpUser() {
-  return window.wpReactUi?.user ?? { name: "Admin", role: "administrator" };
+export function navigateHome(adminUrl: string): void {
+  navigate("index.php", adminUrl);
 }

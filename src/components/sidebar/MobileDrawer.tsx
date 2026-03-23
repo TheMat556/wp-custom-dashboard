@@ -1,8 +1,9 @@
 import { theme } from "antd";
 import type { ReactNode } from "react";
 import { createPortal } from "react-dom";
+import { getBootConfig } from "../../config/bootConfig";
 
-const SIDEBAR_FULL = 240;
+const SIDEBAR_WIDTH = getBootConfig().layout.sidebarWidths.expanded;
 
 export function MobileDrawer({
   open,
@@ -43,7 +44,7 @@ export function MobileDrawer({
           top: 0,
           left: 0,
           bottom: 0,
-          width: SIDEBAR_FULL,
+          width: SIDEBAR_WIDTH,
           backgroundColor: token.colorBgContainer,
           boxShadow: open ? "6px 0 16px rgba(0, 0, 0, 0.12)" : "none",
           zIndex: 99999,
@@ -61,3 +62,5 @@ export function MobileDrawer({
     document.body
   );
 }
+
+export default MobileDrawer;

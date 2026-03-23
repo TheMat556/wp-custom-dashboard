@@ -1,4 +1,4 @@
-import { QuestionCircleOutlined, ReloadOutlined } from "@ant-design/icons";
+import { ReloadOutlined } from "@ant-design/icons";
 import { Button, Flex, theme } from "antd";
 
 export function BottomActions({
@@ -32,17 +32,10 @@ export function BottomActions({
         block
         style={{ justifyContent: "flex-start", fontWeight: 600 }}
       >
-        {loading ? "Refreshing…" : "Refresh menu"}
-      </Button>
-
-      <Button
-        type="text"
-        icon={<QuestionCircleOutlined />}
-        block
-        style={{ justifyContent: "flex-start", fontWeight: 600 }}
-      >
-        Support
+        {loading ? "Refreshing..." : "Refresh menu"}
       </Button>
     </Flex>
   );
 }
+
+export default BottomActions;

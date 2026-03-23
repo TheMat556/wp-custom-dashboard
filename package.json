@@ -14,6 +14,7 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "test:coverage": "vitest run --coverage",
+    "verify": "npm run lint && npm test && npm run build && composer run lint",
     "php:lint": "composer run lint"
   },
   "dependencies": {

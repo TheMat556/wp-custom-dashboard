@@ -5,15 +5,18 @@
  */
 
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { EMBED_MESSAGE_SOURCE, EMBED_MESSAGE_VERSION } from "../types/embedMessages";
+import { toEmbedUrl } from "../utils/embedUrl";
 import {
-  navigationStore,
   activeKeyStore,
+  bootstrapNavigationStore,
+  navigationStore,
   resetNavigationStore,
 } from "./navigationStore";
-import { toEmbedUrl } from "../utils/embedUrl";
 
 beforeEach(() => {
   resetNavigationStore();
+  bootstrapNavigationStore({ breakoutPagenow: ["post.php", "post-new.php", "site-editor.php"] });
   vi.spyOn(history, "pushState").mockImplementation(() => {});
   vi.spyOn(history, "replaceState").mockImplementation(() => {});
 });
@@ -45,11 +48,11 @@ describe("navigate()", () => {
     expect(state.iframeUrl).toBe(toEmbedUrl("http://localhost/wp-admin/plugins.php"));
   });
 
-  it("sets isLoading to true and _shellInitiated to true", () => {
+  it("sets status to loading and marks the navigation source as shell", () => {
     navigationStore.getState().navigate("http://localhost/wp-admin/plugins.php");
     const state = navigationStore.getState();
-    expect(state.isLoading).toBe(true);
-    expect(state._shellInitiated).toBe(true);
+    expect(state.status).toBe("loading");
+    expect(state.pendingNavigationSource).toBe("shell");
   });
 
   it("pushes clean URL to history", () => {
@@ -61,6 +64,21 @@ describe("navigate()", () => {
     );
   });
 
+  it("does not re-navigate when the target is the current page", () => {
+    navigationStore.setState({
+      iframeUrl: "http://localhost/wp-admin/index.php?wp_shell_embed=1",
+      pageUrl: "http://localhost/wp-admin/index.php",
+      status: "ready",
+      pendingNavigationSource: null,
+    });
+
+    navigationStore.getState().navigate("http://localhost/wp-admin/");
+
+    expect(navigationStore.getState().status).toBe("ready");
+    expect(navigationStore.getState().pendingNavigationSource).toBeNull();
+    expect(history.pushState).not.toHaveBeenCalled();
+  });
+
   it("does a full redirect for breakout URLs", () => {
     // Replace window.location with a plain mock so we can capture href assignment.
     // jsdom allows deleting and redefining window.location in tests.
@@ -69,7 +87,9 @@ describe("navigate()", () => {
     const hrefSetter = vi.fn();
     (window as unknown as Record<string, unknown>).location = {
       origin: "http://localhost",
-      set href(v: string) { hrefSetter(v); },
+      set href(v: string) {
+        hrefSetter(v);
+      },
     };
 
     navigationStore.getState().navigate("http://localhost/wp-admin/post-new.php");
@@ -93,7 +113,7 @@ describe("navigate()", () => {
 
 describe("handleIframeLoad()", () => {
   it("updates state and clears loading for shell-initiated loads", () => {
-    navigationStore.setState({ _shellInitiated: true, isLoading: true });
+    navigationStore.setState({ pendingNavigationSource: "shell", status: "loading" });
 
     const fakeWindow = {
       location: { href: "http://localhost/wp-admin/plugins.php?wp_shell_embed=1" },
@@ -103,14 +123,14 @@ describe("handleIframeLoad()", () => {
     navigationStore.getState().handleIframeLoad(fakeWindow);
 
     const state = navigationStore.getState();
-    expect(state.isLoading).toBe(false);
-    expect(state._shellInitiated).toBe(false);
+    expect(state.status).toBe("ready");
+    expect(state.pendingNavigationSource).toBeNull();
     expect(state.pageUrl).toBe("http://localhost/wp-admin/plugins.php");
     expect(state.pageTitle).toBe("Plugins — WordPress");
   });
 
   it("pushes to history for user-initiated iframe navigation", () => {
-    navigationStore.setState({ _shellInitiated: false });
+    navigationStore.setState({ pendingNavigationSource: null });
 
     const fakeWindow = {
       location: { href: "http://localhost/wp-admin/plugins.php?paged=2&wp_shell_embed=1" },
@@ -127,7 +147,7 @@ describe("handleIframeLoad()", () => {
   });
 
   it("does NOT push history for shell-initiated loads", () => {
-    navigationStore.setState({ _shellInitiated: true });
+    navigationStore.setState({ pendingNavigationSource: "shell" });
 
     const fakeWindow = {
       location: { href: "http://localhost/wp-admin/plugins.php?wp_shell_embed=1" },
@@ -139,14 +159,15 @@ describe("handleIframeLoad()", () => {
   });
 
   it("clears loading even when location access throws (cross-origin)", () => {
-    navigationStore.setState({ isLoading: true, _shellInitiated: true });
+    navigationStore.setState({ status: "loading", pendingNavigationSource: "shell" });
     const badWindow = {
       get location(): never {
         throw new DOMException("cross-origin");
       },
     } as unknown as Window;
     navigationStore.getState().handleIframeLoad(badWindow);
-    expect(navigationStore.getState().isLoading).toBe(false);
+    expect(navigationStore.getState().status).toBe("ready");
+    expect(navigationStore.getState().pendingNavigationSource).toBeNull();
   });
 });
 
@@ -154,7 +175,12 @@ describe("handleIframeMessage()", () => {
   it("ignores messages from other origins", () => {
     const event = new MessageEvent("message", {
       origin: "https://evil.com",
-      data: { source: "wp-shell-embed", type: "title-change", title: "Hacked" },
+      data: {
+        source: EMBED_MESSAGE_SOURCE,
+        version: EMBED_MESSAGE_VERSION,
+        type: "title-change",
+        title: "Hacked",
+      },
     });
     navigationStore.getState().handleIframeMessage(event);
     expect(navigationStore.getState().pageTitle).not.toBe("Hacked");
@@ -163,7 +189,12 @@ describe("handleIframeMessage()", () => {
   it("ignores messages with wrong source", () => {
     const event = new MessageEvent("message", {
       origin: "http://localhost",
-      data: { source: "other-plugin", type: "title-change", title: "Hacked" },
+      data: {
+        source: "other-plugin",
+        version: EMBED_MESSAGE_VERSION,
+        type: "title-change",
+        title: "Hacked",
+      },
     });
     navigationStore.getState().handleIframeMessage(event);
     expect(navigationStore.getState().pageTitle).not.toBe("Hacked");
@@ -172,10 +203,38 @@ describe("handleIframeMessage()", () => {
   it("updates pageTitle on title-change message", () => {
     const event = new MessageEvent("message", {
       origin: "http://localhost",
-      data: { source: "wp-shell-embed", type: "title-change", title: "New Title" },
+      data: {
+        source: EMBED_MESSAGE_SOURCE,
+        version: EMBED_MESSAGE_VERSION,
+        type: "title-change",
+        title: "New Title",
+      },
     });
     navigationStore.getState().handleIframeMessage(event);
     expect(navigationStore.getState().pageTitle).toBe("New Title");
+  });
+
+  it("accepts page-ready messages as part of the iframe protocol", () => {
+    const event = new MessageEvent("message", {
+      origin: "http://localhost",
+      data: {
+        source: "wp-shell-embed",
+        version: EMBED_MESSAGE_VERSION,
+        type: "page-ready",
+        url: "http://localhost/wp-admin/users.php?wp_shell_embed=1",
+        title: "Users",
+      },
+    });
+
+    navigationStore.setState({ status: "loading", pendingNavigationSource: "shell" });
+    navigationStore.getState().handleIframeMessage(event);
+
+    const state = navigationStore.getState();
+    expect(state.pageUrl).toBe("http://localhost/wp-admin/users.php");
+    expect(state.iframeUrl).toBe("http://localhost/wp-admin/users.php?wp_shell_embed=1");
+    expect(state.pageTitle).toBe("Users");
+    expect(state.status).toBe("ready");
+    expect(state.pendingNavigationSource).toBe("shell");
   });
 });
 

@@ -1,7 +1,7 @@
 import { Flex, Menu, theme } from "antd";
 import { memo, useMemo } from "react";
-import type { MenuItem } from "../../hooks/useMenu";
-import { BottomActions } from "./BottomActions";
+import type { MenuItem } from "../../types/menu";
+import BottomActions from "./BottomActions";
 import { Logo } from "./Logo";
 import { transformMenuItems } from "./menuTransform";
 

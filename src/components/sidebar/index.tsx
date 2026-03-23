@@ -1,9 +1,11 @@
 import { Layout, theme } from "antd";
 import { useCallback, useEffect, useRef, useState } from "react";
+import { getBootConfig } from "../../config/bootConfig";
+import { useShellConfig } from "../../context/ShellConfigContext";
 import { useSidebar } from "../../context/SidebarContext";
 import { useTheme } from "../../context/ThemeContext";
-import type { MenuItem } from "../../hooks/useMenu";
 import { useMenu } from "../../hooks/useMenu";
+import type { MenuItem } from "../../types/menu";
 import "../../types/wp";
 import { useActiveKey } from "../../utils/spaNavigate";
 import { navigate } from "../../utils/wp";
@@ -11,9 +13,7 @@ import { MobileDrawer } from "./MobileDrawer";
 import { SidebarContent } from "./SidebarContent";
 
 const { Sider } = Layout;
-
-const SIDEBAR_FULL = 240;
-const SIDEBAR_COLLAPSED = 64;
+const SIDEBAR_WIDTHS = getBootConfig().layout.sidebarWidths;
 
 function getInitialOpenKeys(menuItems: MenuItem[], activeKey?: string): string[] {
   if (!activeKey) return [];
@@ -24,6 +24,7 @@ function getInitialOpenKeys(menuItems: MenuItem[], activeKey?: string): string[]
 }
 
 export default function Sidebar() {
+  const { adminUrl } = useShellConfig();
   const { theme: appTheme } = useTheme();
   const { collapsed, toggle, isMobile, mobileOpen } = useSidebar();
   const { token } = theme.useToken();
@@ -69,12 +70,12 @@ export default function Sidebar() {
     (key: string) => {
       if (isMobile) {
         toggle();
-        navigate(key);
+        navigate(key, adminUrl);
         return;
       }
-      navigate(key);
+      navigate(key, adminUrl);
     },
-    [isMobile, toggle]
+    [adminUrl, isMobile, toggle]
   );
 
   // Mobile
@@ -101,8 +102,8 @@ export default function Sidebar() {
   return (
     <div style={{ height: "100%", display: "flex", flexDirection: "column" }}>
       <Sider
-        width={SIDEBAR_FULL}
-        collapsedWidth={SIDEBAR_COLLAPSED}
+        width={SIDEBAR_WIDTHS.expanded}
+        collapsedWidth={SIDEBAR_WIDTHS.collapsed}
         collapsed={collapsed}
         theme={isDark ? "dark" : "light"}
         style={{

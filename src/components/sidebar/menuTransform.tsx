@@ -1,5 +1,5 @@
 import type { MenuProps } from "antd";
-import type { MenuItem, SubMenuItem } from "../../hooks/useMenu";
+import type { MenuItem, SubMenuItem } from "../../types/menu";
 import { resolveIcon } from "./iconMap";
 import { type BadgeType, getBadgeTypeForItem, IconWithBadge, MenuLabel } from "./MenuLabel";
 

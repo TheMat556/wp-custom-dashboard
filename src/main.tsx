@@ -1,48 +1,12 @@
-import { theme as antTheme, ConfigProvider } from "antd";
-import React from "react";
-import { createRoot } from "react-dom/client";
-import App from "./App";
-import { ErrorBoundary } from "./components/ErrorBoundary";
-import { SidebarProvider } from "./context/SidebarContext";
-import { ThemeProvider, useTheme } from "./context/ThemeContext";
-import "./types/wp";
 import "./index.css";
-import { initSpaNavigation } from "./utils/spaNavigate";
+import "./types/wp";
+import { bootstrapShell } from "./bootstrapShell";
+import { normalizeWpReactUiConfig } from "./types/wp";
 
-function AntConfigProvider({ children }: { children: React.ReactNode }) {
-  const { theme } = useTheme();
-
-  return (
-    <ConfigProvider
-      theme={{
-        algorithm: theme === "dark" ? antTheme.darkAlgorithm : antTheme.defaultAlgorithm,
-        token: {
-          fontFamily: '"Inter", -apple-system, BlinkMacSystemFont, sans-serif',
-          colorPrimary: "#4f46e5",
-        },
-      }}
-    >
-      {children}
-    </ConfigProvider>
-  );
-}
-
-function Providers({ children }: { children: React.ReactNode }) {
-  return (
-    <ThemeProvider>
-      <AntConfigProvider>
-        <SidebarProvider>{children}</SidebarProvider>
-      </AntConfigProvider>
-    </ThemeProvider>
-  );
-}
-
-function setupDOM() {
+function setupDOM(initialTheme: string) {
   const wpwrap = document.getElementById("wpwrap");
   if (!wpwrap) return null;
 
-  const initialTheme =
-    document.body.getAttribute("data-theme") ?? window.wpReactUi?.theme ?? "light";
   const wpcontent = document.getElementById("wpcontent");
 
   document.getElementById("react-navbar-root")?.remove();
@@ -61,21 +25,10 @@ function setupDOM() {
   return shellRoot;
 }
 
-const host = setupDOM();
+const config = normalizeWpReactUiConfig(window.wpReactUi);
+const host = setupDOM(document.body.getAttribute("data-theme") ?? config.theme);
 
 if (host) {
-  createRoot(host).render(
-    <React.StrictMode>
-      <ErrorBoundary name="react-shell-root">
-        <Providers>
-          <App />
-        </Providers>
-      </ErrorBoundary>
-    </React.StrictMode>
-  );
-
-  host.classList.add("mounted");
+  window.__wpReactUiTeardown?.();
+  window.__wpReactUiTeardown = bootstrapShell(host, config);
 }
-
-document.getElementById("wpwrap")?.classList.add("react-ready");
-initSpaNavigation();

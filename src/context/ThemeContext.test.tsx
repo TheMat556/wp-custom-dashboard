@@ -1,9 +1,5 @@
 /**
  * Tests for themeStore.ts and ThemeContext.tsx
- *
- * The module-level store runs applyThemeToDOM() immediately on import.
- * Strategy: set up DOM + wpReactUi BEFORE the dynamic import so the
- * module-level side effects land on a jsdom that's ready.
  */
 
 import { act, fireEvent, render, screen } from "@testing-library/react";
@@ -17,16 +13,17 @@ function setupDom() {
   `;
 }
 
-function setServerTheme(theme: "light" | "dark") {
-  (window as Window & { wpReactUi: typeof window.wpReactUi }).wpReactUi = {
-    ...window.wpReactUi,
+function getThemeBootstrapConfig(theme: "light" | "dark") {
+  return {
     theme,
+    restUrl: "http://localhost/wp-json/wp-react-ui/v1",
+    nonce: "test-nonce",
   };
 }
 
-// ── applyThemeToDOM (module-level side effect on import) ──────────────────────
+// ── bootstrapThemeStore ───────────────────────────────────────────────────────
 
-describe("applyThemeToDOM", () => {
+describe("bootstrapThemeStore", () => {
   beforeEach(() => {
     setupDom();
     localStorage.clear();
@@ -39,25 +36,25 @@ describe("applyThemeToDOM", () => {
   });
 
   it("sets data-theme='light' on body and roots when server theme is light", async () => {
-    setServerTheme("light");
-    await import("../store/themeStore");
+    const { bootstrapThemeStore } = await import("../store/themeStore");
+    bootstrapThemeStore(getThemeBootstrapConfig("light"));
 
     expect(document.body.getAttribute("data-theme")).toBe("light");
     expect(document.getElementById("react-shell-root")?.getAttribute("data-theme")).toBe("light");
   });
 
   it("sets data-theme='dark' when server theme is dark", async () => {
-    setServerTheme("dark");
-    await import("../store/themeStore");
+    const { bootstrapThemeStore } = await import("../store/themeStore");
+    bootstrapThemeStore(getThemeBootstrapConfig("dark"));
 
     expect(document.body.getAttribute("data-theme")).toBe("dark");
     expect(document.getElementById("react-shell-root")?.getAttribute("data-theme")).toBe("dark");
   });
 
   it("prefers localStorage over server theme", async () => {
-    setServerTheme("light");
     localStorage.setItem("wp-react-ui-theme", "dark");
-    await import("../store/themeStore");
+    const { bootstrapThemeStore } = await import("../store/themeStore");
+    bootstrapThemeStore(getThemeBootstrapConfig("light"));
 
     expect(document.body.getAttribute("data-theme")).toBe("dark");
     expect(document.getElementById("react-shell-root")?.getAttribute("data-theme")).toBe("dark");
@@ -66,11 +63,10 @@ describe("applyThemeToDOM", () => {
 
 // ── ThemeProvider + useTheme ──────────────────────────────────────────────────
 
-describe("ThemeProvider / useTheme", () => {
+describe("useTheme", () => {
   beforeEach(() => {
     setupDom();
     localStorage.clear();
-    setServerTheme("light");
     vi.resetModules();
     vi.stubGlobal("fetch", vi.fn().mockResolvedValue({ ok: true }));
   });
@@ -80,24 +76,24 @@ describe("ThemeProvider / useTheme", () => {
   });
 
   it("provides the current theme to consumers", async () => {
-    const { ThemeProvider, useTheme } = await import("../context/ThemeContext");
+    const { useTheme } = await import("../context/ThemeContext");
+    const { bootstrapThemeStore } = await import("../store/themeStore");
+    bootstrapThemeStore(getThemeBootstrapConfig("light"));
 
     function Consumer() {
       const { theme } = useTheme();
       return <span data-testid="theme">{theme}</span>;
     }
 
-    render(
-      <ThemeProvider>
-        <Consumer />
-      </ThemeProvider>
-    );
+    render(<Consumer />);
 
     expect(screen.getByTestId("theme").textContent).toBe("light");
   });
 
   it("toggles from light to dark and updates the DOM", async () => {
-    const { ThemeProvider, useTheme } = await import("../context/ThemeContext");
+    const { useTheme } = await import("../context/ThemeContext");
+    const { bootstrapThemeStore } = await import("../store/themeStore");
+    bootstrapThemeStore(getThemeBootstrapConfig("light"));
 
     function ToggleButton() {
       const { theme, toggle } = useTheme();
@@ -108,11 +104,7 @@ describe("ThemeProvider / useTheme", () => {
       );
     }
 
-    render(
-      <ThemeProvider>
-        <ToggleButton />
-      </ThemeProvider>
-    );
+    render(<ToggleButton />);
 
     expect(screen.getByTestId("toggle").textContent).toBe("light");
 
@@ -125,18 +117,16 @@ describe("ThemeProvider / useTheme", () => {
   });
 
   it("persists theme to localStorage on toggle", async () => {
-    const { ThemeProvider, useTheme } = await import("../context/ThemeContext");
+    const { useTheme } = await import("../context/ThemeContext");
+    const { bootstrapThemeStore } = await import("../store/themeStore");
+    bootstrapThemeStore(getThemeBootstrapConfig("light"));
 
     function ToggleButton() {
       const { toggle } = useTheme();
       return <button type="submit" data-testid="toggle" onClick={toggle} />;
     }
 
-    render(
-      <ThemeProvider>
-        <ToggleButton />
-      </ThemeProvider>
-    );
+    render(<ToggleButton />);
 
     await act(async () => {
       fireEvent.click(screen.getByTestId("toggle"));
@@ -149,18 +139,16 @@ describe("ThemeProvider / useTheme", () => {
     const fetchMock = vi.fn().mockResolvedValue({ ok: true });
     vi.stubGlobal("fetch", fetchMock);
 
-    const { ThemeProvider, useTheme } = await import("../context/ThemeContext");
+    const { useTheme } = await import("../context/ThemeContext");
+    const { bootstrapThemeStore } = await import("../store/themeStore");
+    bootstrapThemeStore(getThemeBootstrapConfig("light"));
 
     function ToggleButton() {
       const { toggle } = useTheme();
       return <button type="submit" data-testid="toggle" onClick={toggle} />;
     }
 
-    render(
-      <ThemeProvider>
-        <ToggleButton />
-      </ThemeProvider>
-    );
+    render(<ToggleButton />);
 
     await act(async () => {
       fireEvent.click(screen.getByTestId("toggle"));
@@ -179,18 +167,16 @@ describe("ThemeProvider / useTheme", () => {
   });
 
   it("dispatches wp-react-ui-theme-change custom event on toggle", async () => {
-    const { ThemeProvider, useTheme } = await import("../context/ThemeContext");
+    const { useTheme } = await import("../context/ThemeContext");
+    const { bootstrapThemeStore } = await import("../store/themeStore");
+    bootstrapThemeStore(getThemeBootstrapConfig("light"));
 
     function ToggleButton() {
       const { toggle } = useTheme();
       return <button type="submit" data-testid="toggle" onClick={toggle} />;
     }
 
-    render(
-      <ThemeProvider>
-        <ToggleButton />
-      </ThemeProvider>
-    );
+    render(<ToggleButton />);
 
     const listener = vi.fn();
     window.addEventListener("wp-react-ui-theme-change", listener);
@@ -207,7 +193,9 @@ describe("ThemeProvider / useTheme", () => {
   });
 
   it("two providers sharing the module-level store stay in sync", async () => {
-    const { ThemeProvider, useTheme } = await import("../context/ThemeContext");
+    const { useTheme } = await import("../context/ThemeContext");
+    const { bootstrapThemeStore } = await import("../store/themeStore");
+    bootstrapThemeStore(getThemeBootstrapConfig("light"));
 
     function Consumer({ id }: { id: string }) {
       const { theme } = useTheme();
@@ -220,17 +208,13 @@ describe("ThemeProvider / useTheme", () => {
     }
 
     const { unmount: unmountA } = render(
-      <ThemeProvider>
+      <>
         <Consumer id="a" />
         <Toggler />
-      </ThemeProvider>
+      </>
     );
 
-    const { unmount: unmountB } = render(
-      <ThemeProvider>
-        <Consumer id="b" />
-      </ThemeProvider>
-    );
+    const { unmount: unmountB } = render(<Consumer id="b" />);
 
     expect(screen.getByTestId("a").textContent).toBe("light");
     expect(screen.getByTestId("b").textContent).toBe("light");
