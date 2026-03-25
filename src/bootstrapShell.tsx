@@ -3,11 +3,13 @@ import React from "react";
 import { createRoot, type Root } from "react-dom/client";
 import App from "./App";
 import { ErrorBoundary } from "./components/ErrorBoundary";
+import { NotificationRenderer } from "./components/NotificationRenderer";
 import { ShellMountEffects } from "./components/ShellMountEffects";
 import { ShellConfigProvider } from "./context/ShellConfigContext";
 import { useTheme } from "./context/ThemeContext";
 import { bootstrapMenuStore, resetMenuStore } from "./store/menuStore";
 import { bootstrapNavigationStore, resetNavigationStore } from "./store/navigationStore";
+import { resetNotificationStore } from "./store/notificationStore";
 import { bootstrapSidebarStore, resetSidebarStore } from "./store/sidebarStore";
 import { bootstrapThemeStore, resetThemeStore } from "./store/themeStore";
 import type { WpReactUiConfig } from "./types/wp";
@@ -35,6 +37,7 @@ function ShellRoot({ host, config }: { host: HTMLElement; config: Readonly<WpRea
     <ErrorBoundary name="react-shell-root">
       <ShellConfigProvider config={config}>
         <AntConfigProvider>
+          <NotificationRenderer />
           <ShellMountEffects host={host} />
           <App />
         </AntConfigProvider>
@@ -68,5 +71,6 @@ export function bootstrapShell(host: HTMLElement, config: Readonly<WpReactUiConf
     resetThemeStore();
     resetSidebarStore();
     resetNavigationStore();
+    resetNotificationStore();
   };
 }

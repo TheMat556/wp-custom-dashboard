@@ -54,6 +54,7 @@ export function MenuLabel({
           overflowCount={99}
           size="small"
           color={isSubmenu ? token.colorPrimaryBg : getBadgeColor(badgeType, token)}
+          aria-label={`${count} pending`}
           style={{
             color: isSubmenu ? token.colorPrimary : "#fff",
             fontWeight: 600,
@@ -81,6 +82,7 @@ export function IconWithBadge({ icon, count, badgeType = "primary" }: IconWithBa
     <Badge
       dot
       offset={[-2, 4]}
+      aria-label="Has notifications"
       style={{
         backgroundColor: getBadgeColor(badgeType, token),
         boxShadow: `0 0 0 2px ${token.colorBgContainer}`,

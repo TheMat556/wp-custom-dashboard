@@ -81,6 +81,7 @@ export function Logo({
           type="text"
           icon={<CloseOutlined />}
           onClick={onClose}
+          aria-label="Close navigation menu"
           style={{
             width: 32,
             height: 32,

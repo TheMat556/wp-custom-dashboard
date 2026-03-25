@@ -1,3 +1,4 @@
+import { notifyApiError } from "../store/notificationStore";
 import type { MenuItem } from "../types/menu";
 import type { WpReactUiConfig } from "../types/wp";
 
@@ -13,7 +14,7 @@ export function createMenuService(config: Pick<WpReactUiConfig, "restUrl" | "non
       });
 
       if (!res.ok) {
-        throw new Error(`Menu fetch failed: ${res.status}`);
+        throw new Error(notifyApiError(res, "Menu refresh"));
       }
 
       const data = await res.json();

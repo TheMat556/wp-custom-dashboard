@@ -7,7 +7,6 @@
  *
  *  - useActiveKey()    — reactive sidebar menu key (backed by navigationStore)
  *  - isAdminUrl()      — re-exported from embedUrl for call-site compat
- *  - initSpaNavigation() — kept as a no-op so main.tsx needs no change
  */
 
 import { useSyncExternalStore } from "react";
@@ -23,6 +22,3 @@ export function useActiveKey(): string | undefined {
     activeKeyStore.getSnapshot
   );
 }
-
-/** No-op — retained for call-site compatibility with main.tsx. */
-export function initSpaNavigation(): void {}

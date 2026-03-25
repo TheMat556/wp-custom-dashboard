@@ -3,12 +3,13 @@
  *
  * Owns all state related to which URL is loaded in the content iframe,
  * the browser address bar URL, the loading flag, and history coordination.
+ *
+ * Browser history mechanics are delegated to utils/historyManager.
  */
 
 import { createStore } from "zustand/vanilla";
 import { type EmbedMessage, isEmbedMessage } from "../types/embedMessages";
 import type { WpReactUiNavigationConfig } from "../types/wp";
-import { matchesOpenInNewTabPattern } from "../utils/openInNewTab";
 import {
   DEFAULT_BREAKOUT_PAGENOW,
   fromEmbedUrl,
@@ -16,6 +17,13 @@ import {
   normalizeToMenuKey,
   toEmbedUrl,
 } from "../utils/embedUrl";
+import {
+  type HistoryEntry,
+  listenPopstate,
+  pushHistory,
+  replaceHistory,
+} from "../utils/historyManager";
+import { matchesOpenInNewTabPattern } from "../utils/openInNewTab";
 
 type Listener = () => void;
 
@@ -95,7 +103,7 @@ export const navigationStore = createStore<NavigationState & NavigationActions>(
       status: "loading",
       pendingNavigationSource: "shell",
     });
-    history.pushState({ iframeUrl: embedUrl, pageUrl: cleanUrl }, "", cleanUrl);
+    pushHistory({ iframeUrl: embedUrl, pageUrl: cleanUrl }, "");
   },
 
   handleIframeLoad(iframeWindow: Window) {
@@ -114,7 +122,7 @@ export const navigationStore = createStore<NavigationState & NavigationActions>(
       });
 
       if (null === pendingNavigationSource) {
-        history.pushState({ iframeUrl: href, pageUrl: cleanUrl }, title, cleanUrl);
+        pushHistory({ iframeUrl: href, pageUrl: cleanUrl }, title);
       }
 
       if (typeof document !== "undefined") {
@@ -178,28 +186,16 @@ export function bootstrapNavigationStore(
   });
 
   const initial = navigationStore.getState();
-  history.replaceState(
-    { iframeUrl: initial.iframeUrl, pageUrl: initial.pageUrl },
-    document.title,
-    initial.pageUrl
-  );
+  replaceHistory({ iframeUrl: initial.iframeUrl, pageUrl: initial.pageUrl }, document.title);
 
-  const handlePopstate = (e: PopStateEvent) => {
-    const state = e.state as { iframeUrl?: string; pageUrl?: string } | null;
-    if (state?.iframeUrl && state?.pageUrl) {
-      navigationStore.setState({
-        iframeUrl: state.iframeUrl,
-        pageUrl: state.pageUrl,
-        status: "loading",
-        pendingNavigationSource: "history",
-      });
-    }
-  };
-
-  window.addEventListener("popstate", handlePopstate);
-  teardownPopstateListener = () => {
-    window.removeEventListener("popstate", handlePopstate);
-  };
+  teardownPopstateListener = listenPopstate((entry: HistoryEntry) => {
+    navigationStore.setState({
+      iframeUrl: entry.iframeUrl,
+      pageUrl: entry.pageUrl,
+      status: "loading",
+      pendingNavigationSource: "history",
+    });
+  });
 
   return () => {
     teardownPopstateListener?.();

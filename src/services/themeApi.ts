@@ -1,3 +1,4 @@
+import { notifyApiError } from "../store/notificationStore";
 import type { WpReactUiConfig } from "../types/wp";
 
 export interface ThemeService {
@@ -19,7 +20,7 @@ export function createThemeService(
       });
 
       if (!response.ok) {
-        throw new Error(`Theme save failed: ${response.status}`);
+        throw new Error(notifyApiError(response, "Theme save"));
       }
     },
   };
