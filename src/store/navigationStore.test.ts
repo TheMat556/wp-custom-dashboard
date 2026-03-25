@@ -16,7 +16,10 @@ import {
 
 beforeEach(() => {
   resetNavigationStore();
-  bootstrapNavigationStore({ breakoutPagenow: ["post.php", "post-new.php", "site-editor.php"] });
+  bootstrapNavigationStore({
+    breakoutPagenow: ["post.php", "post-new.php", "site-editor.php"],
+    openInNewTabPatterns: [],
+  });
   vi.spyOn(history, "pushState").mockImplementation(() => {});
   vi.spyOn(history, "replaceState").mockImplementation(() => {});
 });
@@ -100,6 +103,25 @@ describe("navigate()", () => {
 
     // Restore
     (window as unknown as Record<string, unknown>).location = originalLocation;
+  });
+
+  it("opens matching configured URL patterns in a new tab", () => {
+    const openSpy = vi.spyOn(window, "open").mockImplementation(() => null);
+
+    navigationStore.setState({
+      openInNewTabPatterns: ["builder=bricks"],
+    });
+
+    navigationStore
+      .getState()
+      .navigate("http://localhost/wp-admin/admin.php?page=landing-page&builder=bricks");
+
+    expect(openSpy).toHaveBeenCalledWith(
+      "http://localhost/wp-admin/admin.php?page=landing-page&builder=bricks",
+      "_blank",
+      "noopener,noreferrer"
+    );
+    expect(history.pushState).not.toHaveBeenCalled();
   });
 
   it("notifies activeKeyStore subscribers", () => {

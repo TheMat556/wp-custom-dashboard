@@ -66,6 +66,14 @@ html, body { margin: 0 !important; padding: 0 !important; height: 100% !importan
 			true
 		);
 
+		wp_localize_script(
+			'wp-react-ui-embed-bridge',
+			'wpReactUiEmbed',
+			array(
+				'openInNewTabPatterns' => WP_React_UI_Branding_Settings::get_navigation_preferences()['openInNewTabPatterns'],
+			)
+		);
+
 		add_filter(
 			'script_loader_tag',
 			function ( $tag, $handle ) {

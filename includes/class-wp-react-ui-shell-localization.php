@@ -21,6 +21,7 @@ class WP_React_UI_Shell_Localization {
 		$user          = wp_get_current_user();
 		$theme         = get_user_meta( $user->ID, 'wp_react_ui_theme', true );
 		$branding      = WP_React_UI_Branding_Settings::get_frontend_branding();
+		$preferences   = WP_React_UI_Branding_Settings::get_navigation_preferences();
 		$special_pages = wp_react_ui_get_special_page_config();
 
 		if ( ! $theme ) {
@@ -38,6 +39,7 @@ class WP_React_UI_Shell_Localization {
 				'fullReloadPageParams' => array_values( $special_pages['full_reload_page_params'] ),
 				'shellDisabledPagenow' => array_values( $special_pages['shell_disabled_pagenow'] ),
 				'breakoutPagenow'      => array_values( $special_pages['breakout_pagenow'] ),
+				'openInNewTabPatterns' => array_values( $preferences['openInNewTabPatterns'] ),
 			),
 			'nonce'     => wp_create_nonce( 'wp_rest' ),
 			'restUrl'   => rest_url( 'wp-react-ui/v1' ),

@@ -8,6 +8,7 @@
 import { createStore } from "zustand/vanilla";
 import { type EmbedMessage, isEmbedMessage } from "../types/embedMessages";
 import type { WpReactUiNavigationConfig } from "../types/wp";
+import { matchesOpenInNewTabPattern } from "../utils/openInNewTab";
 import {
   DEFAULT_BREAKOUT_PAGENOW,
   fromEmbedUrl,
@@ -33,6 +34,7 @@ export interface NavigationState {
   pageTitle: string;
   status: "loading" | "ready";
   breakoutPagenow: string[];
+  openInNewTabPatterns: string[];
   pendingNavigationSource: "shell" | "history" | null;
 }
 
@@ -46,6 +48,7 @@ export interface NavigationBootstrapOptions {
   pageUrl: string;
   pageTitle: string;
   breakoutPagenow: string[];
+  openInNewTabPatterns: string[];
 }
 
 function getDefaultBootstrapOptions(): NavigationBootstrapOptions {
@@ -53,6 +56,7 @@ function getDefaultBootstrapOptions(): NavigationBootstrapOptions {
     pageUrl: typeof window === "undefined" ? "" : fromEmbedUrl(window.location.href),
     pageTitle: typeof document === "undefined" ? "" : document.title,
     breakoutPagenow: [...DEFAULT_BREAKOUT_PAGENOW],
+    openInNewTabPatterns: [],
   };
 }
 
@@ -62,6 +66,7 @@ export const navigationStore = createStore<NavigationState & NavigationActions>(
   pageTitle: "",
   status: "loading",
   breakoutPagenow: [...DEFAULT_BREAKOUT_PAGENOW],
+  openInNewTabPatterns: [],
   pendingNavigationSource: "shell",
 
   navigate(url: string) {
@@ -71,6 +76,11 @@ export const navigationStore = createStore<NavigationState & NavigationActions>(
     }
 
     const cleanUrl = fromEmbedUrl(url);
+    if (matchesOpenInNewTabPattern(cleanUrl, get().openInNewTabPatterns)) {
+      window.open(cleanUrl, "_blank", "noopener,noreferrer");
+      return;
+    }
+
     const currentPageUrl = fromEmbedUrl(get().pageUrl);
     const embedUrl = toEmbedUrl(cleanUrl);
 
@@ -146,7 +156,7 @@ export const navigationStore = createStore<NavigationState & NavigationActions>(
 let teardownPopstateListener: (() => void) | null = null;
 
 export function bootstrapNavigationStore(
-  config: Pick<WpReactUiNavigationConfig, "breakoutPagenow"> & {
+  config: Pick<WpReactUiNavigationConfig, "breakoutPagenow" | "openInNewTabPatterns"> & {
     pageUrl?: string;
     pageTitle?: string;
   }
@@ -164,6 +174,7 @@ export function bootstrapNavigationStore(
       config.breakoutPagenow.length > 0
         ? [...config.breakoutPagenow]
         : [...DEFAULT_BREAKOUT_PAGENOW],
+    openInNewTabPatterns: [...config.openInNewTabPatterns],
   });
 
   const initial = navigationStore.getState();
@@ -201,6 +212,7 @@ export function resetNavigationStore(config: Partial<NavigationBootstrapOptions>
   const pageUrl = config.pageUrl ?? defaults.pageUrl;
   const pageTitle = config.pageTitle ?? defaults.pageTitle;
   const breakoutPagenow = config.breakoutPagenow ?? defaults.breakoutPagenow;
+  const openInNewTabPatterns = config.openInNewTabPatterns ?? defaults.openInNewTabPatterns;
 
   navigationStore.setState({
     iframeUrl: toEmbedUrl(pageUrl),
@@ -208,6 +220,7 @@ export function resetNavigationStore(config: Partial<NavigationBootstrapOptions>
     pageTitle,
     status: "loading",
     breakoutPagenow: [...breakoutPagenow],
+    openInNewTabPatterns: [...openInNewTabPatterns],
     pendingNavigationSource: "shell",
   });
 }

@@ -3,6 +3,15 @@ import {
   EMBED_MESSAGE_VERSION,
   type EmbedMessage,
 } from "./types/embedMessages";
+import { matchesOpenInNewTabPattern } from "./utils/openInNewTab";
+
+declare global {
+  interface Window {
+    wpReactUiEmbed?: {
+      openInNewTabPatterns?: string[];
+    };
+  }
+}
 
 function postToParent(message: EmbedMessage) {
   if (window.parent === window) {
@@ -51,8 +60,62 @@ function addEmbedParam(url: string) {
   }
 }
 
+function isBricksBuilderUrl(url: string) {
+  try {
+    const parsed = new URL(url, window.location.href);
+    const combined = `${parsed.pathname}?${parsed.search}`.toLowerCase();
+
+    if (parsed.searchParams.get("page")?.toLowerCase() === "bricks") {
+      return true;
+    }
+
+    if (parsed.searchParams.get("bricks")?.toLowerCase() === "run") {
+      return true;
+    }
+
+    if (parsed.searchParams.get("builder")?.toLowerCase() === "bricks") {
+      return true;
+    }
+
+    return (
+      combined.includes("edit_with_bricks") ||
+      combined.includes("edit-with-bricks") ||
+      combined.includes("action=bricks") ||
+      combined.includes("bricks=run") ||
+      combined.includes("/bricks/")
+    );
+  } catch {
+    return false;
+  }
+}
+
+function shouldOpenInNewTab(anchor: HTMLAnchorElement) {
+  const href = anchor.getAttribute("href");
+  const label = (anchor.textContent ?? "").trim().toLowerCase();
+
+  if (!href) {
+    return false;
+  }
+
+  if (isBricksBuilderUrl(href)) {
+    return true;
+  }
+
+  if (matchesOpenInNewTabPattern(href, window.wpReactUiEmbed?.openInNewTabPatterns)) {
+    return true;
+  }
+
+  return label.includes("edit with bricks");
+}
+
 function patchLinks(root: ParentNode) {
   root.querySelectorAll<HTMLAnchorElement>("a[href]").forEach((anchor) => {
+    if (shouldOpenInNewTab(anchor)) {
+      anchor.target = "_blank";
+      anchor.rel = "noopener noreferrer";
+      return;
+    }
+
     anchor.href = addEmbedParam(anchor.href);
   });
 
@@ -60,6 +123,20 @@ function patchLinks(root: ParentNode) {
     form.action = addEmbedParam(form.action || window.location.href);
   });
 }
+
+document.addEventListener(
+  "click",
+  (event) => {
+    const target = event.target instanceof Element ? event.target.closest("a[href]") : null;
+    if (!(target instanceof HTMLAnchorElement) || !shouldOpenInNewTab(target)) {
+      return;
+    }
+
+    event.preventDefault();
+    window.open(target.href, "_blank", "noopener,noreferrer");
+  },
+  true
+);
 
 sendPageReady();
 patchLinks(document);

@@ -13,6 +13,7 @@ const DEFAULT_NAVIGATION = {
   fullReloadPageParams: ["site-health", "wp-react-ui-branding", "h-bricks-elements"],
   shellDisabledPagenow: ["post.php", "post-new.php", "site-editor.php"],
   breakoutPagenow: ["post.php", "post-new.php", "site-editor.php", "customize.php", "export.php"],
+  openInNewTabPatterns: [],
 };
 
 // Minimal wpReactUi stub used by main/bootstrap configuration tests.

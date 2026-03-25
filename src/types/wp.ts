@@ -15,6 +15,7 @@ export interface WpReactUiNavigationConfig {
   fullReloadPageParams: string[];
   shellDisabledPagenow: string[];
   breakoutPagenow: string[];
+  openInNewTabPatterns: string[];
 }
 
 export interface WpReactUiUser {
@@ -69,6 +70,7 @@ function normalizeNavigation(raw: WpReactUiWindowConfig | undefined): WpReactUiN
     fullReloadPageParams: raw?.navigation?.fullReloadPageParams ?? [],
     shellDisabledPagenow: raw?.navigation?.shellDisabledPagenow ?? [],
     breakoutPagenow: raw?.navigation?.breakoutPagenow ?? [],
+    openInNewTabPatterns: raw?.navigation?.openInNewTabPatterns ?? [],
   };
 }
 

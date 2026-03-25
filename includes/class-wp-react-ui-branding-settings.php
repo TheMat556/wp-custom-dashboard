@@ -39,6 +39,7 @@ class WP_React_UI_Branding_Settings {
 	 * @var string
 	 */
 	private const SECTION_ID = 'wp_react_ui_branding_section';
+	private const NAVIGATION_SECTION_ID = 'wp_react_ui_navigation_section';
 
 	/**
 	 * Hook suffix returned by add_options_page().
@@ -81,6 +82,13 @@ class WP_React_UI_Branding_Settings {
 			self::PAGE_SLUG
 		);
 
+		add_settings_section(
+			self::NAVIGATION_SECTION_ID,
+			'Navigation',
+			array( self::class, 'render_navigation_section_intro' ),
+			self::PAGE_SLUG
+		);
+
 		$fields = array(
 			'light_logo_id' => array(
 				'label'       => 'Light logo',
@@ -111,6 +119,14 @@ class WP_React_UI_Branding_Settings {
 				)
 			);
 		}
+
+		add_settings_field(
+			'open_in_new_tab_patterns',
+			'Open Links In New Tab',
+			array( self::class, 'render_open_in_new_tab_patterns_field' ),
+			self::PAGE_SLUG,
+			self::NAVIGATION_SECTION_ID
+		);
 	}
 
 	/**
@@ -158,6 +174,7 @@ class WP_React_UI_Branding_Settings {
 		return array(
 			'light_logo_id' => self::sanitize_logo_id( $input['light_logo_id'] ?? 0, 'light' ),
 			'dark_logo_id'  => self::sanitize_logo_id( $input['dark_logo_id'] ?? 0, 'dark' ),
+			'open_in_new_tab_patterns' => self::sanitize_open_in_new_tab_patterns( $input['open_in_new_tab_patterns'] ?? '' ),
 		);
 	}
 
@@ -168,6 +185,15 @@ class WP_React_UI_Branding_Settings {
 	 */
 	public static function render_section_intro(): void {
 		echo '<p>Choose logos for the admin UI. The dark logo is optional and falls back to the light logo when unset.</p>';
+	}
+
+	/**
+	 * Renders the navigation section introduction text.
+	 *
+	 * @return void
+	 */
+	public static function render_navigation_section_intro(): void {
+		echo '<p>Configure link patterns that should open in a new browser tab instead of inside the shell iframe.</p>';
 	}
 
 	/**
@@ -230,6 +256,29 @@ class WP_React_UI_Branding_Settings {
 				<p class="description"><?php echo esc_html( $description ); ?></p>
 			<?php endif; ?>
 		</div>
+		<?php
+	}
+
+	/**
+	 * Renders the open-in-new-tab patterns textarea.
+	 *
+	 * @return void
+	 */
+	public static function render_open_in_new_tab_patterns_field(): void {
+		$field_id = self::get_field_id( 'open_in_new_tab_patterns' );
+		$value    = implode( "\n", self::get_open_in_new_tab_patterns() );
+		?>
+		<textarea
+			id="<?php echo esc_attr( $field_id ); ?>"
+			name="<?php echo esc_attr( self::OPTION_NAME . '[open_in_new_tab_patterns]' ); ?>"
+			rows="8"
+			class="large-text code"
+			placeholder="bricks=run&#10;builder=bricks&#10;edit_with_bricks"
+		><?php echo esc_textarea( $value ); ?></textarea>
+		<p class="description">
+			Enter one URL or URL fragment per line. If a link contains one of these patterns, it opens in a new tab.
+			Useful for builders like Bricks.
+		</p>
 		<?php
 	}
 
@@ -380,6 +429,17 @@ class WP_React_UI_Branding_Settings {
 	}
 
 	/**
+	 * Returns navigation-related frontend preferences.
+	 *
+	 * @return array{openInNewTabPatterns: string[]}
+	 */
+	public static function get_navigation_preferences(): array {
+		return array(
+			'openInNewTabPatterns' => self::get_open_in_new_tab_patterns(),
+		);
+	}
+
+	/**
 	 * Sanitizes and validates a logo attachment ID.
 	 *
 	 * @param mixed  $value   The raw value to sanitize.
@@ -443,7 +503,58 @@ class WP_React_UI_Branding_Settings {
 		return array(
 			'light_logo_id' => 0,
 			'dark_logo_id'  => 0,
+			'open_in_new_tab_patterns' => array(),
 		);
+	}
+
+	/**
+	 * Returns the stored open-in-new-tab URL patterns.
+	 *
+	 * @return string[]
+	 */
+	private static function get_open_in_new_tab_patterns(): array {
+		$settings = self::get_settings();
+		$raw      = $settings['open_in_new_tab_patterns'] ?? array();
+
+		if ( ! is_array( $raw ) ) {
+			return array();
+		}
+
+		return array_values(
+			array_filter(
+				array_map( 'strval', $raw ),
+				static fn( string $pattern ): bool => '' !== trim( $pattern )
+			)
+		);
+	}
+
+	/**
+	 * Sanitizes the submitted open-in-new-tab patterns.
+	 *
+	 * @param mixed $value Raw textarea value.
+	 * @return string[]
+	 */
+	private static function sanitize_open_in_new_tab_patterns( $value ): array {
+		if ( is_array( $value ) ) {
+			$lines = $value;
+		} else {
+			$lines = preg_split( '/\r\n|\r|\n/', (string) $value );
+		}
+
+		$patterns = array();
+
+		foreach ( (array) $lines as $line ) {
+			$pattern = sanitize_text_field( wp_unslash( (string) $line ) );
+			$pattern = trim( $pattern );
+
+			if ( '' === $pattern ) {
+				continue;
+			}
+
+			$patterns[] = strtolower( $pattern );
+		}
+
+		return array_values( array_unique( $patterns ) );
 	}
 
 	/**

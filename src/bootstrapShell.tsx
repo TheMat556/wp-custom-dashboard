@@ -49,6 +49,7 @@ export function bootstrapShell(host: HTMLElement, config: Readonly<WpReactUiConf
   const teardownSidebar = bootstrapSidebarStore();
   const teardownNavigation = bootstrapNavigationStore({
     breakoutPagenow: config.navigation.breakoutPagenow,
+    openInNewTabPatterns: config.navigation.openInNewTabPatterns,
   });
 
   let root: Root | null = createRoot(host);
