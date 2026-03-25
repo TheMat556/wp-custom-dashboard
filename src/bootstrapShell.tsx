@@ -7,6 +7,7 @@ import { NotificationRenderer } from "./components/NotificationRenderer";
 import { ShellMountEffects } from "./components/ShellMountEffects";
 import { ShellConfigProvider } from "./context/ShellConfigContext";
 import { useTheme } from "./context/ThemeContext";
+import { bootstrapBrandingStore, resetBrandingStore } from "./store/brandingStore";
 import { bootstrapMenuStore, resetMenuStore } from "./store/menuStore";
 import { bootstrapNavigationStore, resetNavigationStore } from "./store/navigationStore";
 import { resetNotificationStore } from "./store/notificationStore";
@@ -49,6 +50,7 @@ function ShellRoot({ host, config }: { host: HTMLElement; config: Readonly<WpRea
 export function bootstrapShell(host: HTMLElement, config: Readonly<WpReactUiConfig>) {
   bootstrapMenuStore(config);
   bootstrapThemeStore(config);
+  bootstrapBrandingStore(config);
   const teardownSidebar = bootstrapSidebarStore();
   const teardownNavigation = bootstrapNavigationStore({
     breakoutPagenow: config.navigation.breakoutPagenow,
@@ -72,5 +74,6 @@ export function bootstrapShell(host: HTMLElement, config: Readonly<WpReactUiConf
     resetSidebarStore();
     resetNavigationStore();
     resetNotificationStore();
+    resetBrandingStore();
   };
 }

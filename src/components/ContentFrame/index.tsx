@@ -1,5 +1,6 @@
 /**
- * ContentFrame — renders the WordPress admin content inside an iframe.
+ * ContentFrame — renders the WordPress admin content inside an iframe,
+ * or a native React page for shell-managed routes (e.g. branding settings).
  *
  * Every navigation target is loaded with `?wp_shell_embed=1` so PHP
  * suppresses native WordPress chrome and injects the postMessage script.
@@ -7,13 +8,33 @@
  */
 
 import { Spin, theme } from "antd";
-import { useEffect, useRef } from "react";
+import { lazy, Suspense, useEffect, useRef } from "react";
 import { useStore } from "zustand";
 import { navigationStore } from "../../store/navigationStore";
+
+const BrandingSettings = lazy(() => import("../BrandingSettings"));
+
+const SHELL_ROUTES: Record<string, React.ComponentType> = {
+  "wp-react-ui-branding": BrandingSettings,
+};
+
+function getShellRoute(pageUrl: string): React.ComponentType | null {
+  try {
+    const url = new URL(pageUrl);
+    const page = url.searchParams.get("page");
+    if (page && page in SHELL_ROUTES) {
+      return SHELL_ROUTES[page];
+    }
+  } catch {
+    // not a valid URL
+  }
+  return null;
+}
 
 export default function ContentFrame() {
   const iframeRef = useRef<HTMLIFrameElement>(null);
   const iframeUrl = useStore(navigationStore, (s) => s.iframeUrl);
+  const pageUrl = useStore(navigationStore, (s) => s.pageUrl);
   const isLoading = useStore(navigationStore, (s) => s.status === "loading");
   const handleIframeLoad = useStore(navigationStore, (s) => s.handleIframeLoad);
   const handleIframeMessage = useStore(navigationStore, (s) => s.handleIframeMessage);
@@ -25,6 +46,46 @@ export default function ContentFrame() {
     window.addEventListener("message", onMessage);
     return () => window.removeEventListener("message", onMessage);
   }, [handleIframeMessage]);
+
+  const ShellPage = getShellRoute(pageUrl);
+
+  // Mark the shell-managed page as ready so the loading spinner clears
+  useEffect(() => {
+    if (ShellPage && isLoading) {
+      navigationStore.setState({ status: "ready", pendingNavigationSource: null });
+    }
+  }, [ShellPage, isLoading]);
+
+  if (ShellPage) {
+    return (
+      <div
+        style={{
+          gridArea: "content",
+          position: "relative",
+          overflow: "hidden",
+          minWidth: 0,
+          minHeight: 0,
+        }}
+      >
+        <Suspense
+          fallback={
+            <div
+              style={{
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                height: "100%",
+              }}
+            >
+              <Spin size="large" />
+            </div>
+          }
+        >
+          <ShellPage />
+        </Suspense>
+      </div>
+    );
+  }
 
   return (
     <div

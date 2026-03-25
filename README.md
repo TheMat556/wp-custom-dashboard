@@ -80,11 +80,11 @@ wp-custom-dashboard/
 ## Development
 
 ```bash
-npm run dev
-npm run verify
-npm run build
-npm test
-npm run lint
+bun run dev
+bun run verify
+bun run build
+bun run test
+bun run lint
 composer run lint
 ```
 
@@ -92,7 +92,7 @@ composer run lint
 
 Before deploying:
 
-1. Run `npm run verify`.
+1. Run `bun run verify`.
 2. Deploy the updated plugin PHP files and the built `dist/` directory together.
 3. Hard-refresh wp-admin after deploy so the new hashed assets are requested.
 4. Smoke-test the main flows:

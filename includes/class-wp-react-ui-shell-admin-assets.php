@@ -72,6 +72,7 @@ class WP_React_UI_Shell_Admin_Assets {
 		}
 
 		WP_React_UI_Asset_Loader::enqueue();
+		wp_enqueue_media();
 		wp_localize_script(
 			'wp-react-ui',
 			'wpReactUi',
@@ -115,6 +116,6 @@ class WP_React_UI_Shell_Admin_Assets {
 			return;
 		}
 
-		echo '<div class="notice notice-error"><p><strong>WP React UI:</strong> Shell assets are unavailable, so native WordPress admin is being shown. Run <code>npm run build</code> and deploy the <code>dist/</code> directory.</p></div>';
+		echo '<div class="notice notice-error"><p><strong>WP React UI:</strong> Shell assets are unavailable, so native WordPress admin is being shown. Run <code>bun run build</code> and deploy the <code>dist/</code> directory.</p></div>';
 	}
 }

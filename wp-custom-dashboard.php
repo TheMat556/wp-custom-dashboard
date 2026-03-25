@@ -48,7 +48,6 @@ function wp_react_ui_get_special_page_config(): array {
 		),
 		'full_reload_page_params' => array(
 			'site-health',
-			'wp-react-ui-branding',
 			'h-bricks-elements',
 		),
 		'breakout_pagenow' => array(

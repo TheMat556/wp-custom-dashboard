@@ -139,4 +139,4 @@ The stores no longer rely on import-time side effects.
 - The iframe model is less “pure SPA” than the previous design, but it is much safer for WordPress compatibility because each screen still gets a clean execution context.
 - The shell still depends on several inline scripts in PHP for pre-paint behavior. That is deliberate to avoid visible flicker.
 - The menu refresh endpoint is advisory. The shell starts from localized server data and only refreshes on demand.
-- Production deploys should ship PHP changes and the built `dist/` assets together. The simplest local gate is `npm run verify`.
+- Production deploys should ship PHP changes and the built `dist/` assets together. The simplest local gate is `bun run verify`.

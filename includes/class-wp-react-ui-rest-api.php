@@ -71,5 +71,40 @@ class WP_React_UI_REST_API {
 				),
 			)
 		);
+
+		// Branding settings endpoints — GET reads, POST writes.
+		// Permission: manage_options (administrators only).
+		register_rest_route(
+			'wp-react-ui/v1',
+			'/branding',
+			array(
+				array(
+					'methods'             => 'GET',
+					'callback'            => function () {
+						return rest_ensure_response( WP_React_UI_Branding_Settings::get_rest_data() );
+					},
+					'permission_callback' => fn() => current_user_can( 'manage_options' ),
+				),
+				array(
+					'methods'             => 'POST',
+					'callback'            => function ( WP_REST_Request $request ) {
+						$input = array(
+							'light_logo_id'          => $request->get_param( 'lightLogoId' ),
+							'dark_logo_id'           => $request->get_param( 'darkLogoId' ),
+							'open_in_new_tab_patterns' => $request->get_param( 'openInNewTabPatterns' ),
+						);
+
+						$result = WP_React_UI_Branding_Settings::save_from_rest( $input );
+
+						if ( is_wp_error( $result ) ) {
+							return $result;
+						}
+
+						return rest_ensure_response( WP_React_UI_Branding_Settings::get_rest_data() );
+					},
+					'permission_callback' => fn() => current_user_can( 'manage_options' ),
+				),
+			)
+		);
 	}
 }

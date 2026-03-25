@@ -20,8 +20,9 @@ export function NotificationRenderer() {
           ? `${notification.message} — ${notification.description}`
           : notification.message;
 
+        const antType = notification.type === "info" ? "success" : notification.type;
         messageApi.open({
-          type: notification.type === "warning" ? "warning" : "error",
+          type: antType,
           content,
           duration: 6,
           onClose: () => notificationStore.getState().dismiss(notification.id),

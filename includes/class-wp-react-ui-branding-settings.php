@@ -595,4 +595,50 @@ class WP_React_UI_Branding_Settings {
 	private static function get_default_logo_url(): string {
 		return plugins_url( 'dist/logo.svg', dirname( __DIR__ ) . '/wp-custom-dashboard.php' );
 	}
+
+	/**
+	 * Returns the branding settings data for the REST API.
+	 *
+	 * @return array REST-ready settings data.
+	 */
+	public static function get_rest_data(): array {
+		$light_id = self::get_logo_id( 'light_logo_id' );
+		$dark_id  = self::get_logo_id( 'dark_logo_id' );
+
+		return array(
+			'lightLogoId'          => $light_id,
+			'lightLogoUrl'         => self::get_attachment_url( $light_id ),
+			'darkLogoId'           => $dark_id,
+			'darkLogoUrl'          => self::get_attachment_url( $dark_id ),
+			'openInNewTabPatterns' => self::get_open_in_new_tab_patterns(),
+		);
+	}
+
+	/**
+	 * Saves branding settings from a REST API request.
+	 *
+	 * @param array $input Raw input from the REST request.
+	 * @return true|WP_Error True on success, WP_Error on failure.
+	 */
+	public static function save_from_rest( array $input ) {
+		$sanitized = self::sanitize_settings(
+			array(
+				'light_logo_id'          => $input['light_logo_id'] ?? 0,
+				'dark_logo_id'           => $input['dark_logo_id'] ?? 0,
+				'open_in_new_tab_patterns' => $input['open_in_new_tab_patterns'] ?? array(),
+			)
+		);
+
+		$updated = update_option( self::OPTION_NAME, $sanitized );
+
+		if ( false === $updated ) {
+			$current = get_option( self::OPTION_NAME, array() );
+			if ( $current === $sanitized ) {
+				return true;
+			}
+			return new WP_Error( 'save_failed', 'Failed to save branding settings.', array( 'status' => 500 ) );
+		}
+
+		return true;
+	}
 }
