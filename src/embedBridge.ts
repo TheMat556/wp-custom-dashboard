@@ -3,7 +3,7 @@ import {
   EMBED_MESSAGE_VERSION,
   type EmbedMessage,
 } from "./types/embedMessages";
-import { matchesOpenInNewTabPattern } from "./utils/openInNewTab";
+import { matchesOpenInNewTabPattern, shouldOpenOutsideAdminInNewTab } from "./utils/openInNewTab";
 
 declare global {
   interface Window {
@@ -98,6 +98,10 @@ function shouldOpenInNewTab(anchor: HTMLAnchorElement) {
   }
 
   if (isBricksBuilderUrl(href)) {
+    return true;
+  }
+
+  if (shouldOpenOutsideAdminInNewTab(href)) {
     return true;
   }
 

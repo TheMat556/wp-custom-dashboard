@@ -30,6 +30,7 @@ export function Logo({
     <Flex
       align="center"
       style={{
+        boxSizing: "border-box",
         height: 64,
         padding: collapsed ? 0 : "0 16px 0 20px",
         justifyContent: collapsed ? "center" : "space-between",
