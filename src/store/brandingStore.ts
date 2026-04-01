@@ -15,7 +15,13 @@ export interface BrandingStoreState {
   save(
     data: Pick<
       BrandingData,
-      "lightLogoId" | "darkLogoId" | "longLogoId" | "useLongLogo" | "openInNewTabPatterns"
+      | "lightLogoId"
+      | "darkLogoId"
+      | "longLogoId"
+      | "useLongLogo"
+      | "primaryColor"
+      | "fontPreset"
+      | "openInNewTabPatterns"
     >
   ): Promise<boolean>;
 }

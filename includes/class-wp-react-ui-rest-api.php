@@ -93,6 +93,8 @@ class WP_React_UI_REST_API {
 							'dark_logo_id'           => $request->get_param( 'darkLogoId' ),
 							'long_logo_id'           => $request->get_param( 'longLogoId' ),
 							'use_long_logo'          => $request->get_param( 'useLongLogo' ),
+							'primary_color'          => $request->get_param( 'primaryColor' ),
+							'font_preset'            => $request->get_param( 'fontPreset' ),
 							'open_in_new_tab_patterns' => $request->get_param( 'openInNewTabPatterns' ),
 						);
 

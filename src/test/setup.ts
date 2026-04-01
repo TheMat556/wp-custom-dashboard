@@ -32,6 +32,8 @@ Object.defineProperty(window, "wpReactUi", {
       siteName: "Test Site",
       logos: { lightUrl: null, darkUrl: null, longUrl: null, defaultUrl: "/logo.svg" },
       useLongLogo: false,
+      primaryColor: "#4f46e5",
+      fontPreset: "inter",
     },
     navigation: DEFAULT_NAVIGATION,
     logoutUrl: "http://localhost/wp-login.php?action=logout",

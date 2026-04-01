@@ -1,19 +1,28 @@
 import {
+  BgColorsOutlined,
   DeleteOutlined,
   LinkOutlined,
   PictureOutlined,
+  ReloadOutlined,
+  FontSizeOutlined,
   UploadOutlined,
 } from "@ant-design/icons";
-import { Button, Flex, Grid, Input, Spin, Switch, Typography, theme } from "antd";
-import { useCallback, useEffect, useState } from "react";
+import { Button, ColorPicker, Flex, Grid, Input, Select, Spin, Switch, Typography, theme } from "antd";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { useStore } from "zustand";
 import type { BrandingData } from "../../services/brandingApi";
 import { brandingStore } from "../../store/brandingStore";
+import { DEFAULT_FONT_PRESET, FONT_PRESETS, type FontPresetKey } from "../../utils/fontPresets";
 import { openMediaPicker } from "../../utils/wpMedia";
 
-const { Title, Text } = Typography;
+const { Title, Text, Paragraph } = Typography;
 const { TextArea } = Input;
 const { useBreakpoint } = Grid;
+const DEFAULT_PRIMARY_COLOR = "#4f46e5";
+const FONT_PRESET_OPTIONS = Object.entries(FONT_PRESETS).map(([value, preset]) => ({
+  value,
+  label: preset.label,
+}));
 
 function LogoField({
   label,
@@ -22,7 +31,6 @@ function LogoField({
   logoUrl,
   onSelect,
   onRemove,
-  wide,
   previewBackground,
 }: {
   label: string;
@@ -31,11 +39,9 @@ function LogoField({
   logoUrl: string | null;
   onSelect: (id: number, url: string) => void;
   onRemove: () => void;
-  wide?: boolean;
   previewBackground?: string;
 }) {
   const { token } = theme.useToken();
-  const hasLogo = logoId > 0 && !!logoUrl;
 
   const handleSelect = useCallback(async () => {
     const result = await openMediaPicker({
@@ -54,37 +60,36 @@ function LogoField({
         border: `1px solid ${token.colorBorderSecondary}`,
         borderRadius: token.borderRadiusLG,
         background: token.colorBgContainer,
-        padding: 24,
+        padding: 28,
       }}
     >
-      <Text
-        strong
-        style={{
-          display: "block",
-          marginBottom: 6,
-          fontSize: 14,
-          color: token.colorTextHeading,
-        }}
-      >
-        {label}
-      </Text>
-      <Text type="secondary" style={{ display: "block", marginBottom: 16, fontSize: 13 }}>
-        {description}
-      </Text>
+      <Flex justify="space-between" align="baseline" gap={12} style={{ marginBottom: 20 }}>
+        <Text
+          style={{
+            fontSize: 11,
+            fontWeight: 800,
+            letterSpacing: "0.12em",
+            textTransform: "uppercase",
+            color: token.colorTextTertiary,
+          }}
+        >
+          {label}
+        </Text>
+        <Text style={{ fontSize: 11, color: token.colorTextQuaternary }}>{description}</Text>
+      </Flex>
 
       <div
         style={{
-          aspectRatio: wide ? "21 / 9" : "16 / 9",
-          minHeight: wide ? 144 : 180,
-          marginBottom: 16,
-          padding: 16,
+          height: 160,
+          marginBottom: 18,
+          padding: 18,
           borderRadius: token.borderRadiusLG,
-          border: `1px dashed ${token.colorBorder}`,
-          background: previewBackground ?? (hasLogo ? token.colorBgLayout : token.colorFillQuaternary),
+          background: previewBackground ?? token.colorFillAlter,
           display: "flex",
           alignItems: "center",
           justifyContent: "center",
           overflow: "hidden",
+          boxSizing: "border-box",
         }}
       >
         {logoUrl ? (
@@ -93,15 +98,16 @@ function LogoField({
             alt={`${label} preview`}
             style={{
               display: "block",
-              width: "100%",
-              maxWidth: "100%",
-              maxHeight: wide ? 72 : 96,
+              width: "auto",
+              height: "auto",
+              maxWidth: "min(100%, 240px)",
+              maxHeight: 72,
               objectFit: "contain",
             }}
           />
         ) : (
-          <Flex vertical align="center" gap={8}>
-            <PictureOutlined style={{ fontSize: 28, color: token.colorTextTertiary }} />
+          <Flex vertical align="center" gap={10}>
+            <PictureOutlined style={{ fontSize: 28, color: token.colorTextQuaternary }} />
             <Text type="secondary" style={{ fontSize: 13 }}>
               No image selected
             </Text>
@@ -109,13 +115,13 @@ function LogoField({
         )}
       </div>
 
-      <Flex gap={8} wrap>
-        <Button type="primary" icon={<UploadOutlined />} onClick={handleSelect}>
-          {logoId ? "Change image" : "Select image"}
+      <Flex gap={10} wrap>
+        <Button type="default" onClick={handleSelect} icon={<UploadOutlined />}>
+          {logoId ? "Replace" : "Upload"}
         </Button>
         {logoId > 0 && (
-          <Button danger icon={<DeleteOutlined />} onClick={onRemove}>
-            Remove
+          <Button danger onClick={onRemove} icon={<DeleteOutlined />}>
+            Delete
           </Button>
         )}
       </Flex>
@@ -123,14 +129,14 @@ function LogoField({
   );
 }
 
-function SectionCard({
+function SurfaceCard({
   title,
   description,
   icon,
   children,
 }: {
   title: string;
-  description: string;
+  description?: string;
   icon: React.ReactNode;
   children: React.ReactNode;
 }) {
@@ -139,36 +145,40 @@ function SectionCard({
   return (
     <section
       style={{
+        height: "100%",
         borderRadius: token.borderRadiusLG,
-        border: `1px solid ${token.colorBorder}`,
+        border: `1px solid ${token.colorBorderSecondary}`,
         background: token.colorBgContainer,
         padding: 32,
+        boxSizing: "border-box",
       }}
     >
-      <Flex justify="space-between" align="flex-start" gap={16} style={{ marginBottom: 24 }}>
-        <div style={{ flex: 1 }}>
-          <Title level={4} style={{ margin: 0, marginBottom: 4 }}>
-            {title}
-          </Title>
-          <Text type="secondary" style={{ fontSize: 14 }}>
-            {description}
-          </Text>
-        </div>
-        <div
+      <Flex align="center" gap={10} style={{ marginBottom: 24 }}>
+        <span
           style={{
-            width: 44,
-            height: 44,
-            borderRadius: 14,
-            background: token.colorPrimaryBg,
+            width: 36,
+            height: 36,
+            borderRadius: 12,
+            background: `${token.colorPrimary}12`,
             color: token.colorPrimary,
-            display: "flex",
+            fontSize: 20,
+            display: "inline-flex",
             alignItems: "center",
             justifyContent: "center",
             flexShrink: 0,
-            fontSize: 20,
           }}
         >
           {icon}
+        </span>
+        <div style={{ minWidth: 0, marginLeft: 4 }}>
+          <Title level={4} style={{ margin: 0, fontSize: 18 }}>
+            {title}
+          </Title>
+          {description && (
+            <Text type="secondary" style={{ fontSize: 13 }}>
+              {description}
+            </Text>
+          )}
         </div>
       </Flex>
 
@@ -178,11 +188,11 @@ function SectionCard({
 }
 
 export default function BrandingSettings() {
-  const settings = useStore(brandingStore, (s) => s.settings);
-  const loading = useStore(brandingStore, (s) => s.loading);
-  const saving = useStore(brandingStore, (s) => s.saving);
-  const load = useStore(brandingStore, (s) => s.load);
-  const save = useStore(brandingStore, (s) => s.save);
+  const settings = useStore(brandingStore, (state) => state.settings);
+  const loading = useStore(brandingStore, (state) => state.loading);
+  const saving = useStore(brandingStore, (state) => state.saving);
+  const load = useStore(brandingStore, (state) => state.load);
+  const save = useStore(brandingStore, (state) => state.save);
   const { token } = theme.useToken();
   const screens = useBreakpoint();
 
@@ -192,50 +202,69 @@ export default function BrandingSettings() {
   const [darkLogoUrl, setDarkLogoUrl] = useState<string | null>(null);
   const [longLogoId, setLongLogoId] = useState(0);
   const [useLongLogo, setUseLongLogo] = useState(false);
+  const [primaryColor, setPrimaryColor] = useState(DEFAULT_PRIMARY_COLOR);
+  const [fontPreset, setFontPreset] = useState<FontPresetKey>(DEFAULT_FONT_PRESET);
   const [patterns, setPatterns] = useState("");
 
   useEffect(() => {
     void load();
   }, [load]);
 
+  const applySettingsToDraft = useCallback((next: BrandingData) => {
+    setLightLogoId(next.lightLogoId);
+    setLightLogoUrl(next.lightLogoUrl);
+    setDarkLogoId(next.darkLogoId);
+    setDarkLogoUrl(next.darkLogoUrl);
+    setLongLogoId(next.longLogoId);
+    setUseLongLogo(next.useLongLogo);
+    setPrimaryColor(next.primaryColor);
+    setFontPreset((next.fontPreset in FONT_PRESETS ? next.fontPreset : DEFAULT_FONT_PRESET) as FontPresetKey);
+    setPatterns(next.openInNewTabPatterns.join("\n"));
+  }, []);
+
   useEffect(() => {
     if (!settings) return;
-    setLightLogoId(settings.lightLogoId);
-    setLightLogoUrl(settings.lightLogoUrl);
-    setDarkLogoId(settings.darkLogoId);
-    setDarkLogoUrl(settings.darkLogoUrl);
-    setLongLogoId(settings.longLogoId);
-    setUseLongLogo(settings.useLongLogo);
-    setPatterns(settings.openInNewTabPatterns.join("\n"));
-  }, [settings]);
+    applySettingsToDraft(settings);
+  }, [settings, applySettingsToDraft]);
 
-  const isDirty = useCallback((): boolean => {
+  const isDirty = useMemo(() => {
     if (!settings) return false;
     return (
       lightLogoId !== settings.lightLogoId ||
       darkLogoId !== settings.darkLogoId ||
       longLogoId !== settings.longLogoId ||
       useLongLogo !== settings.useLongLogo ||
+      primaryColor !== settings.primaryColor ||
+      fontPreset !== settings.fontPreset ||
       patterns !== settings.openInNewTabPatterns.join("\n")
     );
-  }, [settings, lightLogoId, darkLogoId, longLogoId, useLongLogo, patterns]);
+  }, [settings, lightLogoId, darkLogoId, longLogoId, useLongLogo, primaryColor, fontPreset, patterns]);
 
   const handleSave = useCallback(async () => {
-    const data: Pick<
+    const payload: Pick<
       BrandingData,
-      "lightLogoId" | "darkLogoId" | "longLogoId" | "useLongLogo" | "openInNewTabPatterns"
+      | "lightLogoId"
+      | "darkLogoId"
+      | "longLogoId"
+      | "useLongLogo"
+      | "primaryColor"
+      | "fontPreset"
+      | "openInNewTabPatterns"
     > = {
       lightLogoId,
       darkLogoId,
       longLogoId,
       useLongLogo,
+      primaryColor,
+      fontPreset,
       openInNewTabPatterns: patterns
         .split("\n")
         .map((pattern) => pattern.trim())
         .filter(Boolean),
     };
-    await save(data);
-  }, [lightLogoId, darkLogoId, longLogoId, useLongLogo, patterns, save]);
+
+    await save(payload);
+  }, [lightLogoId, darkLogoId, longLogoId, useLongLogo, primaryColor, fontPreset, patterns, save]);
 
   if (loading && !settings) {
     return (
@@ -249,145 +278,407 @@ export default function BrandingSettings() {
     <div
       style={{
         width: "100%",
-        overflowY: "auto",
         height: "100%",
-        pointerEvents: "auto",
+        overflowY: "auto",
         overflowX: "hidden",
         background: token.colorBgLayout,
+        pointerEvents: "auto",
       }}
     >
       <div
         style={{
           width: "100%",
+          maxWidth: 1240,
+          margin: "0 auto",
+          padding: screens.md ? 40 : 20,
           boxSizing: "border-box",
-          padding: screens.md ? 32 : 20,
         }}
       >
-        <div
-          style={{
-            display: "grid",
-            gridTemplateColumns: screens.lg ? "minmax(0, 1.8fr) minmax(300px, 1fr)" : "1fr",
-            gap: 24,
-            alignItems: "start",
-          }}
+        <Flex
+          justify="space-between"
+          align={screens.md ? "flex-start" : "flex-start"}
+          gap={24}
+          wrap
+          style={{ marginBottom: 32 }}
         >
-          <SectionCard
-            title="Brand Assets In The Sidebar"
-            description="Upload the logo variants used in the shell sidebar."
-            icon={<PictureOutlined />}
-          >
-            <Flex
-              align={screens.sm ? "center" : "flex-start"}
-              justify="space-between"
-              gap={16}
-              wrap
+          <div style={{ minWidth: 0 }}>
+            <Title level={2} style={{ marginTop: 0, marginBottom: 6, fontSize: screens.md ? 30 : 24 }}>
+              Brand Assets
+            </Title>
+            <Paragraph type="secondary" style={{ marginBottom: 0, maxWidth: 760, fontSize: 14 }}>
+              Centralized management for identity logos, color accents, and global navigation
+              fragments used across the shell.
+            </Paragraph>
+          </div>
+
+          <Flex gap={12} wrap align="center">
+            <div
               style={{
-                marginBottom: 20,
-                padding: 16,
+                display: "flex",
+                alignItems: "center",
+                gap: 12,
+                padding: "8px 14px",
                 borderRadius: token.borderRadiusLG,
-                border: `1px solid ${token.colorBorderSecondary}`,
                 background: token.colorFillAlter,
               }}
             >
-              <div style={{ minWidth: 0, flex: 1 }}>
-                <Text strong style={{ display: "block", marginBottom: 4 }}>
-                  Use long logo in sidebar
-                </Text>
-                <Text type="secondary" style={{ fontSize: 13 }}>
-                  Hides the site name and Control Panel text and keeps only the logo visible in the
-                  expanded sidebar.
-                </Text>
-              </div>
+              <Text style={{ fontSize: 12, fontWeight: 700, color: token.colorTextSecondary }}>
+                Logo-only sidebar
+              </Text>
               <Switch
                 checked={useLongLogo}
                 onChange={setUseLongLogo}
-                checkedChildren="Long"
-                unCheckedChildren="Short"
+                checkedChildren="On"
+                unCheckedChildren="Off"
               />
+            </div>
+            <Button type="primary" loading={saving} onClick={() => void handleSave()} disabled={!isDirty}>
+              Save Brand Assets
+            </Button>
+          </Flex>
+        </Flex>
+
+        <SurfaceCard
+          title="Brand Assets In The Sidebar"
+          description="Upload the logo variants used in the shell sidebar."
+          icon={<PictureOutlined />}
+        >
+          <div
+            style={{
+              display: "grid",
+              gridTemplateColumns: screens.md ? "repeat(2, minmax(0, 1fr))" : "1fr",
+              gap: 24,
+            }}
+          >
+            <LogoField
+              label="Light Theme Logo"
+              description="400 x 120px suggested"
+              logoId={lightLogoId}
+              logoUrl={lightLogoUrl}
+              previewBackground="#ffffff"
+              onSelect={(id, url) => {
+                setLightLogoId(id);
+                setLightLogoUrl(url);
+              }}
+              onRemove={() => {
+                setLightLogoId(0);
+                setLightLogoUrl(null);
+              }}
+            />
+
+            <LogoField
+              label="Dark Theme Logo"
+              description="SVG preferred"
+              logoId={darkLogoId}
+              logoUrl={darkLogoUrl}
+              previewBackground="#1f2430"
+              onSelect={(id, url) => {
+                setDarkLogoId(id);
+                setDarkLogoUrl(url);
+              }}
+              onRemove={() => {
+                setDarkLogoId(0);
+                setDarkLogoUrl(null);
+              }}
+            />
+          </div>
+        </SurfaceCard>
+
+        <div
+          style={{
+            display: "grid",
+            gridTemplateColumns: screens.md ? "repeat(2, minmax(0, 1fr))" : "1fr",
+            gap: 24,
+            alignItems: "stretch",
+            marginTop: 24,
+          }}
+        >
+          <SurfaceCard
+            title="Brand Colors"
+            description="Primary shell accent and palette preview."
+            icon={<BgColorsOutlined />}
+          >
+            <div
+              style={{
+                display: "grid",
+                gridTemplateColumns: screens.sm ? "repeat(2, minmax(0, 1fr))" : "1fr",
+                gap: 18,
+                marginBottom: 20,
+              }}
+            >
+              <div style={{ minWidth: 0 }}>
+                <Text
+                  style={{
+                    display: "block",
+                    marginBottom: 8,
+                    fontSize: 11,
+                    fontWeight: 800,
+                    letterSpacing: "0.12em",
+                    textTransform: "uppercase",
+                    color: token.colorTextTertiary,
+                  }}
+                >
+                  Primary Accent
+                </Text>
+                <div
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 12,
+                    padding: 12,
+                    borderRadius: token.borderRadiusLG,
+                    background: token.colorFillAlter,
+                  }}
+                >
+                  <div
+                    style={{
+                      width: 24,
+                      height: 24,
+                      borderRadius: 8,
+                      background: primaryColor,
+                      flexShrink: 0,
+                    }}
+                  />
+                  <ColorPicker
+                    value={primaryColor}
+                    format="hex"
+                    size="large"
+                    disabledAlpha
+                    showText
+                    onChange={(color) => setPrimaryColor(color.toHexString())}
+                  />
+                </div>
+              </div>
+
+              <div style={{ minWidth: 0 }}>
+                <Text
+                  style={{
+                    display: "block",
+                    marginBottom: 8,
+                    fontSize: 11,
+                    fontWeight: 800,
+                    letterSpacing: "0.12em",
+                    textTransform: "uppercase",
+                    color: token.colorTextTertiary,
+                  }}
+                >
+                  Default
+                </Text>
+                <div
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 12,
+                    padding: 12,
+                    borderRadius: token.borderRadiusLG,
+                    background: token.colorFillAlter,
+                  }}
+                >
+                  <div
+                    style={{
+                      width: 24,
+                      height: 24,
+                      borderRadius: 8,
+                      background: DEFAULT_PRIMARY_COLOR,
+                      flexShrink: 0,
+                    }}
+                  />
+                  <Text
+                    style={{
+                      fontFamily:
+                        'ui-monospace, SFMono-Regular, SF Mono, Menlo, Consolas, "Liberation Mono", monospace',
+                    }}
+                  >
+                    {DEFAULT_PRIMARY_COLOR}
+                  </Text>
+                </div>
+              </div>
+            </div>
+
+            <div style={{ marginTop: "auto" }}>
+              <div
+                style={{
+                  height: 10,
+                  width: "100%",
+                  borderRadius: 999,
+                  overflow: "hidden",
+                  display: "flex",
+                  background: token.colorFillAlter,
+                  marginBottom: 8,
+                }}
+              >
+                <div style={{ width: "48%", background: primaryColor }} />
+                <div style={{ width: "24%", background: `${primaryColor}80` }} />
+                <div style={{ width: "18%", background: token.colorTextSecondary }} />
+                <div style={{ width: "10%", background: token.colorBorderSecondary }} />
+              </div>
+              <Flex justify="space-between" align="center" gap={12} wrap>
+                <Text type="secondary" style={{ fontSize: 11 }}>
+                  Global distribution preview
+                </Text>
+                <Button icon={<ReloadOutlined />} onClick={() => setPrimaryColor(DEFAULT_PRIMARY_COLOR)}>
+                  Reset to default
+                </Button>
+              </Flex>
+            </div>
+          </SurfaceCard>
+
+          <SurfaceCard
+            title="Link Rules"
+            description="Patterns that should open in a new tab."
+            icon={<LinkOutlined />}
+          >
+            <Text
+              style={{
+                display: "flex",
+                justifyContent: "space-between",
+                gap: 12,
+                marginBottom: 10,
+                fontSize: 11,
+                fontWeight: 800,
+                letterSpacing: "0.12em",
+                textTransform: "uppercase",
+                color: token.colorTextTertiary,
+              }}
+            >
+              <span>Global URL Fragments</span>
+              <span style={{ textTransform: "none", letterSpacing: 0, fontWeight: 500 }}>
+                One fragment per line
+              </span>
+            </Text>
+
+            <TextArea
+              value={patterns}
+              onChange={(event) => setPatterns(event.target.value)}
+              rows={8}
+              placeholder={"/brand-kit\n/identity-guide\n/media-assets"}
+              style={{
+                fontFamily:
+                  'ui-monospace, SFMono-Regular, SF Mono, Menlo, Consolas, "Liberation Mono", monospace',
+                borderRadius: token.borderRadiusLG,
+                background: token.colorFillAlter,
+                resize: "none",
+              }}
+            />
+
+            <Flex justify="space-between" align="center" gap={12} wrap style={{ marginTop: 16 }}>
+              <Text type="secondary" style={{ fontSize: 11 }}>
+                Matching links bypass the iframe and open directly in a new tab.
+              </Text>
             </Flex>
+          </SurfaceCard>
+        </div>
+
+        <SurfaceCard
+          title="Typography"
+          description="Choose the font system used across the shell interface."
+          icon={<FontSizeOutlined />}
+        >
+          <div
+            style={{
+              display: "grid",
+              gridTemplateColumns: screens.md ? "320px minmax(0, 1fr)" : "1fr",
+              gap: 24,
+              alignItems: "start",
+            }}
+          >
+            <div style={{ minWidth: 0 }}>
+              <Text
+                style={{
+                  display: "block",
+                  marginBottom: 8,
+                  fontSize: 11,
+                  fontWeight: 800,
+                  letterSpacing: "0.12em",
+                  textTransform: "uppercase",
+                  color: token.colorTextTertiary,
+                }}
+              >
+                Font preset
+              </Text>
+              <Select
+                value={fontPreset}
+                options={FONT_PRESET_OPTIONS}
+                onChange={(value) => setFontPreset(value as FontPresetKey)}
+                style={{ width: "100%" }}
+                size="large"
+              />
+            </div>
 
             <div
               style={{
                 display: "grid",
-                gridTemplateColumns: screens.lg
-                  ? "repeat(2, minmax(0, 1fr))"
-                  : "1fr",
-                gap: 20,
+                gridTemplateColumns: screens.lg ? "repeat(4, minmax(0, 1fr))" : screens.sm ? "repeat(2, minmax(0, 1fr))" : "1fr",
+                gap: 16,
               }}
             >
-              <LogoField
-                label="Light Theme Logo"
-                description="Shown on light backgrounds."
-                logoId={lightLogoId}
-                logoUrl={lightLogoUrl}
-                previewBackground="#ffffff"
-                onSelect={(id, url) => {
-                  setLightLogoId(id);
-                  setLightLogoUrl(url);
-                }}
-                onRemove={() => {
-                  setLightLogoId(0);
-                  setLightLogoUrl(null);
-                }}
-              />
+              {Object.entries(FONT_PRESETS).map(([key, preset]) => {
+                const active = key === fontPreset;
 
-              <LogoField
-                label="Dark Theme Logo"
-                description="Optional. Falls back to the light logo when unset."
-                logoId={darkLogoId}
-                logoUrl={darkLogoUrl}
-                previewBackground="#0f172a"
-                onSelect={(id, url) => {
-                  setDarkLogoId(id);
-                  setDarkLogoUrl(url);
-                }}
-                onRemove={() => {
-                  setDarkLogoId(0);
-                  setDarkLogoUrl(null);
-                }}
-              />
+                return (
+                  <div
+                    key={key}
+                    style={{
+                      padding: 18,
+                      borderRadius: token.borderRadiusLG,
+                      border: `1px solid ${active ? token.colorPrimary : token.colorBorderSecondary}`,
+                      background: active ? `${token.colorPrimary}10` : token.colorBgContainer,
+                    }}
+                  >
+                    <Text
+                      style={{
+                        display: "block",
+                        marginBottom: 6,
+                        fontSize: 11,
+                        fontWeight: 800,
+                        letterSpacing: "0.12em",
+                        textTransform: "uppercase",
+                        color: active ? token.colorPrimary : token.colorTextTertiary,
+                      }}
+                    >
+                      {preset.label}
+                    </Text>
+                    <div
+                      style={{
+                        fontFamily: preset.family,
+                        fontSize: 28,
+                        lineHeight: 1,
+                        marginBottom: 10,
+                        color: token.colorTextHeading,
+                      }}
+                    >
+                      Aa
+                    </div>
+                    <Text style={{ display: "block", fontFamily: preset.family, fontWeight: 600 }}>
+                      Brand Assets
+                    </Text>
+                    <Text type="secondary" style={{ display: "block", fontFamily: preset.family, fontSize: 12 }}>
+                      The quick brown fox
+                    </Text>
+                  </div>
+                );
+              })}
             </div>
-          </SectionCard>
+          </div>
+        </SurfaceCard>
 
-          <Flex vertical gap={24}>
-            <SectionCard
-              title="Link Rules"
-              description="Control which admin links should break out of the shell and open in a new tab."
-              icon={<LinkOutlined />}
-            >
-              <Text strong style={{ display: "block", marginBottom: 6 }}>
-                Open links in new tab
-              </Text>
-              <Text type="secondary" style={{ display: "block", marginBottom: 14, fontSize: 13 }}>
-                Enter one URL fragment per line. Matching links will open in a new browser tab
-                instead of inside the shell iframe.
-              </Text>
-              <TextArea
-                value={patterns}
-                onChange={(e) => setPatterns(e.target.value)}
-                rows={10}
-                placeholder={"builder=bricks\nedit_with_bricks\nelementor\n/wp-admin/customize.php"}
-                style={{
-                  fontFamily:
-                    'ui-monospace, SFMono-Regular, SF Mono, Menlo, Consolas, "Liberation Mono", monospace',
-                  borderRadius: token.borderRadiusLG,
-                }}
-              />
-            </SectionCard>
-          </Flex>
-        </div>
+        <Flex
+          justify="space-between"
+          align="center"
+          gap={16}
+          wrap
+          style={{
+            marginTop: 32,
+            paddingTop: 24,
+            borderTop: `1px solid ${token.colorBorderSecondary}`,
+          }}
+        >
+          <Text type="secondary" style={{ fontSize: 12 }}>
+            Changes are applied live after saving.
+          </Text>
 
-        <div style={{ marginTop: 24, display: "flex", justifyContent: "flex-start" }}>
-          <Button
-            type="primary"
-            size="large"
-            loading={saving}
-            onClick={() => void handleSave()}
-            disabled={!isDirty()}
-          >
-            Save changes
-          </Button>
-        </div>
+          <Flex gap={12} wrap />
+        </Flex>
       </div>
     </div>
   );

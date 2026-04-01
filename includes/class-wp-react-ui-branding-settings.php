@@ -11,6 +11,9 @@ defined( 'ABSPATH' ) || exit;
  * Handles logo upload settings and frontend branding data.
  */
 class WP_React_UI_Branding_Settings {
+	private const DEFAULT_PRIMARY_COLOR = '#4f46e5';
+	private const DEFAULT_FONT_PRESET = 'inter';
+	private const ALLOWED_FONT_PRESETS = array( 'inter', 'system', 'grotesk', 'serif' );
 
 	/**
 	 * Settings option group identifier.
@@ -182,6 +185,8 @@ class WP_React_UI_Branding_Settings {
 			'dark_logo_id'  => self::sanitize_logo_id( $input['dark_logo_id'] ?? 0, 'dark' ),
 			'long_logo_id'  => self::sanitize_logo_id( $input['long_logo_id'] ?? 0, 'long' ),
 			'use_long_logo' => ! empty( $input['use_long_logo'] ),
+			'primary_color' => self::sanitize_primary_color( $input['primary_color'] ?? self::DEFAULT_PRIMARY_COLOR ),
+			'font_preset'   => self::sanitize_font_preset( $input['font_preset'] ?? self::DEFAULT_FONT_PRESET ),
 			'open_in_new_tab_patterns' => self::sanitize_open_in_new_tab_patterns( $input['open_in_new_tab_patterns'] ?? '' ),
 		);
 	}
@@ -436,6 +441,8 @@ class WP_React_UI_Branding_Settings {
 				'defaultUrl' => self::get_default_logo_url(),
 			),
 			'useLongLogo' => self::get_use_long_logo(),
+			'primaryColor' => self::get_primary_color(),
+			'fontPreset'   => self::get_font_preset(),
 		);
 	}
 
@@ -516,6 +523,8 @@ class WP_React_UI_Branding_Settings {
 			'dark_logo_id'  => 0,
 			'long_logo_id'  => 0,
 			'use_long_logo' => false,
+			'primary_color' => self::DEFAULT_PRIMARY_COLOR,
+			'font_preset'   => self::DEFAULT_FONT_PRESET,
 			'open_in_new_tab_patterns' => array(),
 		);
 	}
@@ -528,6 +537,30 @@ class WP_React_UI_Branding_Settings {
 	private static function get_use_long_logo(): bool {
 		$settings = self::get_settings();
 		return ! empty( $settings['use_long_logo'] );
+	}
+
+	/**
+	 * Returns the primary brand color.
+	 *
+	 * @return string
+	 */
+	private static function get_primary_color(): string {
+		$settings = self::get_settings();
+		$color    = $settings['primary_color'] ?? self::DEFAULT_PRIMARY_COLOR;
+
+		return self::sanitize_primary_color( $color );
+	}
+
+	/**
+	 * Returns the current font preset.
+	 *
+	 * @return string
+	 */
+	private static function get_font_preset(): string {
+		$settings = self::get_settings();
+		$preset   = sanitize_key( (string) ( $settings['font_preset'] ?? self::DEFAULT_FONT_PRESET ) );
+
+		return in_array( $preset, self::ALLOWED_FONT_PRESETS, true ) ? $preset : self::DEFAULT_FONT_PRESET;
 	}
 
 	/**
@@ -637,6 +670,8 @@ class WP_React_UI_Branding_Settings {
 			'longLogoId'           => $long_id,
 			'longLogoUrl'          => self::get_attachment_url( $long_id ),
 			'useLongLogo'          => self::get_use_long_logo(),
+			'primaryColor'         => self::get_primary_color(),
+			'fontPreset'           => self::get_font_preset(),
 			'openInNewTabPatterns' => self::get_open_in_new_tab_patterns(),
 		);
 	}
@@ -654,6 +689,8 @@ class WP_React_UI_Branding_Settings {
 				'dark_logo_id'           => $input['dark_logo_id'] ?? 0,
 				'long_logo_id'           => $input['long_logo_id'] ?? 0,
 				'use_long_logo'          => $input['use_long_logo'] ?? false,
+				'primary_color'          => $input['primary_color'] ?? self::DEFAULT_PRIMARY_COLOR,
+				'font_preset'            => $input['font_preset'] ?? self::DEFAULT_FONT_PRESET,
 				'open_in_new_tab_patterns' => $input['open_in_new_tab_patterns'] ?? array(),
 			)
 		);
@@ -669,5 +706,29 @@ class WP_React_UI_Branding_Settings {
 		}
 
 		return true;
+	}
+
+	/**
+	 * Sanitizes a hex primary color value.
+	 *
+	 * @param mixed $value Raw color value.
+	 * @return string
+	 */
+	private static function sanitize_primary_color( $value ): string {
+		$color = sanitize_hex_color( (string) $value );
+
+		return is_string( $color ) ? strtolower( $color ) : self::DEFAULT_PRIMARY_COLOR;
+	}
+
+	/**
+	 * Sanitizes a font preset key.
+	 *
+	 * @param mixed $value Raw preset value.
+	 * @return string
+	 */
+	private static function sanitize_font_preset( $value ): string {
+		$preset = sanitize_key( (string) $value );
+
+		return in_array( $preset, self::ALLOWED_FONT_PRESETS, true ) ? $preset : self::DEFAULT_FONT_PRESET;
 	}
 }

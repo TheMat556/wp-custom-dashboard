@@ -11,6 +11,8 @@ export interface WpReactUiBranding {
   siteName: string;
   logos: WpReactUiBrandingLogos;
   useLongLogo: boolean;
+  primaryColor: string;
+  fontPreset: string;
 }
 
 export interface WpReactUiNavigationConfig {
@@ -66,6 +68,8 @@ function normalizeBranding(
       defaultUrl: raw?.branding?.logos?.defaultUrl ?? `${assetsUrl}logo.svg`,
     },
     useLongLogo: raw?.branding?.useLongLogo ?? false,
+    primaryColor: raw?.branding?.primaryColor ?? "#4f46e5",
+    fontPreset: raw?.branding?.fontPreset ?? "inter",
   };
 }
 

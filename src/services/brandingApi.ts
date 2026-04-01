@@ -9,6 +9,8 @@ export interface BrandingData {
   longLogoId: number;
   longLogoUrl: string | null;
   useLongLogo: boolean;
+  primaryColor: string;
+  fontPreset: string;
   openInNewTabPatterns: string[];
 }
 
@@ -17,7 +19,13 @@ export interface BrandingService {
   saveBranding(
     data: Pick<
       BrandingData,
-      "lightLogoId" | "darkLogoId" | "longLogoId" | "useLongLogo" | "openInNewTabPatterns"
+      | "lightLogoId"
+      | "darkLogoId"
+      | "longLogoId"
+      | "useLongLogo"
+      | "primaryColor"
+      | "fontPreset"
+      | "openInNewTabPatterns"
     >
   ): Promise<BrandingData>;
 }
