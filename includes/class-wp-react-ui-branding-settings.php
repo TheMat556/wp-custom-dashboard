@@ -102,6 +102,12 @@ class WP_React_UI_Branding_Settings {
 				'title'       => 'Select dark logo',
 				'button_text' => 'Use dark logo',
 			),
+			'long_logo_id'  => array(
+				'label'       => 'Long logo',
+				'description' => 'Optional wide logo for the expanded sidebar. When enabled, it replaces the site name and Control Panel text.',
+				'title'       => 'Select long logo',
+				'button_text' => 'Use long logo',
+			),
 		);
 
 		foreach ( $fields as $key => $field ) {
@@ -174,6 +180,8 @@ class WP_React_UI_Branding_Settings {
 		return array(
 			'light_logo_id' => self::sanitize_logo_id( $input['light_logo_id'] ?? 0, 'light' ),
 			'dark_logo_id'  => self::sanitize_logo_id( $input['dark_logo_id'] ?? 0, 'dark' ),
+			'long_logo_id'  => self::sanitize_logo_id( $input['long_logo_id'] ?? 0, 'long' ),
+			'use_long_logo' => ! empty( $input['use_long_logo'] ),
 			'open_in_new_tab_patterns' => self::sanitize_open_in_new_tab_patterns( $input['open_in_new_tab_patterns'] ?? '' ),
 		);
 	}
@@ -405,6 +413,7 @@ class WP_React_UI_Branding_Settings {
 		$site_name = (string) get_bloginfo( 'name' );
 		$light_url = self::get_attachment_url( self::get_logo_id( 'light_logo_id' ) );
 		$dark_url  = self::get_attachment_url( self::get_logo_id( 'dark_logo_id' ) );
+		$long_url  = self::get_attachment_url( self::get_logo_id( 'long_logo_id' ) );
 
 		if ( null === $light_url ) {
 			$light_url_value = null;
@@ -423,8 +432,10 @@ class WP_React_UI_Branding_Settings {
 			'logos'    => array(
 				'lightUrl'   => $light_url_value,
 				'darkUrl'    => $dark_url_value,
+				'longUrl'    => $long_url,
 				'defaultUrl' => self::get_default_logo_url(),
 			),
+			'useLongLogo' => self::get_use_long_logo(),
 		);
 	}
 
@@ -503,8 +514,20 @@ class WP_React_UI_Branding_Settings {
 		return array(
 			'light_logo_id' => 0,
 			'dark_logo_id'  => 0,
+			'long_logo_id'  => 0,
+			'use_long_logo' => false,
 			'open_in_new_tab_patterns' => array(),
 		);
+	}
+
+	/**
+	 * Returns whether the long logo mode is enabled.
+	 *
+	 * @return bool
+	 */
+	private static function get_use_long_logo(): bool {
+		$settings = self::get_settings();
+		return ! empty( $settings['use_long_logo'] );
 	}
 
 	/**
@@ -604,12 +627,16 @@ class WP_React_UI_Branding_Settings {
 	public static function get_rest_data(): array {
 		$light_id = self::get_logo_id( 'light_logo_id' );
 		$dark_id  = self::get_logo_id( 'dark_logo_id' );
+		$long_id  = self::get_logo_id( 'long_logo_id' );
 
 		return array(
 			'lightLogoId'          => $light_id,
 			'lightLogoUrl'         => self::get_attachment_url( $light_id ),
 			'darkLogoId'           => $dark_id,
 			'darkLogoUrl'          => self::get_attachment_url( $dark_id ),
+			'longLogoId'           => $long_id,
+			'longLogoUrl'          => self::get_attachment_url( $long_id ),
+			'useLongLogo'          => self::get_use_long_logo(),
 			'openInNewTabPatterns' => self::get_open_in_new_tab_patterns(),
 		);
 	}
@@ -625,6 +652,8 @@ class WP_React_UI_Branding_Settings {
 			array(
 				'light_logo_id'          => $input['light_logo_id'] ?? 0,
 				'dark_logo_id'           => $input['dark_logo_id'] ?? 0,
+				'long_logo_id'           => $input['long_logo_id'] ?? 0,
+				'use_long_logo'          => $input['use_long_logo'] ?? false,
 				'open_in_new_tab_patterns' => $input['open_in_new_tab_patterns'] ?? array(),
 			)
 		);

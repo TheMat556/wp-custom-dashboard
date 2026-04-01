@@ -30,7 +30,8 @@ Object.defineProperty(window, "wpReactUi", {
     user: { name: "Admin", role: "administrator" },
     branding: {
       siteName: "Test Site",
-      logos: { lightUrl: null, darkUrl: null, defaultUrl: "/logo.svg" },
+      logos: { lightUrl: null, darkUrl: null, longUrl: null, defaultUrl: "/logo.svg" },
+      useLongLogo: false,
     },
     navigation: DEFAULT_NAVIGATION,
     logoutUrl: "http://localhost/wp-login.php?action=logout",

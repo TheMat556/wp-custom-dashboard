@@ -6,13 +6,19 @@ export interface BrandingData {
   lightLogoUrl: string | null;
   darkLogoId: number;
   darkLogoUrl: string | null;
+  longLogoId: number;
+  longLogoUrl: string | null;
+  useLongLogo: boolean;
   openInNewTabPatterns: string[];
 }
 
 export interface BrandingService {
   fetchBranding(): Promise<BrandingData>;
   saveBranding(
-    data: Pick<BrandingData, "lightLogoId" | "darkLogoId" | "openInNewTabPatterns">
+    data: Pick<
+      BrandingData,
+      "lightLogoId" | "darkLogoId" | "longLogoId" | "useLongLogo" | "openInNewTabPatterns"
+    >
   ): Promise<BrandingData>;
 }
 

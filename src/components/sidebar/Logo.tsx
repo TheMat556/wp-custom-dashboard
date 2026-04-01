@@ -1,6 +1,8 @@
 import { CloseOutlined } from "@ant-design/icons";
 import { Button, Flex, Typography, theme } from "antd";
+import { useStore } from "zustand";
 import { useShellConfig } from "../../context/ShellConfigContext";
+import { brandingStore } from "../../store/brandingStore";
 import { useTheme } from "../../context/ThemeContext";
 
 const { Text } = Typography;
@@ -15,16 +17,20 @@ export function Logo({
   onClose?: () => void;
 }) {
   const { assetsUrl, branding, siteName } = useShellConfig();
+  const brandingSettings = useStore(brandingStore, (state) => state.settings);
   const { theme: appTheme } = useTheme();
   const { token } = theme.useToken();
   const isDark = appTheme === "dark";
   const fallbackLogoUrl = `${assetsUrl}logo.svg`;
+  const lightLogoUrl = brandingSettings?.lightLogoUrl ?? branding?.logos.lightUrl ?? null;
+  const darkLogoUrl = brandingSettings?.darkLogoUrl ?? branding?.logos.darkUrl ?? null;
+  const useLongLogo = !collapsed && (brandingSettings?.useLongLogo ?? branding?.useLongLogo ?? false);
   const logoUrl = isDark
-    ? (branding?.logos.darkUrl ??
-      branding?.logos.lightUrl ??
+    ? (darkLogoUrl ??
+      lightLogoUrl ??
       branding?.logos.defaultUrl ??
       fallbackLogoUrl)
-    : (branding?.logos.lightUrl ?? branding?.logos.defaultUrl ?? fallbackLogoUrl);
+    : (lightLogoUrl ?? branding?.logos.defaultUrl ?? fallbackLogoUrl);
 
   return (
     <Flex
@@ -38,7 +44,11 @@ export function Logo({
         flexShrink: 0,
       }}
     >
-      <Flex align="center">
+      <Flex
+        align="center"
+        justify={collapsed || useLongLogo ? "center" : "flex-start"}
+        style={{ minWidth: 0, flex: collapsed ? "0 0 auto" : 1 }}
+      >
         <img
           src={logoUrl}
           alt={`${siteName} logo`}
@@ -50,7 +60,7 @@ export function Logo({
             flexShrink: 0,
           }}
         />
-        {!collapsed && (
+        {!collapsed && !useLongLogo && (
           <div style={{ marginLeft: 12, lineHeight: 1.2 }}>
             <Text
               strong

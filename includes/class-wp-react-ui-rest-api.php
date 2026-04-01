@@ -91,6 +91,8 @@ class WP_React_UI_REST_API {
 						$input = array(
 							'light_logo_id'          => $request->get_param( 'lightLogoId' ),
 							'dark_logo_id'           => $request->get_param( 'darkLogoId' ),
+							'long_logo_id'           => $request->get_param( 'longLogoId' ),
+							'use_long_logo'          => $request->get_param( 'useLongLogo' ),
 							'open_in_new_tab_patterns' => $request->get_param( 'openInNewTabPatterns' ),
 						);
 

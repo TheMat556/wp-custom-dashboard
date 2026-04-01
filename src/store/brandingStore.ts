@@ -13,7 +13,10 @@ export interface BrandingStoreState {
   service: BrandingService | null;
   load(): Promise<void>;
   save(
-    data: Pick<BrandingData, "lightLogoId" | "darkLogoId" | "openInNewTabPatterns">
+    data: Pick<
+      BrandingData,
+      "lightLogoId" | "darkLogoId" | "longLogoId" | "useLongLogo" | "openInNewTabPatterns"
+    >
   ): Promise<boolean>;
 }
 

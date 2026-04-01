@@ -3,12 +3,14 @@ import type { MenuItem } from "./menu";
 export interface WpReactUiBrandingLogos {
   lightUrl: string | null;
   darkUrl: string | null;
+  longUrl: string | null;
   defaultUrl: string;
 }
 
 export interface WpReactUiBranding {
   siteName: string;
   logos: WpReactUiBrandingLogos;
+  useLongLogo: boolean;
 }
 
 export interface WpReactUiNavigationConfig {
@@ -60,8 +62,10 @@ function normalizeBranding(
     logos: {
       lightUrl: raw?.branding?.logos?.lightUrl ?? null,
       darkUrl: raw?.branding?.logos?.darkUrl ?? null,
+      longUrl: raw?.branding?.logos?.longUrl ?? null,
       defaultUrl: raw?.branding?.logos?.defaultUrl ?? `${assetsUrl}logo.svg`,
     },
+    useLongLogo: raw?.branding?.useLongLogo ?? false,
   };
 }
 
