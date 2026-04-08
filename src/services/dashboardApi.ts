@@ -18,17 +18,6 @@ export interface SiteHealthData {
   score: number;
 }
 
-export interface ActivityPerMonthEntry {
-  month: string;
-  posts: number;
-  comments: number;
-}
-
-export interface ContentBreakdownEntry {
-  name: string;
-  value: number;
-}
-
 export interface PendingUpdates {
   plugins: number;
   themes: number;
@@ -36,12 +25,68 @@ export interface PendingUpdates {
   total: number;
 }
 
+export interface VisitorTrendEntry {
+  date: string;
+  views: number;
+}
+
+export interface CountryStatEntry {
+  country: string;
+  visits: number;
+}
+
+export interface SiteSpeedData {
+  ms: number | null;
+  status: "good" | "fair" | "slow" | "error";
+}
+
+export interface PageItem {
+  id: number;
+  title: string;
+  modified: string;
+  daysOld?: number;
+  editUrl: string;
+  viewUrl: string;
+}
+
+export interface PagesOverview {
+  recent: PageItem[];
+  drafts: PageItem[];
+  totalPublished: number;
+  totalDrafts: number;
+}
+
+export interface ActionItem {
+  type: "update" | "content" | "health" | "seo";
+  severity: "error" | "warning" | "info";
+  title: string;
+  description?: string;
+  action: string;
+  url: string;
+}
+
+export interface SeoIssue {
+  label: string;
+  url: string;
+}
+
+export interface SeoOverview {
+  score: number;
+  issues: SeoIssue[];
+  plugin: string | null;
+  totalPages: number;
+}
+
 export interface DashboardData {
   atAGlance: AtAGlanceData;
   siteHealth: SiteHealthData;
-  activityPerMonth: ActivityPerMonthEntry[];
-  contentBreakdown: ContentBreakdownEntry[];
   pendingUpdates: PendingUpdates;
+  visitorTrend: VisitorTrendEntry[];
+  countryStats: CountryStatEntry[];
+  siteSpeed: SiteSpeedData;
+  pagesOverview: PagesOverview;
+  actionItems: ActionItem[];
+  seoOverview: SeoOverview;
 }
 
 export interface DashboardService {

@@ -220,8 +220,8 @@ export default function Navbar() {
         transition: "background 300ms ease, border-color 300ms ease, box-shadow 300ms ease",
       }}
     >
-      {/* Left: burger + breadcrumb (fixed, won't grow) */}
-      <div style={{ display: "flex", alignItems: "center", flexShrink: 0 }}>
+      {/* Left: burger + breadcrumb (shrinks to show burger at minimum) */}
+      <div style={{ display: "flex", alignItems: "center", flexShrink: 1, minWidth: "var(--shell-navbar-height, 64px)", overflow: "hidden" }}>
         <Button
           className="wp-react-ui-navbar-toggle"
           type="text"

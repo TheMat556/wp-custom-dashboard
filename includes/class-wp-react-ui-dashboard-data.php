@@ -10,18 +10,46 @@ defined( 'ABSPATH' ) || exit;
 class WP_React_UI_Dashboard_Data {
 
 /**
+ * Register front-end page-view tracking hook.
+ */
+public static function init(): void {
+add_action( 'template_redirect', array( __CLASS__, 'track_page_view' ) );
+}
+
+/**
+ * Increment today's page-view counter (front-end only, skips bots/feeds).
+ */
+public static function track_page_view(): void {
+if ( is_feed() || is_trackback() ) {
+return;
+}
+$ua = isset( $_SERVER['HTTP_USER_AGENT'] ) ? sanitize_text_field( wp_unslash( $_SERVER['HTTP_USER_AGENT'] ) ) : '';
+if ( $ua && preg_match( '/bot|crawl|slurp|spider|curl|wget|facebookexternalhit/i', $ua ) ) {
+return;
+}
+$today = gmdate( 'Y-m-d' );
+$key   = 'wp_react_ui_pv_' . $today;
+$count = (int) get_transient( $key );
+set_transient( $key, $count + 1, 2 * DAY_IN_SECONDS );
+}
+
+/**
  * Returns aggregated dashboard data for the React shell.
  *
  * @return array
  */
 public static function get_dashboard_data(): array {
-return array(
-'atAGlance'        => self::get_at_a_glance(),
-'siteHealth'       => self::get_site_health(),
-'activityPerMonth' => self::get_activity_per_month(),
-'contentBreakdown' => self::get_content_breakdown(),
-'pendingUpdates'   => self::get_pending_updates(),
-);
+	return array(
+		'atAGlance'        => self::get_at_a_glance(),
+		'siteHealth'       => self::get_site_health(),
+		'pendingUpdates'   => self::get_pending_updates(),
+		'visitorTrend'     => self::get_visitor_trend(),
+		'countryStats'     => self::get_country_stats(),
+		'siteSpeed'        => self::get_site_speed(),
+		'pagesOverview'    => self::get_pages_overview(),
+		'actionItems'      => self::get_action_items(),
+		'seoOverview'      => self::get_seo_overview(),
+	);
 }
 
 private static function get_at_a_glance(): array {
@@ -92,7 +120,7 @@ $passed++;
 }
 }
 if ( $total > 0 ) {
-$result['score'] = round( ( $passed / $total ) * 100 );
+$result['score']  = round( ( $passed / $total ) * 100 );
 $result['status'] = $result['score'] >= 80 ? 'good' : ( $result['score'] >= 50 ? 'recommended' : 'critical' );
 }
 } catch ( \Throwable $e ) {
@@ -110,8 +138,8 @@ global $wpdb;
 $results = array();
 for ( $i = 5; $i >= 0; $i-- ) {
 $ts    = strtotime( "-{$i} months" );
-$year  = (int) date( 'Y', $ts );
-$month = (int) date( 'n', $ts );
+$year  = (int) gmdate( 'Y', $ts );
+$month = (int) gmdate( 'n', $ts );
 
 $posts = (int) $wpdb->get_var( $wpdb->prepare(
 "SELECT COUNT(*) FROM {$wpdb->posts}
@@ -128,7 +156,7 @@ $year, $month
 ) );
 
 $results[] = array(
-'month'    => date( 'M', $ts ),
+'month'    => gmdate( 'M', $ts ),
 'posts'    => $posts,
 'comments' => $comments,
 );
@@ -180,6 +208,349 @@ return array(
 'themes'  => $themes,
 'core'    => $core,
 'total'   => $plugins + $themes + $core,
+);
+}
+
+/**
+ * Returns daily page-view counts for the last 30 days.
+ */
+private static function get_visitor_trend(): array {
+$results = array();
+for ( $i = 29; $i >= 0; $i-- ) {
+$ts  = strtotime( "-{$i} days" );
+$day = gmdate( 'Y-m-d', $ts );
+$results[] = array(
+'date'  => gmdate( 'M d', $ts ),
+'views' => (int) get_transient( 'wp_react_ui_pv_' . $day ),
+);
+}
+return $results;
+}
+
+/**
+ * Returns country visit counts.
+ * Uses WP Statistics plugin table if available, otherwise empty.
+ */
+private static function get_country_stats(): array {
+global $wpdb;
+
+// Try WP Statistics (most common analytics plugin).
+$table = $wpdb->prefix . 'statistics_visitor';
+// phpcs:ignore WordPress.DB.DirectDatabaseQuery.NoCaching
+if ( $wpdb->get_var( $wpdb->prepare( 'SHOW TABLES LIKE %s', $table ) ) !== $table ) {
+return array();
+}
+
+// Detect column name (older versions use 'country', newer use 'location').
+$columns    = $wpdb->get_col( "SHOW COLUMNS FROM `{$table}`" ); // phpcs:ignore
+$col        = in_array( 'location', $columns, true ) ? 'location' : 'country';
+$thirty_ago = gmdate( 'Y-m-d', strtotime( '-30 days' ) );
+
+$rows = $wpdb->get_results( // phpcs:ignore WordPress.DB.DirectDatabaseQuery
+$wpdb->prepare(
+"SELECT `{$col}` AS country, COUNT(*) AS visits
+ FROM `{$table}`
+ WHERE last_counter >= %s
+   AND `{$col}` != ''
+   AND `{$col}` != 'xx'
+   AND `{$col}` != '--'
+ GROUP BY `{$col}`
+ ORDER BY visits DESC
+ LIMIT 10",
+$thirty_ago
+),
+ARRAY_A
+);
+
+return array_map(
+function ( $row ) {
+return array(
+'country' => strtoupper( (string) $row['country'] ),
+'visits'  => (int) $row['visits'],
+);
+},
+$rows ?? array()
+);
+}
+
+/**
+ * Measures homepage response time (cached 5 min).
+ */
+private static function get_site_speed(): array {
+$cached = get_transient( 'wp_react_ui_site_speed' );
+if ( false !== $cached ) {
+return $cached;
+}
+$start    = microtime( true );
+$response = wp_remote_get(
+home_url( '/' ),
+array(
+'timeout'    => 8,
+'sslverify'  => false,
+'headers'    => array( 'Cache-Control' => 'no-cache' ),
+'user-agent' => 'WP-React-UI-Health/1.0',
+)
+);
+$ms = (int) round( ( microtime( true ) - $start ) * 1000 );
+if ( is_wp_error( $response ) ) {
+return array( 'ms' => null, 'status' => 'error' );
+}
+$status = $ms < 600 ? 'good' : ( $ms < 1500 ? 'fair' : 'slow' );
+$result = array( 'ms' => $ms, 'status' => $status );
+set_transient( 'wp_react_ui_site_speed', $result, 5 * MINUTE_IN_SECONDS );
+return $result;
+}
+
+/**
+ * Returns published and draft pages.
+ */
+private static function get_pages_overview(): array {
+$map = function ( $p ) {
+$days_old = (int) ceil( ( time() - strtotime( $p->post_modified_gmt ) ) / DAY_IN_SECONDS );
+return array(
+'id'       => $p->ID,
+'title'    => $p->post_title ?: '(untitled)',
+'modified' => human_time_diff( strtotime( $p->post_modified_gmt ) ) . ' ago',
+'daysOld'  => $days_old,
+'editUrl'  => admin_url( 'post.php?post=' . $p->ID . '&action=edit' ),
+'viewUrl'  => get_permalink( $p->ID ),
+);
+};
+$recent = get_posts(
+array(
+'post_type'      => 'page',
+'post_status'    => 'publish',
+'posts_per_page' => 6,
+'orderby'        => 'modified',
+'order'          => 'DESC',
+)
+);
+$drafts = get_posts(
+array(
+'post_type'      => 'page',
+'post_status'    => 'draft',
+'posts_per_page' => 6,
+'orderby'        => 'modified',
+'order'          => 'DESC',
+)
+);
+$page_counts = wp_count_posts( 'page' );
+return array(
+'recent'         => array_map( $map, $recent ),
+'drafts'         => array_map( $map, $drafts ),
+'totalPublished' => (int) ( $page_counts->publish ?? 0 ),
+'totalDrafts'    => (int) ( $page_counts->draft ?? 0 ),
+);
+}
+
+/**
+ * Returns actionable items with plain-language descriptions, sorted by severity.
+ * Severity: error (act now) > warning (review soon) > info (low priority).
+ */
+private static function get_action_items(): array {
+global $wpdb;
+$errors   = array();
+$warnings = array();
+$infos    = array();
+
+// ── Critical: site unreachable ─────────────────────────────────────────
+$speed = get_transient( 'wp_react_ui_site_speed' );
+if ( false !== $speed && isset( $speed['status'] ) && 'error' === $speed['status'] ) {
+$errors[] = array(
+'type'        => 'health',
+'severity'    => 'error',
+'title'       => 'Your website is not reachable',
+'description' => 'We could not load your homepage. Visitors may not be able to access your site right now. Check with your hosting provider — they can tell you if the server is running.',
+'action'      => 'Check site health',
+'url'         => 'site-health.php',
+);
+}
+
+// ── Critical: legal pages still in draft ──────────────────────────────
+$legal_keywords = array( 'datenschutz', 'impressum', 'privacy', 'legal', 'cookie', 'terms', 'agb', 'haftung' );
+$legal_ids      = array();
+$all_drafts     = get_posts(
+array(
+'post_type'      => 'page',
+'post_status'    => 'draft',
+'posts_per_page' => 50,
+)
+);
+foreach ( $all_drafts as $page ) {
+$lower = strtolower( $page->post_title );
+$is_legal = false;
+foreach ( $legal_keywords as $kw ) {
+if ( false !== strpos( $lower, $kw ) ) {
+$is_legal = true;
+break;
+}
+}
+if ( $is_legal ) {
+$legal_ids[] = $page->ID;
+$days = (int) ceil( ( time() - strtotime( $page->post_modified_gmt ) ) / DAY_IN_SECONDS );
+$errors[] = array(
+'type'        => 'content',
+'severity'    => 'error',
+'title'       => '"' . $page->post_title . '" is not published',
+'description' => 'This legal page has been a draft for ' . $days . ' day' . ( $days > 1 ? 's' : '' ) . '. Legal pages like privacy policies must be publicly accessible — leaving this unpublished may violate data protection law.',
+'action'      => 'Review now',
+'url'         => 'post.php?post=' . $page->ID . '&action=edit',
+);
+}
+}
+
+// ── Warning: WordPress core update ────────────────────────────────────
+$core_updates = get_site_transient( 'update_core' );
+if ( $core_updates && ! empty( $core_updates->updates ) ) {
+foreach ( $core_updates->updates as $update ) {
+if ( isset( $update->response ) && 'upgrade' === $update->response ) {
+$warnings[] = array(
+'type'        => 'update',
+'severity'    => 'warning',
+'title'       => 'WordPress update available (' . $update->version . ')',
+'description' => 'Core updates include security patches. WordPress automatically backs up your settings before updating, so your content stays safe.',
+'action'      => 'Update now',
+'url'         => 'update-core.php',
+);
+break;
+}
+}
+}
+
+// ── Warning: plugin updates ───────────────────────────────────────────
+$plugin_updates = get_site_transient( 'update_plugins' );
+if ( $plugin_updates && ! empty( $plugin_updates->response ) ) {
+$count      = count( $plugin_updates->response );
+$warnings[] = array(
+'type'        => 'update',
+'severity'    => 'warning',
+'title'       => $count . ' plugin update' . ( $count > 1 ? 's' : '' ) . ' available',
+'description' => 'Outdated plugins can have security gaps. Updates usually take under a minute and do not affect your content. If something looks different afterwards, you can roll back.',
+'action'      => 'Update now',
+'url'         => 'update-core.php',
+);
+}
+
+// ── Warning: theme updates ────────────────────────────────────────────
+$theme_updates = get_site_transient( 'update_themes' );
+if ( $theme_updates && ! empty( $theme_updates->response ) ) {
+$count      = count( $theme_updates->response );
+$warnings[] = array(
+'type'        => 'update',
+'severity'    => 'warning',
+'title'       => $count . ' theme update' . ( $count > 1 ? 's' : '' ) . ' available',
+'description' => 'Theme updates can include design fixes and security improvements. Your texts and images are stored separately and won\'t be lost.',
+'action'      => 'Update now',
+'url'         => 'update-core.php',
+);
+}
+
+// ── Warning: site health issues ───────────────────────────────────────
+$cached_health = get_transient( 'health-check-site-status-result' );
+if ( $cached_health && isset( $cached_health['status'] )
+&& in_array( $cached_health['status'], array( 'recommended', 'critical' ), true ) ) {
+$is_critical = 'critical' === $cached_health['status'];
+if ( $is_critical ) {
+$errors[] = array(
+'type'        => 'health',
+'severity'    => 'error',
+'title'       => 'WordPress has detected critical configuration issues',
+'description' => 'The WordPress Site Health tool has found serious problems with your server setup that could affect your site\'s security or availability.',
+'action'      => 'View report',
+'url'         => 'site-health.php',
+);
+} else {
+$warnings[] = array(
+'type'        => 'health',
+'severity'    => 'warning',
+'title'       => 'WordPress has detected configuration issues',
+'description' => 'The WordPress Site Health tool checks your server setup. Some issues can slow down your site or create security risks.',
+'action'      => 'View report',
+'url'         => 'site-health.php',
+);
+}
+}
+
+// ── Info: old non-legal drafts ────────────────────────────────────────
+$exclude_ids = ! empty( $legal_ids ) ? $legal_ids : array( 0 );
+$placeholders = implode( ',', array_fill( 0, count( $exclude_ids ), '%d' ) );
+$old_count   = (int) $wpdb->get_var( // phpcs:ignore WordPress.DB.DirectDatabaseQuery
+$wpdb->prepare(
+"SELECT COUNT(*) FROM {$wpdb->posts}
+ WHERE post_type = 'page' AND post_status = 'draft'
+   AND post_modified < %s
+   AND ID NOT IN ({$placeholders})",
+array_merge( array( gmdate( 'Y-m-d', strtotime( '-30 days' ) ) ), $exclude_ids )
+)
+);
+if ( $old_count > 0 ) {
+$infos[] = array(
+'type'        => 'content',
+'severity'    => 'info',
+'title'       => $old_count . ' draft page' . ( $old_count > 1 ? 's' : '' ) . ' not updated in 30+ days',
+'description' => 'These pages were started but not finished. You may want to either complete and publish them, or delete them to keep things tidy.',
+'action'      => 'Review',
+'url'         => 'edit.php?post_status=draft&post_type=page',
+);
+}
+
+return array_merge( $errors, $warnings, $infos );
+}
+
+/**
+ * Returns a basic SEO overview.
+ */
+private static function get_seo_overview(): array {
+global $wpdb;
+$total_pages = (int) $wpdb->get_var(
+"SELECT COUNT(*) FROM {$wpdb->posts} WHERE post_type = 'page' AND post_status = 'publish'"
+);
+$plugin = null;
+if ( defined( 'WPSEO_VERSION' ) ) {
+$plugin = 'yoast';
+} elseif ( defined( 'RANK_MATH_VERSION' ) ) {
+$plugin = 'rankmath';
+} elseif ( defined( 'AIOSEO_VERSION' ) || class_exists( 'All_in_One_SEO_Pack' ) ) {
+$plugin = 'aioseo';
+}
+$issues       = array();
+$issues_count = 0;
+if ( 'yoast' === $plugin && $total_pages > 0 ) {
+$missing_meta = (int) $wpdb->get_var(
+"SELECT COUNT(p.ID) FROM {$wpdb->posts} p
+ LEFT JOIN {$wpdb->postmeta} pm ON p.ID = pm.post_id AND pm.meta_key = '_yoast_wpseo_metadesc'
+ WHERE p.post_type = 'page' AND p.post_status = 'publish'
+   AND (pm.meta_value IS NULL OR pm.meta_value = '')"
+);
+if ( $missing_meta > 0 ) {
+$issues[]      = array(
+'label' => $missing_meta . ' page' . ( $missing_meta > 1 ? 's' : '' ) . ' missing meta description',
+'url'   => 'edit.php?post_type=page',
+);
+$issues_count += $missing_meta;
+}
+}
+if ( $total_pages > 0 ) {
+$short_titles = (int) $wpdb->get_var(
+"SELECT COUNT(*) FROM {$wpdb->posts}
+ WHERE post_type = 'page' AND post_status = 'publish' AND CHAR_LENGTH(post_title) < 10"
+);
+if ( $short_titles > 0 ) {
+$issues[]      = array(
+'label' => $short_titles . ' page' . ( $short_titles > 1 ? 's' : '' ) . ' with very short title',
+'url'   => 'edit.php?post_type=page',
+);
+$issues_count += $short_titles;
+}
+}
+$score = $total_pages > 0
+? max( 0, (int) round( ( 1 - min( 1.0, $issues_count / $total_pages ) ) * 100 ) )
+: 100;
+return array(
+'score'      => $score,
+'issues'     => $issues,
+'plugin'     => $plugin,
+'totalPages' => $total_pages,
 );
 }
 }
