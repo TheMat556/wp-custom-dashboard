@@ -22,7 +22,10 @@ export interface EmbedBreakoutMessage extends EmbedMessageBase {
   url: string;
 }
 
-export type EmbedMessage = EmbedPageReadyMessage | EmbedTitleChangeMessage | EmbedBreakoutMessage;
+export type EmbedMessage =
+  | EmbedPageReadyMessage
+  | EmbedTitleChangeMessage
+  | EmbedBreakoutMessage;
 
 export function isEmbedMessage(value: unknown): value is EmbedMessage {
   if (!value || typeof value !== "object") {

@@ -38,6 +38,7 @@ export function MenuLabel({
   return (
     <Flex justify="space-between" align="center" gap={8} style={{ width: "100%", minWidth: 0 }}>
       <span
+        className={isSubmenu ? "wp-react-ui-sidebar-submenu-label" : "wp-react-ui-sidebar-menu-label"}
         style={{
           overflow: "hidden",
           textOverflow: "ellipsis",

@@ -18,8 +18,9 @@ export function BottomActions({
     <Flex
       vertical
       gap={4}
+      className="wp-react-ui-sidebar-bottom-actions"
       style={{
-        padding: 12,
+        padding: "12px 12px 14px",
         borderTop: `1px solid ${token.colorBorderSecondary}`,
         flexShrink: 0,
       }}
@@ -30,7 +31,12 @@ export function BottomActions({
         onClick={onRefresh}
         disabled={loading}
         block
-        style={{ justifyContent: "flex-start", fontWeight: 600 }}
+        style={{
+          justifyContent: "flex-start",
+          fontWeight: 600,
+          minHeight: 40,
+          borderRadius: token.borderRadiusLG,
+        }}
       >
         {loading ? "Refreshing..." : "Refresh menu"}
       </Button>

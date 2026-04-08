@@ -21,9 +21,11 @@ function getInitials(name: string) {
 export default function UserDropdown({
   isDark,
   getContainer,
+  compact = false,
 }: {
   isDark: boolean;
   getContainer: () => HTMLElement;
+  compact?: boolean;
 }) {
   const { adminUrl, logoutUrl, user } = useShellConfig();
   const { token } = theme.useToken();
@@ -112,7 +114,7 @@ export default function UserDropdown({
     <Dropdown
       menu={{
         items: menuItems,
-        style: { minWidth: 200 },
+        style: { minWidth: 220, borderRadius: token.borderRadiusLG },
       }}
       trigger={["click"]}
       placement="bottomRight"
@@ -124,27 +126,31 @@ export default function UserDropdown({
         gap={10}
         style={{
           cursor: "pointer",
-          padding: "6px 10px",
+          padding: compact ? 0 : "6px 10px",
           borderRadius: token.borderRadiusLG,
           color: token.colorText,
           transition: "background-color 180ms ease, color 180ms ease",
         }}
         className="wp-react-ui-user-trigger"
       >
-        <div style={{ textAlign: "right" }}>
-          <Text
-            strong
-            style={{
-              display: "block",
-              fontSize: 13,
-              lineHeight: 1.3,
-              color: token.colorText,
-            }}
-          >
-            {displayUser.name}
-          </Text>
-          <Text style={{ fontSize: 11, color: token.colorTextSecondary }}>{displayUser.role}</Text>
-        </div>
+        {!compact && (
+          <div style={{ textAlign: "right" }}>
+            <Text
+              strong
+              style={{
+                display: "block",
+                fontSize: 13,
+                lineHeight: 1.3,
+                color: token.colorText,
+              }}
+            >
+              {displayUser.name}
+            </Text>
+            <Text style={{ fontSize: 11, color: token.colorTextSecondary }}>
+              {displayUser.role}
+            </Text>
+          </div>
+        )}
         <Avatar
           size={38}
           style={{
@@ -153,6 +159,7 @@ export default function UserDropdown({
             fontWeight: 700,
             fontSize: 13,
             flexShrink: 0,
+            boxShadow: `inset 0 0 0 1px ${token.colorBorderSecondary}`,
           }}
         >
           {displayUser.initials}

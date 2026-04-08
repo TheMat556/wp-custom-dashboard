@@ -7,7 +7,7 @@
  * The parent shell (React) stays alive across all navigations.
  */
 
-import { Spin, theme } from "antd";
+import { Spin } from "antd";
 import { lazy, Suspense, useEffect, useRef } from "react";
 import { useStore } from "zustand";
 import { navigationStore } from "../../store/navigationStore";
@@ -38,7 +38,6 @@ export default function ContentFrame() {
   const isLoading = useStore(navigationStore, (s) => s.status === "loading");
   const handleIframeLoad = useStore(navigationStore, (s) => s.handleIframeLoad);
   const handleIframeMessage = useStore(navigationStore, (s) => s.handleIframeMessage);
-  const { token } = theme.useToken();
 
   // Listen for postMessage from the iframe (title changes, breakout requests).
   useEffect(() => {
@@ -69,14 +68,7 @@ export default function ContentFrame() {
       >
         <Suspense
           fallback={
-            <div
-              style={{
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                height: "100%",
-              }}
-            >
+            <div className="wp-react-ui-content-loading-shell">
               <Spin size="large" />
             </div>
           }
@@ -101,17 +93,16 @@ export default function ContentFrame() {
       {/* Spinner overlay while the iframe is loading */}
       {isLoading && (
         <div
+          className="wp-react-ui-content-loading-overlay"
           style={{
             position: "absolute",
             inset: 0,
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            background: token.colorBgContainer,
             zIndex: 10,
           }}
         >
-          <Spin size="large" />
+          <div className="wp-react-ui-content-loading-shell">
+            <Spin size="large" />
+          </div>
         </div>
       )}
       <iframe

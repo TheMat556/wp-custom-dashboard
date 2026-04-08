@@ -40,6 +40,7 @@ export const SidebarContent = memo(function SidebarContent({
   return (
     <Flex
       vertical
+      className="wp-react-ui-sidebar-shell"
       style={{
         height: "100%",
         backgroundColor: token.colorBgContainer,
@@ -48,12 +49,14 @@ export const SidebarContent = memo(function SidebarContent({
       <Logo collapsed={collapsed} showClose={showClose} onClose={onClose} />
 
       <div
+        className="wp-react-ui-sidebar-scroll"
         style={{
           flex: 1,
           minHeight: 0,
         }}
       >
         <Menu
+          className="wp-react-ui-sidebar-menu"
           mode="inline"
           selectedKeys={activeKey ? [activeKey] : []}
           openKeys={collapsed ? [] : openKeys}
@@ -65,7 +68,8 @@ export const SidebarContent = memo(function SidebarContent({
             height: "100%",
             borderRight: 0,
             overflow: "auto",
-            padding: "12px 8px",
+            padding: collapsed ? "12px 8px" : "16px 10px",
+            background: "transparent",
           }}
         />
       </div>

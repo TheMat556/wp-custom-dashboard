@@ -5,6 +5,7 @@ import { useLayoutEffect } from "react";
 import { useStore } from "zustand";
 import App from "./App";
 import { ErrorBoundary } from "./components/ErrorBoundary";
+import { NativeCommandPaletteEnhancer } from "./components/NativeCommandPaletteEnhancer";
 import { NotificationRenderer } from "./components/NotificationRenderer";
 import { ShellMountEffects } from "./components/ShellMountEffects";
 import { ShellConfigProvider } from "./context/ShellConfigContext";
@@ -12,12 +13,52 @@ import { useShellConfig } from "./context/ShellConfigContext";
 import { useTheme } from "./context/ThemeContext";
 import { bootstrapBrandingStore, brandingStore, resetBrandingStore } from "./store/brandingStore";
 import { bootstrapMenuStore, resetMenuStore } from "./store/menuStore";
-import { bootstrapNavigationStore, resetNavigationStore } from "./store/navigationStore";
+import {
+  bootstrapNavigationStore,
+  navigationStore,
+  resetNavigationStore,
+} from "./store/navigationStore";
 import { resetNotificationStore } from "./store/notificationStore";
+import {
+  bootstrapShellPreferencesStore,
+  resetShellPreferencesStore,
+  shellPreferencesStore,
+} from "./store/shellPreferencesStore";
 import { bootstrapSidebarStore, resetSidebarStore } from "./store/sidebarStore";
 import { bootstrapThemeStore, resetThemeStore } from "./store/themeStore";
 import type { WpReactUiConfig } from "./types/wp";
 import { getFontFamilyForPreset } from "./utils/fontPresets";
+
+function ShellCssVarSync() {
+  const { token } = antTheme.useToken();
+
+  useLayoutEffect(() => {
+    const root = document.documentElement;
+    const body = document.body;
+
+    const cssVars: Record<string, string> = {
+      "--wp-react-ui-command-surface": token.colorBgContainer,
+      "--wp-react-ui-command-surface-muted": token.colorFillAlter,
+      "--wp-react-ui-command-border": token.colorBorderSecondary,
+      "--wp-react-ui-command-text": token.colorText,
+      "--wp-react-ui-command-text-muted": token.colorTextTertiary,
+      "--wp-react-ui-command-shadow": token.boxShadowSecondary,
+      "--wp-react-ui-command-item-hover": token.colorFillSecondary,
+      "--wp-react-ui-command-item-active": token.colorPrimary,
+      "--wp-react-ui-command-item-active-text": token.colorTextLightSolid,
+      "--wp-react-ui-scrollbar-track": token.colorFillSecondary,
+      "--wp-react-ui-scrollbar-thumb": token.colorTextQuaternary,
+      "--wp-react-ui-scrollbar-thumb-hover": token.colorTextTertiary,
+    };
+
+    for (const [name, value] of Object.entries(cssVars)) {
+      root.style.setProperty(name, value);
+      body.style.setProperty(name, value);
+    }
+  }, [token]);
+
+  return null;
+}
 
 function AntConfigProvider({ children }: { children: React.ReactNode }) {
   const { branding } = useShellConfig();
@@ -42,6 +83,7 @@ function AntConfigProvider({ children }: { children: React.ReactNode }) {
         },
       }}
     >
+      <ShellCssVarSync />
       {children}
     </ConfigProvider>
   );
@@ -53,6 +95,7 @@ function ShellRoot({ host, config }: { host: HTMLElement; config: Readonly<WpRea
       <ShellConfigProvider config={config}>
         <AntConfigProvider>
           <NotificationRenderer />
+          <NativeCommandPaletteEnhancer />
           <ShellMountEffects host={host} />
           <App />
         </AntConfigProvider>
@@ -65,10 +108,25 @@ export function bootstrapShell(host: HTMLElement, config: Readonly<WpReactUiConf
   bootstrapMenuStore(config);
   bootstrapThemeStore(config);
   bootstrapBrandingStore(config);
+  bootstrapShellPreferencesStore();
   const teardownSidebar = bootstrapSidebarStore();
   const teardownNavigation = bootstrapNavigationStore({
     breakoutPagenow: config.navigation.breakoutPagenow,
     openInNewTabPatterns: config.navigation.openInNewTabPatterns,
+  });
+  const teardownRecentPages = navigationStore.subscribe((state, prevState) => {
+    if (state.status !== "ready" || !state.pageUrl) {
+      return;
+    }
+
+    const justBecameReady = prevState.status !== "ready";
+    const pageChanged = state.pageUrl !== prevState.pageUrl;
+
+    if (!justBecameReady && !pageChanged) {
+      return;
+    }
+
+    shellPreferencesStore.getState().recordVisit(state.pageUrl, state.pageTitle);
   });
 
   let root: Root | null = createRoot(host);
@@ -79,6 +137,7 @@ export function bootstrapShell(host: HTMLElement, config: Readonly<WpReactUiConf
   );
 
   return () => {
+    teardownRecentPages();
     teardownNavigation();
     teardownSidebar();
     root?.unmount();
@@ -89,5 +148,6 @@ export function bootstrapShell(host: HTMLElement, config: Readonly<WpReactUiConf
     resetNavigationStore();
     resetNotificationStore();
     resetBrandingStore();
+    resetShellPreferencesStore();
   };
 }

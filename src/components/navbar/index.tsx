@@ -15,6 +15,7 @@ import { useTheme } from "../../context/ThemeContext";
 import { useMenu } from "../../hooks/useMenu";
 import { useActiveKey } from "../../utils/spaNavigate";
 import { navigate, navigateHome } from "../../utils/wp";
+import { CommandPaletteTrigger } from "./CommandPalette";
 
 const { Text } = Typography;
 const UserDropdown = lazy(() => import("./UserDropdown"));
@@ -42,11 +43,24 @@ export default function Navbar() {
     const items: { title: React.ReactNode }[] = [
       {
         title: (
-          <Space size={4} style={{ cursor: "pointer" }} onClick={() => navigateHome(adminUrl)}>
+          <Space
+            size={4}
+            style={{ cursor: "pointer", minWidth: 0, maxWidth: 160 }}
+            onClick={() => navigateHome(adminUrl)}
+          >
             <HomeOutlined
               style={{ fontSize: 16, color: token.colorTextTertiary, marginRight: 4 }}
             />
-            <Text style={{ color: token.colorTextSecondary }}>Home</Text>
+            <Text
+              style={{
+                color: token.colorTextSecondary,
+                overflow: "hidden",
+                textOverflow: "ellipsis",
+                whiteSpace: "nowrap",
+              }}
+            >
+              Home
+            </Text>
           </Space>
         ),
       },
@@ -60,7 +74,16 @@ export default function Navbar() {
         title: (
           <Text
             strong
-            style={{ cursor: "pointer", color: token.colorTextHeading }}
+            style={{
+              cursor: "pointer",
+              color: token.colorTextHeading,
+              display: "inline-block",
+              maxWidth: 180,
+              overflow: "hidden",
+              textOverflow: "ellipsis",
+              whiteSpace: "nowrap",
+              verticalAlign: "middle",
+            }}
             onClick={() => navigate(topLevel.slug, adminUrl)}
           >
             {topLevel.label}
@@ -76,7 +99,16 @@ export default function Navbar() {
         items.push({
           title: (
             <Text
-              style={{ cursor: "pointer", color: token.colorTextSecondary }}
+              style={{
+                cursor: "pointer",
+                color: token.colorTextSecondary,
+                display: "inline-block",
+                maxWidth: 140,
+                overflow: "hidden",
+                textOverflow: "ellipsis",
+                whiteSpace: "nowrap",
+                verticalAlign: "middle",
+              }}
               onClick={() => navigate(parent.slug, adminUrl)}
             >
               {parent.label}
@@ -85,7 +117,18 @@ export default function Navbar() {
         });
         items.push({
           title: (
-            <Text strong style={{ color: token.colorTextHeading }}>
+            <Text
+              strong
+              style={{
+                color: token.colorTextHeading,
+                display: "inline-block",
+                maxWidth: 180,
+                overflow: "hidden",
+                textOverflow: "ellipsis",
+                whiteSpace: "nowrap",
+                verticalAlign: "middle",
+              }}
+            >
               {child.label}
             </Text>
           ),
@@ -101,6 +144,12 @@ export default function Navbar() {
           style={{
             textTransform: "capitalize",
             color: token.colorTextHeading,
+            display: "inline-block",
+            maxWidth: 180,
+            overflow: "hidden",
+            textOverflow: "ellipsis",
+            whiteSpace: "nowrap",
+            verticalAlign: "middle",
           }}
         >
           {activeKey.replace(/-/g, " ")}
@@ -126,6 +175,7 @@ export default function Navbar() {
   return (
     <header
       ref={containerRef}
+      className="wp-react-ui-navbar"
       style={{
         boxSizing: "border-box",
         position: "relative",
@@ -136,7 +186,7 @@ export default function Navbar() {
         height: 64,
         flexShrink: 0,
         background: headerBackground,
-        paddingRight: 24,
+        paddingRight: isMobile ? 14 : 20,
         paddingLeft: 0,
         borderBottom: `1px solid ${headerBorderColor}`,
         boxShadow: isDark ? token.boxShadowTertiary : "none",
@@ -146,6 +196,7 @@ export default function Navbar() {
       {/* ── Left: Burger + Breadcrumb ── */}
       <Space size={12} align="center">
         <Button
+          className="wp-react-ui-navbar-toggle"
           type="text"
           icon={getToggleIcon()}
           onClick={toggleSidebar}
@@ -162,15 +213,7 @@ export default function Navbar() {
         />
         {!isMobile && (
           <div
-            style={{
-              marginTop: 4,
-              padding: 0,
-              borderRadius: 0,
-              backgroundColor: "transparent",
-              border: "none",
-              transition: "color 200ms ease",
-              boxShadow: "none",
-            }}
+            className="wp-react-ui-navbar-breadcrumb"
           >
             <Breadcrumb
               items={breadcrumbItems}
@@ -184,7 +227,7 @@ export default function Navbar() {
       <Space
         size={12}
         align="center"
-        split={
+        split={isMobile ? undefined : (
           <Divider
             type="vertical"
             style={{
@@ -193,9 +236,12 @@ export default function Navbar() {
               borderInlineStartColor: token.colorSplit,
             }}
           />
-        }
+        )}
       >
+        <CommandPaletteTrigger />
+
         <Button
+          className="wp-react-ui-navbar-icon-button"
           type="text"
           shape="circle"
           icon={
@@ -222,6 +268,7 @@ export default function Navbar() {
 
         {/* Theme toggle */}
         <Button
+          className="wp-react-ui-navbar-icon-button"
           type="text"
           shape="circle"
           icon={
@@ -248,7 +295,7 @@ export default function Navbar() {
 
         {/* User dropdown */}
         <Suspense fallback={null}>
-          <UserDropdown isDark={isDark} getContainer={getPopupContainer} />
+          <UserDropdown isDark={isDark} getContainer={getPopupContainer} compact={isMobile} />
         </Suspense>
       </Space>
     </header>
