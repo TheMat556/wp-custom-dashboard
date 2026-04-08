@@ -49,6 +49,58 @@ class WP_React_UI_Shell_Localization {
 				'name' => $user->display_name,
 				'role' => implode( ', ', $user->roles ),
 			),
+			'shellRoutes' => self::get_shell_routes(),
 		);
+	}
+
+	/**
+	 * Collects plugin-registered shell routes via the wp_react_ui_shell_routes filter.
+	 *
+	 * Third-party plugins register routes like:
+	 *   add_filter( 'wp_react_ui_shell_routes', function( $routes ) {
+	 *       $routes[] = array(
+	 *           'slug'           => 'my-plugin-page',
+	 *           'label'          => 'My Plugin',
+	 *           'entrypoint_url' => plugins_url( 'dist/shell-page.js', __FILE__ ),
+	 *       );
+	 *       return $routes;
+	 *   } );
+	 *
+	 * @return array<int, array{slug: string, label: string, entrypoint_url: string}>
+	 */
+	private static function get_shell_routes(): array {
+		/**
+		 * Filters the list of plugin-provided shell routes.
+		 *
+		 * Each route is an associative array with:
+		 *   - slug           (string) The ?page= parameter value.
+		 *   - label          (string) Human-readable label (for UI or errors).
+		 *   - entrypoint_url (string) Full URL to the JS module that exports a default React component.
+		 *
+		 * @param array $routes Default empty array.
+		 * @return array
+		 */
+		$routes = apply_filters( 'wp_react_ui_shell_routes', array() );
+
+		if ( ! is_array( $routes ) ) {
+			return array();
+		}
+
+		$sanitized = array();
+		foreach ( $routes as $route ) {
+			if (
+				is_array( $route ) &&
+				! empty( $route['slug'] ) &&
+				! empty( $route['entrypoint_url'] )
+			) {
+				$sanitized[] = array(
+					'slug'           => sanitize_key( $route['slug'] ),
+					'label'          => sanitize_text_field( $route['label'] ?? $route['slug'] ),
+					'entrypoint_url' => esc_url_raw( $route['entrypoint_url'] ),
+				);
+			}
+		}
+
+		return $sanitized;
 	}
 }

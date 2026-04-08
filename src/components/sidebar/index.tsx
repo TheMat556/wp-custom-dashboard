@@ -93,6 +93,7 @@ export default function Sidebar() {
           onRefresh={refresh}
           showClose={true}
           onClose={toggle}
+          adminUrl={adminUrl}
         />
       </MobileDrawer>
     );
@@ -124,6 +125,7 @@ export default function Sidebar() {
           onParentClick={collapsed ? handleParentClick : undefined}
           loading={loading}
           onRefresh={refresh}
+          adminUrl={adminUrl}
         />
       </Sider>
     </div>

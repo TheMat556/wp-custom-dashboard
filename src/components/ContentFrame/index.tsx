@@ -7,23 +7,69 @@
  * The parent shell (React) stays alive across all navigations.
  */
 
-import { Spin } from "antd";
-import { lazy, Suspense, useEffect, useRef } from "react";
+import { Spin, Flex, Typography } from "antd";
+import { lazy, Suspense, useEffect, useRef, useMemo } from "react";
 import { useStore } from "zustand";
+import { useShellConfig } from "../../context/ShellConfigContext";
 import { navigationStore } from "../../store/navigationStore";
+import type { WpReactUiShellRoute } from "../../types/wp";
 
 const BrandingSettings = lazy(() => import("../BrandingSettings"));
+const DashboardPage = lazy(() => import("../DashboardPage"));
+
+const { Text } = Typography;
 
 const SHELL_ROUTES: Record<string, React.ComponentType> = {
   "wp-react-ui-branding": BrandingSettings,
 };
 
-function getShellRoute(pageUrl: string): React.ComponentType | null {
+// Cache for dynamically imported plugin components.
+const dynamicComponentCache = new Map<string, React.LazyExoticComponent<React.ComponentType>>();
+
+function getDynamicComponent(route: WpReactUiShellRoute): React.LazyExoticComponent<React.ComponentType> {
+  let cached = dynamicComponentCache.get(route.slug);
+  if (!cached) {
+    cached = lazy(() =>
+      import(/* @vite-ignore */ route.entrypoint_url).catch(() => ({
+        default: () => (
+          <Flex align="center" justify="center" style={{ height: "100%", padding: 40 }}>
+            <Text type="danger">
+              Failed to load plugin page: {route.label}
+            </Text>
+          </Flex>
+        ),
+      }))
+    );
+    dynamicComponentCache.set(route.slug, cached);
+  }
+  return cached;
+}
+
+function getShellRoute(
+  pageUrl: string,
+  pluginRoutes: WpReactUiShellRoute[]
+): React.ComponentType | null {
   try {
     const url = new URL(pageUrl);
+
+    // Check page param routes first (built-in).
     const page = url.searchParams.get("page");
     if (page && page in SHELL_ROUTES) {
       return SHELL_ROUTES[page];
+    }
+
+    // Check plugin-registered routes.
+    if (page) {
+      const pluginRoute = pluginRoutes.find((r) => r.slug === page);
+      if (pluginRoute) {
+        return getDynamicComponent(pluginRoute);
+      }
+    }
+
+    // Check pathname-based routes (e.g., index.php = dashboard).
+    const pathname = url.pathname;
+    if (pathname.endsWith("/index.php") || pathname.endsWith("/wp-admin/") || pathname.endsWith("/wp-admin")) {
+      return DashboardPage;
     }
   } catch {
     // not a valid URL
@@ -32,12 +78,15 @@ function getShellRoute(pageUrl: string): React.ComponentType | null {
 }
 
 export default function ContentFrame() {
+  const config = useShellConfig();
   const iframeRef = useRef<HTMLIFrameElement>(null);
   const iframeUrl = useStore(navigationStore, (s) => s.iframeUrl);
   const pageUrl = useStore(navigationStore, (s) => s.pageUrl);
   const isLoading = useStore(navigationStore, (s) => s.status === "loading");
   const handleIframeLoad = useStore(navigationStore, (s) => s.handleIframeLoad);
   const handleIframeMessage = useStore(navigationStore, (s) => s.handleIframeMessage);
+
+  const pluginRoutes = useMemo(() => config.shellRoutes ?? [], [config.shellRoutes]);
 
   // Listen for postMessage from the iframe (title changes, breakout requests).
   useEffect(() => {
@@ -46,7 +95,7 @@ export default function ContentFrame() {
     return () => window.removeEventListener("message", onMessage);
   }, [handleIframeMessage]);
 
-  const ShellPage = getShellRoute(pageUrl);
+  const ShellPage = getShellRoute(pageUrl, pluginRoutes);
 
   // Mark the shell-managed page as ready so the loading spinner clears
   useEffect(() => {
@@ -58,12 +107,16 @@ export default function ContentFrame() {
   if (ShellPage) {
     return (
       <div
+        id="wp-react-ui-content"
+        tabIndex={-1}
         style={{
           gridArea: "content",
           position: "relative",
           overflow: "hidden",
+          pointerEvents: "auto",
           minWidth: 0,
           minHeight: 0,
+          outline: "none",
         }}
       >
         <Suspense
@@ -81,6 +134,8 @@ export default function ContentFrame() {
 
   return (
     <div
+      id="wp-react-ui-content"
+      tabIndex={-1}
       style={{
         gridArea: "content",
         position: "relative",
@@ -88,23 +143,10 @@ export default function ContentFrame() {
         pointerEvents: "auto",
         minWidth: 0,
         minHeight: 0,
+        outline: "none",
       }}
     >
-      {/* Spinner overlay while the iframe is loading */}
-      {isLoading && (
-        <div
-          className="wp-react-ui-content-loading-overlay"
-          style={{
-            position: "absolute",
-            inset: 0,
-            zIndex: 10,
-          }}
-        >
-          <div className="wp-react-ui-content-loading-shell">
-            <Spin size="large" />
-          </div>
-        </div>
-      )}
+      {isLoading && <div className="wp-react-ui-content-loading-bar" aria-hidden="true" />}
       <iframe
         ref={iframeRef}
         src={iframeUrl}

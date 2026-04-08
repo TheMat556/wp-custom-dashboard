@@ -134,7 +134,7 @@ export default function UserDropdown({
         className="wp-react-ui-user-trigger"
       >
         {!compact && (
-          <div style={{ textAlign: "right" }}>
+          <div style={{ textAlign: "right", minWidth: 0, maxWidth: 110, overflow: "hidden" }}>
             <Text
               strong
               style={{
@@ -142,11 +142,14 @@ export default function UserDropdown({
                 fontSize: 13,
                 lineHeight: 1.3,
                 color: token.colorText,
+                overflow: "hidden",
+                textOverflow: "ellipsis",
+                whiteSpace: "nowrap",
               }}
             >
               {displayUser.name}
             </Text>
-            <Text style={{ fontSize: 11, color: token.colorTextSecondary }}>
+            <Text style={{ fontSize: 11, color: token.colorTextSecondary, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", display: "block" }}>
               {displayUser.role}
             </Text>
           </div>

@@ -27,6 +27,12 @@ export interface WpReactUiUser {
   role: string;
 }
 
+export interface WpReactUiShellRoute {
+  slug: string;
+  label: string;
+  entrypoint_url: string;
+}
+
 export interface WpReactUiConfig {
   adminUrl: string;
   menu: MenuItem[];
@@ -40,6 +46,7 @@ export interface WpReactUiConfig {
   navigation: WpReactUiNavigationConfig;
   logoutUrl: string;
   user: WpReactUiUser;
+  shellRoutes: WpReactUiShellRoute[];
 }
 
 export type WpReactUiWindowConfig = Partial<WpReactUiConfig> & {
@@ -108,6 +115,7 @@ export function normalizeWpReactUiConfig(
     navigation: normalizeNavigation(raw),
     logoutUrl: raw?.logoutUrl ?? "/wp-login.php?action=logout",
     user: normalizeUser(raw),
+    shellRoutes: Array.isArray(raw?.shellRoutes) ? raw.shellRoutes : [],
   });
 }
 

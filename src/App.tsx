@@ -1,4 +1,6 @@
+import { AriaLiveRegion } from "./components/AriaLiveRegion";
 import ContentFrame from "./components/ContentFrame";
+import { SkipToContent } from "./components/SkipToContent";
 import Navbar from "./components/navbar";
 import Sidebar from "./components/sidebar";
 
@@ -8,7 +10,7 @@ export default function App() {
       style={{
         display: "grid",
         gridTemplateColumns: "var(--sidebar-width, 240px) minmax(0, 1fr)",
-        gridTemplateRows: "64px 1fr",
+        gridTemplateRows: "var(--shell-navbar-height, 64px) 1fr",
         gridTemplateAreas: '"sidebar navbar" "sidebar content"',
         transition: "grid-template-columns 0.2s ease",
         width: "100%",
@@ -17,6 +19,8 @@ export default function App() {
         pointerEvents: "none",
       }}
     >
+      <SkipToContent />
+      <AriaLiveRegion />
       <div
         style={{
           gridArea: "sidebar",

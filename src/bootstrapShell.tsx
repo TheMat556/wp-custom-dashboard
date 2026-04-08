@@ -7,11 +7,14 @@ import App from "./App";
 import { ErrorBoundary } from "./components/ErrorBoundary";
 import { NativeCommandPaletteEnhancer } from "./components/NativeCommandPaletteEnhancer";
 import { NotificationRenderer } from "./components/NotificationRenderer";
+import { SessionExpiredModal } from "./components/SessionExpiredModal";
 import { ShellMountEffects } from "./components/ShellMountEffects";
 import { ShellConfigProvider } from "./context/ShellConfigContext";
 import { useShellConfig } from "./context/ShellConfigContext";
 import { useTheme } from "./context/ThemeContext";
 import { bootstrapBrandingStore, brandingStore, resetBrandingStore } from "./store/brandingStore";
+import { bootstrapSessionStore, resetSessionStore } from "./store/sessionStore";
+import { bootstrapMenuCountsStore, resetMenuCountsStore } from "./store/menuCountsStore";
 import { bootstrapMenuStore, resetMenuStore } from "./store/menuStore";
 import {
   bootstrapNavigationStore,
@@ -26,6 +29,7 @@ import {
 } from "./store/shellPreferencesStore";
 import { bootstrapSidebarStore, resetSidebarStore } from "./store/sidebarStore";
 import { bootstrapThemeStore, resetThemeStore } from "./store/themeStore";
+import { CUSTOM_PRESET_KEY, THEME_PRESETS } from "./config/themePresets";
 import type { WpReactUiConfig } from "./types/wp";
 import { getFontFamilyForPreset } from "./utils/fontPresets";
 
@@ -64,7 +68,18 @@ function AntConfigProvider({ children }: { children: React.ReactNode }) {
   const { branding } = useShellConfig();
   const { theme } = useTheme();
   const brandingSettings = useStore(brandingStore, (state) => state.settings);
-  const primaryColor = brandingSettings?.primaryColor ?? branding.primaryColor ?? "#4f46e5";
+  const themePreset = useStore(shellPreferencesStore, (s) => s.themePreset);
+  const customPresetColor = useStore(shellPreferencesStore, (s) => s.customPresetColor);
+
+  // Resolve primary color: user preset > branding settings > branding config > default.
+  const brandingColor = brandingSettings?.primaryColor ?? branding.primaryColor ?? "#4f46e5";
+  let primaryColor = brandingColor;
+  if (themePreset === CUSTOM_PRESET_KEY && customPresetColor) {
+    primaryColor = customPresetColor;
+  } else if (themePreset && themePreset !== "default" && THEME_PRESETS[themePreset]) {
+    primaryColor = THEME_PRESETS[themePreset].primaryColor;
+  }
+
   const fontPreset = brandingSettings?.fontPreset ?? branding.fontPreset ?? "inter";
   const fontFamily = getFontFamilyForPreset(fontPreset);
 
@@ -95,6 +110,7 @@ function ShellRoot({ host, config }: { host: HTMLElement; config: Readonly<WpRea
       <ShellConfigProvider config={config}>
         <AntConfigProvider>
           <NotificationRenderer />
+          <SessionExpiredModal />
           <NativeCommandPaletteEnhancer />
           <ShellMountEffects host={host} />
           <App />
@@ -108,7 +124,9 @@ export function bootstrapShell(host: HTMLElement, config: Readonly<WpReactUiConf
   bootstrapMenuStore(config);
   bootstrapThemeStore(config);
   bootstrapBrandingStore(config);
-  bootstrapShellPreferencesStore();
+  const teardownPreferences = bootstrapShellPreferencesStore(config);
+  const teardownSession = bootstrapSessionStore(config);
+  const teardownMenuCounts = bootstrapMenuCountsStore(config);
   const teardownSidebar = bootstrapSidebarStore();
   const teardownNavigation = bootstrapNavigationStore({
     breakoutPagenow: config.navigation.breakoutPagenow,
@@ -140,6 +158,9 @@ export function bootstrapShell(host: HTMLElement, config: Readonly<WpReactUiConf
     teardownRecentPages();
     teardownNavigation();
     teardownSidebar();
+    teardownPreferences();
+    teardownSession();
+    teardownMenuCounts();
     root?.unmount();
     root = null;
     resetMenuStore();
@@ -149,5 +170,7 @@ export function bootstrapShell(host: HTMLElement, config: Readonly<WpReactUiConf
     resetNotificationStore();
     resetBrandingStore();
     resetShellPreferencesStore();
+    resetSessionStore();
+    resetMenuCountsStore();
   };
 }

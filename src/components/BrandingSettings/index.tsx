@@ -1,6 +1,7 @@
 import {
   BgColorsOutlined,
   DeleteOutlined,
+  EyeOutlined,
   LinkOutlined,
   PictureOutlined,
   ReloadOutlined,
@@ -12,8 +13,10 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { useStore } from "zustand";
 import type { BrandingData } from "../../services/brandingApi";
 import { brandingStore } from "../../store/brandingStore";
+import { shellPreferencesStore } from "../../store/shellPreferencesStore";
 import { DEFAULT_FONT_PRESET, FONT_PRESETS, type FontPresetKey } from "../../utils/fontPresets";
 import { openMediaPicker } from "../../utils/wpMedia";
+import { ThemePresetPicker } from "../ThemePresetPicker";
 
 const { Title, Text, Paragraph } = Typography;
 const { TextArea } = Input;
@@ -193,8 +196,19 @@ export default function BrandingSettings() {
   const saving = useStore(brandingStore, (state) => state.saving);
   const load = useStore(brandingStore, (state) => state.load);
   const save = useStore(brandingStore, (state) => state.save);
+  const highContrast = useStore(shellPreferencesStore, (s) => s.highContrast);
   const { token } = theme.useToken();
   const screens = useBreakpoint();
+
+  const toggleHighContrast = () => {
+    const next = !highContrast;
+    shellPreferencesStore.getState().setHighContrast(next);
+    const root = document.getElementById("react-shell-root");
+    if (root) {
+      root.classList.toggle("wp-react-ui-high-contrast", next);
+      document.body.classList.toggle("wp-react-ui-high-contrast", next);
+    }
+  };
 
   const [lightLogoId, setLightLogoId] = useState(0);
   const [lightLogoUrl, setLightLogoUrl] = useState<string | null>(null);
@@ -659,6 +673,40 @@ export default function BrandingSettings() {
                 );
               })}
             </div>
+          </div>
+        </SurfaceCard>
+
+        <SurfaceCard
+          title="Appearance"
+          description="Theme presets and display preferences"
+          icon={<BgColorsOutlined />}
+        >
+          <div style={{ marginBottom: 24 }}>
+            <Text strong style={{ display: "block", marginBottom: 4, fontSize: 14 }}>
+              Theme Presets
+            </Text>
+            <Text type="secondary" style={{ display: "block", marginBottom: 12, fontSize: 13 }}>
+              Choose a color scheme preset for the admin shell.
+            </Text>
+            <ThemePresetPicker />
+          </div>
+
+          <div>
+            <Flex justify="space-between" align="center">
+              <div>
+                <Text strong style={{ display: "block", fontSize: 14 }}>
+                  High Contrast
+                </Text>
+                <Text type="secondary" style={{ fontSize: 13 }}>
+                  Increase text and border contrast for better readability.
+                </Text>
+              </div>
+              <Switch
+                checked={highContrast}
+                onChange={toggleHighContrast}
+                checkedChildren={<EyeOutlined />}
+              />
+            </Flex>
           </div>
         </SurfaceCard>
 

@@ -376,7 +376,7 @@ function PaletteBody() {
   );
 }
 
-export function CommandPaletteTrigger() {
+export function CommandPaletteTrigger({ compact: forceCompact = false }: { compact?: boolean }) {
   const { token } = theme.useToken();
   const { isMobile } = useSidebar();
   const nativePaletteAvailable = hasNativeCommandPalette();
@@ -390,9 +390,11 @@ export function CommandPaletteTrigger() {
     openPalette();
   };
 
+  const showIconOnly = isMobile || forceCompact;
+
   return (
     <>
-      {isMobile ? (
+      {showIconOnly ? (
         <Button
           type="default"
           onClick={handleOpen}
@@ -423,7 +425,8 @@ export function CommandPaletteTrigger() {
           title="Search admin"
           aria-label="Search admin"
           style={{
-            minWidth: 340,
+            width: "100%",
+            maxWidth: 300,
             cursor: "pointer",
           }}
         >

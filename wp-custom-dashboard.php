@@ -14,15 +14,18 @@ require_once __DIR__ . '/includes/class-wp-react-ui-asset-loader.php';
 require_once __DIR__ . '/includes/class-wp-react-ui-branding-settings.php';
 require_once __DIR__ . '/includes/class-wp-react-ui-menu-cache.php';
 require_once __DIR__ . '/includes/class-wp-react-ui-menu-repository.php';
+require_once __DIR__ . '/includes/class-wp-react-ui-dashboard-data.php';
 require_once __DIR__ . '/includes/class-wp-react-ui-rest-api.php';
 require_once __DIR__ . '/includes/class-wp-react-ui-shell-localization.php';
 require_once __DIR__ . '/includes/class-wp-react-ui-shell-admin-assets.php';
 require_once __DIR__ . '/includes/class-wp-react-ui-shell-early-boot.php';
 require_once __DIR__ . '/includes/class-wp-react-ui-shell-embed-mode.php';
 require_once __DIR__ . '/includes/class-wp-react-ui-shell-bootstrap.php';
+require_once __DIR__ . '/includes/class-wp-react-ui-activity-log.php';
 
 WP_React_UI_Branding_Settings::init();
 WP_React_UI_Shell_Bootstrap::init();
+WP_React_UI_Activity_Log::init();
 
 /**
  * Returns the admin screens that need special handling.

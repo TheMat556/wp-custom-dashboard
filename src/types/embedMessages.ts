@@ -22,10 +22,15 @@ export interface EmbedBreakoutMessage extends EmbedMessageBase {
   url: string;
 }
 
+export interface EmbedSessionExpiredMessage extends EmbedMessageBase {
+  type: "session-expired";
+}
+
 export type EmbedMessage =
   | EmbedPageReadyMessage
   | EmbedTitleChangeMessage
-  | EmbedBreakoutMessage;
+  | EmbedBreakoutMessage
+  | EmbedSessionExpiredMessage;
 
 export function isEmbedMessage(value: unknown): value is EmbedMessage {
   if (!value || typeof value !== "object") {
@@ -49,6 +54,8 @@ export function isEmbedMessage(value: unknown): value is EmbedMessage {
       return typeof message.title === "string";
     case "breakout":
       return typeof message.url === "string";
+    case "session-expired":
+      return true;
     default:
       return false;
   }

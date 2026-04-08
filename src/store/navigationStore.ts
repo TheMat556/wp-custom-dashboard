@@ -157,6 +157,11 @@ export const navigationStore = createStore<NavigationState & NavigationActions>(
       return;
     }
 
+    if (msg.type === "session-expired") {
+      import("./sessionStore").then(({ sessionStore: ss }) => ss.getState().markExpired());
+      return;
+    }
+
     window.location.href = msg.url;
   },
 }));

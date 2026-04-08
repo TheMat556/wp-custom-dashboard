@@ -1,6 +1,7 @@
 import { Flex, Menu, theme } from "antd";
-import { memo, useMemo } from "react";
+import { memo, useCallback, useMemo } from "react";
 import type { MenuItem } from "../../types/menu";
+import { cancelPrefetch, startPrefetch } from "../../utils/prefetch";
 import BottomActions from "./BottomActions";
 import { Logo } from "./Logo";
 import { transformMenuItems } from "./menuTransform";
@@ -17,6 +18,7 @@ export const SidebarContent = memo(function SidebarContent({
   onRefresh,
   showClose,
   onClose,
+  adminUrl,
 }: {
   collapsed: boolean;
   menuItems: MenuItem[];
@@ -29,6 +31,7 @@ export const SidebarContent = memo(function SidebarContent({
   onRefresh: () => void;
   showClose?: boolean;
   onClose?: () => void;
+  adminUrl?: string;
 }) {
   const { token } = theme.useToken();
 
@@ -37,9 +40,30 @@ export const SidebarContent = memo(function SidebarContent({
     [menuItems, collapsed, onParentClick]
   );
 
+  // Prefetch: find menu key from hovered DOM element.
+  const handleMouseOver = useCallback(
+    (e: React.MouseEvent) => {
+      if (!adminUrl) return;
+      const menuItem = (e.target as HTMLElement).closest<HTMLElement>("[data-menu-id]");
+      if (!menuItem) return;
+      const rawId = menuItem.dataset.menuId ?? "";
+      // Ant Menu uses data-menu-id with format "rc-menu-uuid-N-slug"
+      const parts = rawId.split("-");
+      const slug = parts[parts.length - 1];
+      if (slug) startPrefetch(slug, adminUrl);
+    },
+    [adminUrl]
+  );
+
+  const handleMouseLeave = useCallback(() => {
+    cancelPrefetch();
+  }, []);
+
   return (
     <Flex
       vertical
+      role="navigation"
+      aria-label="Admin menu"
       className="wp-react-ui-sidebar-shell"
       style={{
         height: "100%",
@@ -54,6 +78,8 @@ export const SidebarContent = memo(function SidebarContent({
           flex: 1,
           minHeight: 0,
         }}
+        onMouseOver={handleMouseOver}
+        onMouseLeave={handleMouseLeave}
       >
         <Menu
           className="wp-react-ui-sidebar-menu"

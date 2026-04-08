@@ -24,6 +24,7 @@ export interface MenuLabelProps {
   count?: number | null;
   badgeType?: BadgeType;
   isSubmenu?: boolean;
+  animate?: boolean;
 }
 
 export function MenuLabel({
@@ -31,6 +32,7 @@ export function MenuLabel({
   count,
   badgeType = "primary",
   isSubmenu = false,
+  animate = false,
 }: MenuLabelProps) {
   const { token } = theme.useToken();
   const hasCount = count != null && count > 0;
@@ -50,18 +52,20 @@ export function MenuLabel({
         {label}
       </span>
       {hasCount && (
-        <Badge
-          count={count}
-          overflowCount={99}
-          size="small"
-          color={isSubmenu ? token.colorPrimaryBg : getBadgeColor(badgeType, token)}
-          aria-label={`${count} pending`}
-          style={{
-            color: isSubmenu ? token.colorPrimary : "#fff",
-            fontWeight: 600,
-            fontSize: 11,
-          }}
-        />
+        <span className={animate ? "wp-react-ui-badge-pulse" : undefined}>
+          <Badge
+            count={count}
+            overflowCount={99}
+            size="small"
+            color={isSubmenu ? token.colorPrimaryBg : getBadgeColor(badgeType, token)}
+            aria-label={`${count} pending`}
+            style={{
+              color: isSubmenu ? token.colorPrimary : "#fff",
+              fontWeight: 600,
+              fontSize: 11,
+            }}
+          />
+        </span>
       )}
     </Flex>
   );
@@ -95,7 +99,8 @@ export function IconWithBadge({ icon, count, badgeType = "primary" }: IconWithBa
 }
 
 export function getBadgeTypeForItem(slug: string): BadgeType {
-  if (slug.includes("update") || slug.includes("plugin")) return "warning";
-  if (slug.includes("comment") || slug.includes("spam")) return "danger";
+  if (slug.includes("update")) return "danger";
+  if (slug.includes("plugin") || slug.includes("theme")) return "warning";
+  if (slug.includes("comment") || slug.includes("spam")) return "primary";
   return "primary";
 }
