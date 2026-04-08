@@ -47,6 +47,7 @@ export interface WpReactUiConfig {
   logoutUrl: string;
   user: WpReactUiUser;
   shellRoutes: WpReactUiShellRoute[];
+  locale: string;
 }
 
 export type WpReactUiWindowConfig = Partial<WpReactUiConfig> & {
@@ -116,6 +117,7 @@ export function normalizeWpReactUiConfig(
     logoutUrl: raw?.logoutUrl ?? "/wp-login.php?action=logout",
     user: normalizeUser(raw),
     shellRoutes: Array.isArray(raw?.shellRoutes) ? raw.shellRoutes : [],
+    locale: raw?.locale ?? "en_US",
   });
 }
 

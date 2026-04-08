@@ -56,10 +56,11 @@ import {
 import { useStore } from "zustand";
 import { useShellConfig } from "../../context/ShellConfigContext";
 import { bootstrapDashboardStore, dashboardStore } from "../../store/dashboardStore";
-import type { ActionItem, BusinessFunctions, CalendarBooking, CountryStatEntry, LegalCompliance, SeoBasics } from "../../services/dashboardApi";
+import type { ActionItem, BusinessFunctions, CalendarBooking, CountryStatEntry, LegalCompliance, SeoBasics, WeekDay } from "../../services/dashboardApi";
 import { navigate } from "../../utils/wp";
+import { createT, localeToIntl, localCountryName } from "../../utils/i18n";
 
-const { Title, Text, Link } = Typography;
+const { Title, Text } = Typography;
 
 /* ── Helpers ─────────────────────────────────────────────────────────────────── */
 function getGreeting(): string {
@@ -76,29 +77,34 @@ function countryFlag(code: string): string {
   ).join("");
 }
 
-function countryName(code: string): string {
-  try { return new Intl.DisplayNames(["en"], { type: "region" }).of(code) ?? code; }
-  catch { return code; }
+function relativeTime(unixTs: number, intlLocale: string): string {
+  const diffMs = Date.now() - unixTs * 1000;
+  const diffMin = Math.round(diffMs / 60000);
+  try {
+    const rtf = new Intl.RelativeTimeFormat(intlLocale, { numeric: "auto" });
+    if (diffMin < 2) return rtf.format(0, "minute");
+    if (diffMin < 60) return rtf.format(-diffMin, "minute");
+    const diffH = Math.round(diffMin / 60);
+    if (diffH < 24) return rtf.format(-diffH, "hour");
+    const diffD = Math.round(diffH / 24);
+    return rtf.format(-diffD, "day");
+  } catch {
+    if (diffMin < 2) return "just now";
+    if (diffMin < 60) return `${diffMin} min ago`;
+    const diffH = Math.round(diffMin / 60);
+    if (diffH < 24) return `${diffH}h ago`;
+    return `${Math.round(diffH / 24)}d ago`;
+  }
 }
 
-function relativeTime(unixTs: number): string {
-  const diffMin = Math.round((Date.now() / 1000 - unixTs) / 60);
-  if (diffMin < 2) return "just now";
-  if (diffMin < 60) return `${diffMin} min ago`;
-  const diffH = Math.round(diffMin / 60);
-  if (diffH < 24) return `${diffH}h ago`;
-  const diffD = Math.round(diffH / 24);
-  return `${diffD} day${diffD > 1 ? "s" : ""} ago`;
-}
-
-function formatBookingTime(dtStr: string): string {
+function formatBookingTime(dtStr: string, intlLocale: string, t: (k: string) => string): string {
   try {
     const dt = new Date(dtStr);
     const today = new Date(); const tomorrow = new Date(); tomorrow.setDate(today.getDate() + 1);
-    const timeStr = dt.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
-    if (today.toDateString() === dt.toDateString()) return `Today, ${timeStr}`;
-    if (tomorrow.toDateString() === dt.toDateString()) return `Tomorrow, ${timeStr}`;
-    return dt.toLocaleDateString([], { weekday: "short", month: "short", day: "numeric" }) + `, ${timeStr}`;
+    const timeStr = dt.toLocaleTimeString(intlLocale, { hour: "2-digit", minute: "2-digit" });
+    if (today.toDateString() === dt.toDateString()) return `${t("Today")}, ${timeStr}`;
+    if (tomorrow.toDateString() === dt.toDateString()) return `${t("Tomorrow")}, ${timeStr}`;
+    return dt.toLocaleDateString(intlLocale, { weekday: "short", month: "short", day: "numeric" }) + `, ${timeStr}`;
   } catch { return dtStr; }
 }
 
@@ -229,6 +235,81 @@ function ActionRow({ item, adminUrl }: { item: ActionItem; adminUrl: string }) {
 }
 
 const CHECKLIST_CLOSED_KEY = "wp-react-ui-checklist-closed";
+
+/* ── Week calendar grid ──────────────────────────────────────────────────────── */
+function WeekCalendar({ weekDays, intlLocale }: {
+  weekDays: WeekDay[];
+  intlLocale: string;
+}) {
+  const { token } = theme.useToken();
+  return (
+    <div style={{ display: "grid", gridTemplateColumns: `repeat(${weekDays.length}, 1fr)`, gap: 6, overflowX: "auto", minWidth: 0 }}>
+      {weekDays.map((day) => {
+        const localLabel = new Date(day.date + "T12:00:00")
+          .toLocaleDateString(intlLocale, { weekday: "short" });
+        return (
+          <div key={day.date} style={{
+            borderRadius: token.borderRadius,
+            border: `1px solid ${day.isToday ? token.colorPrimary + "60" : token.colorBorderSecondary}`,
+            background: day.isToday ? `${token.colorPrimary}08` : token.colorBgLayout,
+            padding: "8px 4px",
+            minWidth: 0,
+          }}>
+            <div style={{ textAlign: "center", marginBottom: 6 }}>
+              <div style={{ fontSize: 10, color: day.isToday ? token.colorPrimary : token.colorTextSecondary, textTransform: "uppercase", fontWeight: 600, letterSpacing: "0.04em" }}>
+                {localLabel}
+              </div>
+              <div style={{
+                width: 26, height: 26, borderRadius: "50%",
+                background: day.isToday ? token.colorPrimary : "transparent",
+                color: day.isToday ? "#fff" : token.colorText,
+                display: "flex", alignItems: "center", justifyContent: "center",
+                margin: "2px auto 0",
+                fontSize: 13, fontWeight: day.isToday ? 700 : 400,
+              }}>
+                {day.dayNum}
+              </div>
+            </div>
+            {day.bookings.length === 0 ? (
+              <div style={{ textAlign: "center", paddingTop: 4 }}>
+                <Text type="secondary" style={{ fontSize: 10 }}>—</Text>
+              </div>
+            ) : (
+              <div style={{ display: "flex", flexDirection: "column", gap: 3 }}>
+                {day.bookings.map((b: CalendarBooking) => {
+                  const timeStr = new Date(b.startDate).toLocaleTimeString(intlLocale, { hour: "2-digit", minute: "2-digit" });
+                  return (
+                    <Tooltip key={b.id} title={`${b.customerName || "—"} · ${timeStr}`}>
+                      <div style={{
+                        padding: "2px 4px", borderRadius: 4,
+                        background: `${token.colorPrimary}18`,
+                        overflow: "hidden",
+                      }}>
+                        <div style={{
+                          fontSize: 10, color: token.colorPrimary,
+                          overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
+                        }}>
+                          {timeStr}
+                        </div>
+                        <div style={{
+                          fontSize: 10, color: token.colorText,
+                          overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
+                          fontWeight: 500,
+                        }}>
+                          {b.customerName || "—"}
+                        </div>
+                      </div>
+                    </Tooltip>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+        );
+      })}
+    </div>
+  );
+}
 
 /* ── Legal compliance section ────────────────────────────────────────────────── */
 function LegalSection({ legal, adminUrl }: { legal: LegalCompliance; adminUrl: string }) {
@@ -439,7 +520,9 @@ export default function DashboardPage() {
   const screens     = Grid.useBreakpoint();
   const data        = useStore(dashboardStore, (s) => s.data);
   const loading     = useStore(dashboardStore, (s) => s.loading);
-  const greeting    = useMemo(() => getGreeting(), []);
+  const greetingKey = useMemo(() => getGreeting(), []);
+  const intlLocale  = useMemo(() => localeToIntl(config.locale ?? "en_US"), [config.locale]);
+  const t           = useMemo(() => createT(config.locale ?? "en_US"), [config.locale]);
   const isMd        = screens.md;
   const isLg        = screens.lg;
 
@@ -533,15 +616,15 @@ export default function DashboardPage() {
             <Flex vertical gap={4} style={{ minWidth: 0 }}>
               <Flex align="center" gap={10} wrap>
                 <Title level={3} style={{ margin: 0, fontSize: isMd ? 22 : 18 }}>
-                  {greeting}, {config.user.name}!
+                  {t(greetingKey)}, {config.user.name}!
                 </Title>
                 {readiness !== null && (
-                  <Tooltip title={`${readiness}% of setup checklist complete`}>
+                  <Tooltip title={t("{n}% of setup checklist complete", { n: readiness })}>
                     <Tag
                       color={readiness >= 100 ? "success" : readiness >= 60 ? "warning" : "error"}
                       style={{ borderRadius: 999, cursor: "default" }}
                     >
-                      {readiness}% ready
+                      {t("{n}% ready", { n: readiness })}
                     </Tag>
                   </Tooltip>
                 )}
@@ -549,7 +632,7 @@ export default function DashboardPage() {
               {total30Views > 0 ? (
                 <Flex align="center" gap={8} style={{ marginTop: 2 }}>
                   <Text type="secondary" style={{ fontSize: 13 }}>
-                    {total30Views.toLocaleString()} page views in the last 30 days
+                    {t("{n} page views in the last 30 days", { n: total30Views.toLocaleString(intlLocale) })}
                   </Text>
                   {viewTrend !== 0 && (
                     <Tag color={viewTrend > 0 ? "success" : "error"} style={{ margin: 0, fontSize: 11, borderRadius: 999 }}>
@@ -559,7 +642,7 @@ export default function DashboardPage() {
                 </Flex>
               ) : (
                 <Text type="secondary" style={{ fontSize: 13, marginTop: 2 }}>
-                  Visitor tracking is active — data will appear as people visit your site.
+                  {t("Visitor tracking is active — data will appear as people visit your site.")}
                 </Text>
               )}
               {stats && (
@@ -583,15 +666,15 @@ export default function DashboardPage() {
               )}
               <Button icon={<LinkOutlined />}
                 onClick={() => window.open(config.adminUrl.replace(/wp-admin\/?$/, ""), "_blank", "noopener,noreferrer")}>
-                View Site
+                {t("View Site")}
               </Button>
               <Button icon={<PlusOutlined />}
                 onClick={() => navigate("post-new.php?post_type=page", config.adminUrl)}>
-                New Page
+                {t("New Page")}
               </Button>
               <Button type="primary" icon={<PlusOutlined />}
                 onClick={() => navigate("post-new.php", config.adminUrl)}>
-                New Post
+                {t("New Post")}
               </Button>
             </Flex>
           </Flex>
@@ -602,44 +685,44 @@ export default function DashboardPage() {
           <div style={{ marginBottom: 16 }}>
             <Alert
               type="error" showIcon icon={<ExclamationCircleOutlined />}
-              message={<strong>Your website is not reachable right now</strong>}
+              message={<strong>{t("Your website is not reachable right now")}</strong>}
               description={
                 <div>
                   <p style={{ margin: "4px 0 8px" }}>
-                    {speed?.reason ?? "We could not connect to your homepage."}{" "}
-                    Your visitors may see an error page.
+                    {speed?.reason ?? t("We could not connect to your homepage.")}{" "}
+                    {t("Your visitors may see an error page.")}
                   </p>
                   {speed?.firstFailAt && (
                     <p style={{ margin: "0 0 8px", fontSize: 12 }}>
-                      <strong>Problem started:</strong>{" "}
-                      {new Date(speed.firstFailAt * 1000).toLocaleString([], { dateStyle: "medium", timeStyle: "short" })}
-                      {" "}({relativeTime(speed.firstFailAt)})
+                      <strong>{t("Problem started:")}</strong>{" "}
+                      {new Date(speed.firstFailAt * 1000).toLocaleString(intlLocale, { dateStyle: "medium", timeStyle: "short" })}
+                      {" "}({relativeTime(speed.firstFailAt, intlLocale)})
                     </p>
                   )}
                   <Text type="secondary" style={{ fontSize: 12 }}>
-                    <strong>Recommended next step:</strong>{" "}
+                    <strong>{t("Recommended next step:")}</strong>{" "}
                     {speed?.errorClass === "ssl"
-                      ? "Contact your hosting provider about your SSL certificate — it may be expired."
+                      ? t("Contact your hosting provider about your SSL certificate — it may be expired.")
                       : speed?.errorClass === "dns"
-                        ? "Check if your domain registration is still active and DNS settings are correct."
+                        ? t("Check if your domain registration is still active and DNS settings are correct.")
                         : speed?.errorClass === "timeout"
-                          ? "Contact your hosting provider — the server may be overloaded or a plugin may have caused a PHP error."
-                          : "Contact your hosting provider. Tell them your website is not loading and ask them to check the server."}
+                          ? t("Contact your hosting provider — the server may be overloaded or a plugin may have caused a PHP error.")
+                          : t("Contact your hosting provider. Tell them your website is not loading and ask them to check the server.")}
                   </Text>
                   {speed?.errorDetail && (
                     <Collapse ghost size="small" style={{ marginTop: 8 }}
                       items={[{
                         key: "tech",
-                        label: <Text type="secondary" style={{ fontSize: 11 }}>Technical details (for developers)</Text>,
+                        label: <Text type="secondary" style={{ fontSize: 11 }}>{t("Technical details (for developers)")}</Text>,
                         children: (
                           <div style={{
                             fontFamily: "monospace", fontSize: 11,
                             background: token.colorBgLayout, borderRadius: token.borderRadius,
                             padding: "8px 12px", color: token.colorTextSecondary,
                           }}>
-                            <div><strong>Error class:</strong> {speed.errorClass ?? "connection"}</div>
-                            <div><strong>Detail:</strong> {speed.errorDetail}</div>
-                            {speed.checkedAt && <div><strong>Last checked:</strong> {new Date(speed.checkedAt * 1000).toLocaleString()}</div>}
+                            <div><strong>{t("Error class:")}</strong> {speed.errorClass ?? "connection"}</div>
+                            <div><strong>{t("Detail:")}</strong> {speed.errorDetail}</div>
+                            {speed.checkedAt && <div><strong>{t("Last checked:")}</strong> {new Date(speed.checkedAt * 1000).toLocaleString(intlLocale)}</div>}
                           </div>
                         ),
                       }]}
@@ -650,38 +733,10 @@ export default function DashboardPage() {
               style={{ borderRadius: token.borderRadiusLG }}
               action={
                 <Button danger size="small" onClick={() => navigate("site-health.php", config.adminUrl)}>
-                  Site Health
+                  {t("Site Health")}
                 </Button>
               }
             />
-            {/* Speed history mini-bar */}
-            {speed?.history && speed.history.length > 1 && (
-              <div style={{
-                background: token.colorBgContainer,
-                border: `1px solid ${token.colorBorderSecondary}`,
-                borderTop: "none",
-                borderRadius: `0 0 ${token.borderRadiusLG}px ${token.borderRadiusLG}px`,
-                padding: "8px 16px",
-              }}>
-                <Flex align="center" gap={8}>
-                  <Text type="secondary" style={{ fontSize: 11, flexShrink: 0 }}>Uptime history:</Text>
-                  <Flex gap={2} align="center">
-                    {speed.history.slice(-24).map((h, i) => (
-                      <Tooltip key={i} title={`${new Date(h.ts * 1000).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })} — ${h.ok ? `${h.ms}ms` : "unreachable"}`}>
-                        <div style={{
-                          width: 6, height: 14, borderRadius: 2,
-                          background: h.ok ? token.colorSuccess : token.colorError,
-                          opacity: 0.7,
-                        }} />
-                      </Tooltip>
-                    ))}
-                  </Flex>
-                  <Text type="secondary" style={{ fontSize: 11 }}>
-                    {Math.round((speed.history.filter(h => h.ok).length / speed.history.length) * 100)}% uptime
-                  </Text>
-                </Flex>
-              </div>
-            )}
           </div>
         )}
 
@@ -693,15 +748,15 @@ export default function DashboardPage() {
         }}>
           <StatTile
             icon={isSiteDown ? <ExclamationCircleOutlined /> : health?.status === "good" ? <CheckCircleOutlined /> : <WarningOutlined />}
-            label="Website"
-            value={isSiteDown ? "Offline" : health?.status === "good" ? "Online" : "Check"}
+            label={t("Website")}
+            value={isSiteDown ? t("Offline") : health?.status === "good" ? t("Online") : t("Check")}
             sub={
               health && health.score > 0 && !isSiteDown
                 ? <Progress percent={health.score} size="small" showInfo={false}
                     strokeColor={health.status === "good" ? token.colorSuccess : health.status === "critical" ? token.colorError : token.colorWarning}
                     style={{ margin: 0 }} />
                 : <Text style={{ fontSize: 11, color: isSiteDown ? token.colorError : token.colorTextTertiary }}>
-                    {isSiteDown ? "Not reachable" : "Click for details"}
+                    {isSiteDown ? t("Not reachable") : t("Click for details")}
                   </Text>
             }
             color={isSiteDown ? token.colorError : health?.status === "good" ? token.colorSuccess : health?.status === "critical" ? token.colorError : token.colorWarning}
@@ -710,21 +765,21 @@ export default function DashboardPage() {
           />
           <StatTile
             icon={<LineChartOutlined />}
-            label="Visitors 30d"
-            value={total30Views > 0 ? total30Views.toLocaleString() : "—"}
+            label={t("Visitors 30d")}
+            value={total30Views > 0 ? total30Views.toLocaleString(intlLocale) : "—"}
             sub={
               total30Views > 0
                 ? viewTrend !== 0
-                  ? <Text style={{ fontSize: 11, color: viewTrend > 0 ? token.colorSuccess : token.colorError }}>{viewTrend > 0 ? "↑" : "↓"} {Math.abs(viewTrend)}% vs yesterday</Text>
-                  : <Text type="secondary" style={{ fontSize: 11 }}>Stable traffic</Text>
-                : <Text type="secondary" style={{ fontSize: 11 }}>Tracking active</Text>
+                  ? <Text style={{ fontSize: 11, color: viewTrend > 0 ? token.colorSuccess : token.colorError }}>{viewTrend > 0 ? "↑" : "↓"} {Math.abs(viewTrend)}% {t("vs yesterday")}</Text>
+                  : <Text type="secondary" style={{ fontSize: 11 }}>{t("Stable traffic")}</Text>
+                : <Text type="secondary" style={{ fontSize: 11 }}>{t("Tracking active")}</Text>
             }
             color={token.colorPrimary}
-            tooltip="Page views tracked automatically. Install WP Statistics (free) for country-level data."
+            tooltip={t("Install Yoast SEO (free) to track your search visibility")}
           />
           <StatTile
             icon={<UpCircleOutlined />}
-            label="Updates"
+            label={t("Updates")}
             value={updates?.total ?? 0}
             sub={
               hasUpdates
@@ -734,39 +789,39 @@ export default function DashboardPage() {
                     {(updates?.core ?? 0) > 0 && <Tag color="red" style={{ margin: 0, fontSize: 10 }}>core</Tag>}
                   </Flex>
                 : updates?.lastChecked
-                  ? <Text type="secondary" style={{ fontSize: 11 }}>Checked {relativeTime(updates.lastChecked)}</Text>
-                  : <Text type="secondary" style={{ fontSize: 11 }}>All up to date</Text>
+                  ? <Text type="secondary" style={{ fontSize: 11 }}>{relativeTime(updates.lastChecked, intlLocale)}</Text>
+                  : <Text type="secondary" style={{ fontSize: 11 }}>{t("All up to date")}</Text>
             }
             color={hasUpdates ? token.colorWarning : token.colorSuccess}
-            tooltip={hasUpdates ? "Updates fix security issues. Make a backup first, then update." : "Everything is up to date"}
+            tooltip={hasUpdates ? t("Updates fix security issues. Make a backup first, then update.") : t("Everything is up to date")}
             onClick={() => navigate("update-core.php", config.adminUrl)}
           />
           <StatTile
             icon={<ThunderboltOutlined />}
-            label="Speed"
-            value={isSiteDown ? "Error" : speed?.ms != null ? `${speed.ms} ms` : "—"}
+            label={t("Speed")}
+            value={isSiteDown ? t("Error") : speed?.ms != null ? `${speed.ms} ms` : "—"}
             sub={
               !isSiteDown && speed?.status
                 ? <Text style={{ fontSize: 11, color: speed.status === "good" ? token.colorSuccess : speed.status === "fair" ? token.colorWarning : token.colorError }}>
-                    {speed.status === "good" ? "Fast" : speed.status === "fair" ? "Acceptable" : "Slow"}
+                    {speed.status === "good" ? t("Fast") : speed.status === "fair" ? t("Acceptable") : t("Slow")}
                   </Text>
-                : <Text style={{ fontSize: 11, color: token.colorError }}>Unreachable</Text>
+                : <Text style={{ fontSize: 11, color: token.colorError }}>{t("Unreachable")}</Text>
             }
             color={isSiteDown ? token.colorError : speed?.status === "good" ? token.colorSuccess : speed?.status === "fair" ? token.colorWarning : token.colorError}
-            tooltip="Homepage load time. Under 600 ms is good. Refreshes every 5 minutes."
+            tooltip={t("Homepage load time. Under 600 ms is good. Refreshes every 5 minutes.")}
           />
           <StatTile
             icon={<SearchOutlined />}
-            label="SEO"
+            label={t("SEO")}
             value={seo?.plugin ? `${seo.score}%` : seoBasics ? `${seoBasics.score}%` : "—"}
             sub={
               seo?.plugin
                 ? seo.issues.length === 0
-                  ? <Text style={{ fontSize: 11, color: token.colorSuccess }}>No issues</Text>
-                  : <Text style={{ fontSize: 11, color: token.colorWarning }}>{seo.issues.length} issue{seo.issues.length > 1 ? "s" : ""}</Text>
+                  ? <Text style={{ fontSize: 11, color: token.colorSuccess }}>{t("No issues")}</Text>
+                  : <Text style={{ fontSize: 11, color: token.colorWarning }}>{t("{n} issues", { n: seo.issues.length })}</Text>
                 : seoBasics
-                  ? <Text style={{ fontSize: 11, color: seoBasics.score >= 75 ? token.colorSuccess : token.colorWarning }}>Basic check</Text>
-                  : <Text type="secondary" style={{ fontSize: 11 }}>No plugin</Text>
+                  ? <Text style={{ fontSize: 11, color: seoBasics.score >= 75 ? token.colorSuccess : token.colorWarning }}>{t("Basic check")}</Text>
+                  : <Text type="secondary" style={{ fontSize: 11 }}>{t("No plugin")}</Text>
             }
             color={
               seo?.plugin
@@ -775,7 +830,7 @@ export default function DashboardPage() {
                   ? seoBasics.score >= 75 ? token.colorSuccess : token.colorWarning
                   : token.colorTextSecondary
             }
-            tooltip={seo?.plugin ? "Based on Yoast SEO data" : seoBasics ? "Basic SEO checks — install Yoast SEO (free) for full tracking" : "Install Yoast SEO (free) to track your search visibility"}
+            tooltip={seo?.plugin ? t("Based on Yoast SEO data") : seoBasics ? t("Basic SEO checks — install Yoast SEO (free) for full tracking") : t("Install Yoast SEO (free) to track your search visibility")}
             onClick={() => navigate("edit.php?post_type=page", config.adminUrl)}
           />
         </div>
@@ -784,8 +839,8 @@ export default function DashboardPage() {
         {showChecklist && (
           <Section
             icon={<RocketOutlined />}
-            title={`First Steps — ${checklistDone} of ${checklist.length} done`}
-            description="Complete these steps to get your site fully ready. Each one takes just a few minutes."
+            title={t("First Steps — {done} of {total} done", { done: checklistDone, total: checklist.length })}
+            description={t("Complete these steps to get your site fully ready. Each one takes just a few minutes.")}
             extra={
               <Flex align="center" gap={12}>
                 <Progress
@@ -794,7 +849,7 @@ export default function DashboardPage() {
                   size={40}
                   strokeColor={token.colorPrimary}
                 />
-                <Tooltip title="Dismiss checklist">
+                <Tooltip title={t("Dismiss checklist")}>
                   <Button type="text" icon={<CloseOutlined />} size="small"
                     onClick={closeChecklist} style={{ color: token.colorTextTertiary }} />
                 </Tooltip>
@@ -829,7 +884,7 @@ export default function DashboardPage() {
                     {item.label}
                   </Text>
                   {!item.done && (
-                    <Text type="secondary" style={{ fontSize: 11, flexShrink: 0 }}>Open →</Text>
+                    <Text type="secondary" style={{ fontSize: 11, flexShrink: 0 }}>{t("Open →")}</Text>
                   )}
                 </Flex>
               ))}
@@ -840,7 +895,7 @@ export default function DashboardPage() {
 
         {/* ── Charts ────────────────────────────────────────────────────────── */}
         <div style={{ display: "grid", gridTemplateColumns: isMd ? "1fr 1fr" : "1fr", gap: 16, marginBottom: 16 }}>
-          <Section icon={<LineChartOutlined />} title="Page Views" description="Last 30 days">
+          <Section icon={<LineChartOutlined />} title={t("Page Views")} description={t("Last 30 days")}>
             {trend.some((d) => d.views > 0) ? (
               <ResponsiveContainer width="100%" height={170}>
                 <AreaChart data={trend}>
@@ -854,31 +909,31 @@ export default function DashboardPage() {
                   <XAxis dataKey="date" tick={{ fontSize: 10, fill: token.colorTextSecondary }} interval={4} />
                   <YAxis allowDecimals={false} tick={{ fontSize: 10, fill: token.colorTextSecondary }} width={30} />
                   <RechartsTooltip contentStyle={tooltipStyle} />
-                  <Area type="monotone" dataKey="views" name="Views" stroke={token.colorPrimary} fill="url(#viewsGrad)" strokeWidth={2} />
+                  <Area type="monotone" dataKey="views" name={t("Visits")} stroke={token.colorPrimary} fill="url(#viewsGrad)" strokeWidth={2} />
                 </AreaChart>
               </ResponsiveContainer>
             ) : (
               <Flex vertical align="center" justify="center" style={{ height: 170 }} gap={10}>
                 <LineChartOutlined style={{ fontSize: 32, color: token.colorTextQuaternary }} />
                 <Text type="secondary" style={{ textAlign: "center", fontSize: 12, maxWidth: 240 }}>
-                  No data yet. Tracking is active — views appear as people visit your site.
+                  {t("No data yet. Tracking is active — views appear as people visit your site.")}
                 </Text>
               </Flex>
             )}
           </Section>
 
-          <Section icon={<GlobalOutlined />} title="Visitors by Country" description="Last 30 days">
+          <Section icon={<GlobalOutlined />} title={t("Visitors by Country")} description={t("Last 30 days")}>
             {countries.length > 0 ? (
               <ResponsiveContainer width="100%" height={170}>
                 <BarChart
                   data={countries.slice(0, 7).map((c: CountryStatEntry) => ({
-                    ...c, label: `${countryFlag(c.country)} ${countryName(c.country)}`,
+                    ...c, label: `${countryFlag(c.country)} ${localCountryName(c.country, intlLocale)}`,
                   }))}
                   layout="vertical" margin={{ left: 8, right: 12 }}
                 >
                   <XAxis type="number" tick={{ fontSize: 10, fill: token.colorTextSecondary }} allowDecimals={false} />
                   <YAxis type="category" dataKey="label" width={116} tick={{ fontSize: 11, fill: token.colorTextSecondary }} />
-                  <RechartsTooltip contentStyle={tooltipStyle} formatter={(v) => [`${v}`, "Visits"] as [string, string]} />
+                  <RechartsTooltip contentStyle={tooltipStyle} formatter={(v) => [`${v}`, t("Visits")] as [string, string]} />
                   <Bar dataKey="visits" radius={[0, 4, 4, 0]}>
                     {countries.slice(0, 7).map((_, i) => <Cell key={i} fill={chartColors[i % chartColors.length]} />)}
                   </Bar>
@@ -888,147 +943,40 @@ export default function DashboardPage() {
               <Flex vertical align="center" justify="center" style={{ height: 170 }} gap={10}>
                 <GlobalOutlined style={{ fontSize: 32, color: token.colorTextQuaternary }} />
                 <Text type="secondary" style={{ textAlign: "center", fontSize: 12 }}>
-                  Install{" "}
-                  <Link href="https://wordpress.org/plugins/wp-statistics/" target="_blank" rel="noopener noreferrer">
-                    WP Statistics
-                  </Link>{" "}
-                  (free) to track visitor countries.
+                  {t("Install WP Statistics (free) to track visitor countries.")}
                 </Text>
               </Flex>
             )}
           </Section>
         </div>
 
-        {/* ── Action Center (full width) ────────────────────────────────────── */}
-        <div style={{ display: "flex", flexDirection: "column", gap: 16, marginBottom: 16 }}>
-          <Section
-            icon={<AlertOutlined />}
-            title="What Needs Your Attention"
-            description={actions.length === 0 ? "All clear" : `${criticalActions.length} urgent, ${warningActions.length} to review`}
-            extra={criticalActions.length > 0 ? <Tag color="error" style={{ margin: 0 }}>{criticalActions.length} urgent</Tag> : undefined}
-          >
-            {actions.length === 0 ? (
-              <Flex vertical align="center" gap={8} style={{ padding: "20px 0" }}>
-                <CheckCircleOutlined style={{ fontSize: 32, color: token.colorSuccess }} />
-                <Text type="secondary" style={{ fontSize: 13 }}>Everything looks great! No action required.</Text>
-              </Flex>
-            ) : (
-              <>
-                <Text type="secondary" style={{ fontSize: 12, display: "block", marginBottom: 14 }}>
-                  {criticalActions.length > 0
-                    ? "Start with the red items first — everything else can wait."
-                    : "A few things to review. Start with the orange items."}
-                </Text>
-                {hasUpdates && (
-                  <Alert
-                    type="info" showIcon
-                    message={<Text style={{ fontSize: 12 }}>Make a backup before applying updates — most hosts offer this in one click.</Text>}
-                    style={{ marginBottom: 14, borderRadius: token.borderRadius }}
-                  />
-                )}
-                {criticalActions.length > 0 && (
-                  <div style={{ marginBottom: 4 }}>
-                    <Flex align="center" gap={6} style={{ marginBottom: 8 }}>
-                      <AlertOutlined style={{ color: token.colorError, fontSize: 11 }} />
-                      <Text style={{ fontSize: 10, fontWeight: 700, textTransform: "uppercase", color: token.colorError, letterSpacing: "0.07em" }}>
-                        Act Now
-                      </Text>
-                    </Flex>
-                    {criticalActions.map((item, i) => <ActionRow key={i} item={item} adminUrl={config.adminUrl} />)}
-                  </div>
-                )}
-                {warningActions.length > 0 && (
-                  <div style={{ marginTop: criticalActions.length ? 12 : 0 }}>
-                    <Flex align="center" gap={6} style={{ marginBottom: 8 }}>
-                      <WarningOutlined style={{ color: token.colorWarning, fontSize: 11 }} />
-                      <Text style={{ fontSize: 10, fontWeight: 700, textTransform: "uppercase", color: token.colorWarning, letterSpacing: "0.07em" }}>
-                        Review Soon
-                      </Text>
-                    </Flex>
-                    {warningActions.map((item, i) => <ActionRow key={i} item={item} adminUrl={config.adminUrl} />)}
-                  </div>
-                )}
-                {infoActions.length > 0 && (
-                  <Collapse ghost size="small"
-                    items={[{
-                      key: "info",
-                      label: (
-                        <Flex align="center" gap={6}>
-                          <InfoCircleOutlined style={{ color: token.colorInfo, fontSize: 11 }} />
-                          <Text type="secondary" style={{ fontSize: 11 }}>{infoActions.length} low-priority item{infoActions.length > 1 ? "s" : ""}</Text>
-                        </Flex>
-                      ),
-                      children: infoActions.map((item, i) => <ActionRow key={i} item={item} adminUrl={config.adminUrl} />),
-                    }]}
-                    style={{ marginTop: 8 }}
-                  />
-                )}
-              </>
-            )}
-          </Section>
-
-          {/* Update Details (full width) */}
-          {hasUpdates && (
-            <Section icon={<UpCircleOutlined />} title="Available Updates" description="Review before updating — always backup first">
-              <Alert
-                type="info" showIcon icon={<InfoCircleOutlined />}
-                message={<Text style={{ fontSize: 12 }}>Create a backup before updating. Most hosting control panels offer one-click backups.</Text>}
-                style={{ marginBottom: 14, borderRadius: token.borderRadius }}
-              />
-              <div style={{ display: "grid", gridTemplateColumns: isMd ? "repeat(2, 1fr)" : "1fr", gap: 8 }}>
-                {updates?.coreList?.map((u, i) => (
-                  <Flex key={i} align="center" justify="space-between" gap={8}
-                    style={{ padding: "10px 14px", background: `${token.colorError}08`, borderRadius: token.borderRadius, border: `1px solid ${token.colorError}20` }}>
-                    <div>
-                      <Text style={{ fontSize: 13, fontWeight: 500 }}>WordPress Core</Text>
-                      <Text type="secondary" style={{ fontSize: 11, display: "block" }}>{u.currentVersion} → {u.newVersion}</Text>
-                    </div>
-                    <Button size="small" danger onClick={() => navigate("update-core.php", config.adminUrl)}>Update</Button>
-                  </Flex>
-                ))}
-                {updates?.pluginList?.map((p, i) => (
-                  <Flex key={i} align="center" justify="space-between" gap={8}
-                    style={{ padding: "10px 14px", background: token.colorBgLayout, borderRadius: token.borderRadius, border: `1px solid ${token.colorBorderSecondary}` }}>
-                    <div style={{ minWidth: 0 }}>
-                      <Text style={{ fontSize: 13, fontWeight: 500, display: "block", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{p.name}</Text>
-                      <Text type="secondary" style={{ fontSize: 11 }}>{p.currentVersion} → {p.newVersion}{p.testedUpTo ? ` · Tested WP ${p.testedUpTo}` : ""}</Text>
-                    </div>
-                    <Button size="small" onClick={() => navigate("update-core.php", config.adminUrl)} style={{ flexShrink: 0 }}>Update</Button>
-                  </Flex>
-                ))}
-                {updates?.themeList?.map((t, i) => (
-                  <Flex key={i} align="center" justify="space-between" gap={8}
-                    style={{ padding: "10px 14px", background: token.colorBgLayout, borderRadius: token.borderRadius, border: `1px solid ${token.colorBorderSecondary}` }}>
-                    <div>
-                      <Text style={{ fontSize: 13, fontWeight: 500 }}>{t.name} (Theme)</Text>
-                      <Text type="secondary" style={{ fontSize: 11, display: "block" }}>{t.currentVersion} → {t.newVersion}</Text>
-                    </div>
-                    <Button size="small" onClick={() => navigate("update-core.php", config.adminUrl)}>Update</Button>
-                  </Flex>
-                ))}
-              </div>
-            </Section>
-          )}
-
-          {/* Upcoming Bookings (full width) */}
-          {calendar?.available && (
+        {/* ── Upcoming Bookings / Week Calendar (right after charts) ────────── */}
+        {calendar?.available && (
+          <div style={{ marginBottom: 16 }}>
             <Section
               icon={<CalendarOutlined />}
-              title="Upcoming Bookings"
-              description="Next 7 days"
+              title={t("Upcoming Bookings")}
+              description={t("Next 7 days")}
               extra={
                 <Flex align="center" gap={8}>
                   {calendar.totalToday > 0 && <Badge count={calendar.totalToday} color={token.colorPrimary} />}
                   <Button type="link" size="small" style={{ padding: 0 }}
                     onClick={() => navigate("admin.php?page=h-bricks-elements", config.adminUrl)}>
-                    View all
+                    {t("View all")}
                   </Button>
                 </Flex>
               }
             >
+              {/* Week view grid */}
+              {calendar.weekDays && calendar.weekDays.length > 0 && (
+                <div style={{ marginBottom: 16 }}>
+                  <WeekCalendar weekDays={calendar.weekDays} intlLocale={intlLocale} />
+                </div>
+              )}
+              {/* Upcoming list */}
               {calendar.upcoming.length === 0 ? (
-                <Flex align="center" justify="center" style={{ height: 60 }}>
-                  <Text type="secondary" style={{ fontSize: 12 }}>No bookings in the next 7 days</Text>
+                <Flex align="center" justify="center" style={{ height: 48 }}>
+                  <Text type="secondary" style={{ fontSize: 12 }}>{t("No bookings in the next 7 days")}</Text>
                 </Flex>
               ) : (
                 <div style={{ display: "grid", gridTemplateColumns: isMd ? "repeat(2, 1fr)" : "1fr", gap: 8 }}>
@@ -1043,13 +991,127 @@ export default function DashboardPage() {
                         <Text style={{ fontSize: 13, fontWeight: 500, display: "block", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
                           {booking.customerName || "—"}
                         </Text>
-                        <Text type="secondary" style={{ fontSize: 11 }}>{formatBookingTime(booking.startDate)}</Text>
+                        <Text type="secondary" style={{ fontSize: 11 }}>{formatBookingTime(booking.startDate, intlLocale, t)}</Text>
                       </div>
-                      {booking.isToday && <Tag color="blue" style={{ margin: 0, fontSize: 10 }}>Today</Tag>}
+                      {booking.isToday && <Tag color="blue" style={{ margin: 0, fontSize: 10 }}>{t("Today")}</Tag>}
                     </Flex>
                   ))}
                 </div>
               )}
+            </Section>
+          </div>
+        )}
+
+        {/* ── Action Center (full width) ────────────────────────────────────── */}
+        <div style={{ display: "flex", flexDirection: "column", gap: 16, marginBottom: 16 }}>
+          <Section
+            icon={<AlertOutlined />}
+            title={t("What Needs Your Attention")}
+            description={actions.length === 0 ? t("All clear") : t("{n} urgent, {w} to review", { n: criticalActions.length, w: warningActions.length })}
+            extra={criticalActions.length > 0 ? <Tag color="error" style={{ margin: 0 }}>{criticalActions.length} urgent</Tag> : undefined}
+          >
+            {actions.length === 0 ? (
+              <Flex vertical align="center" gap={8} style={{ padding: "20px 0" }}>
+                <CheckCircleOutlined style={{ fontSize: 32, color: token.colorSuccess }} />
+                <Text type="secondary" style={{ fontSize: 13 }}>{t("Everything looks great! No action required.")}</Text>
+              </Flex>
+            ) : (
+              <>
+                <Text type="secondary" style={{ fontSize: 12, display: "block", marginBottom: 14 }}>
+                  {criticalActions.length > 0
+                    ? t("Start with the red items first — everything else can wait.")
+                    : t("A few things to review. Start with the orange items.")}
+                </Text>
+                {hasUpdates && (
+                  <Alert
+                    type="info" showIcon
+                    message={<Text style={{ fontSize: 12 }}>{t("Make a backup before applying updates — most hosts offer this in one click.")}</Text>}
+                    style={{ marginBottom: 14, borderRadius: token.borderRadius }}
+                  />
+                )}
+                {criticalActions.length > 0 && (
+                  <div style={{ marginBottom: 4 }}>
+                    <Flex align="center" gap={6} style={{ marginBottom: 8 }}>
+                      <AlertOutlined style={{ color: token.colorError, fontSize: 11 }} />
+                      <Text style={{ fontSize: 10, fontWeight: 700, textTransform: "uppercase", color: token.colorError, letterSpacing: "0.07em" }}>
+                        {t("Act Now")}
+                      </Text>
+                    </Flex>
+                    {criticalActions.map((item, i) => <ActionRow key={i} item={item} adminUrl={config.adminUrl} />)}
+                  </div>
+                )}
+                {warningActions.length > 0 && (
+                  <div style={{ marginTop: criticalActions.length ? 12 : 0 }}>
+                    <Flex align="center" gap={6} style={{ marginBottom: 8 }}>
+                      <WarningOutlined style={{ color: token.colorWarning, fontSize: 11 }} />
+                      <Text style={{ fontSize: 10, fontWeight: 700, textTransform: "uppercase", color: token.colorWarning, letterSpacing: "0.07em" }}>
+                        {t("Review Soon")}
+                      </Text>
+                    </Flex>
+                    {warningActions.map((item, i) => <ActionRow key={i} item={item} adminUrl={config.adminUrl} />)}
+                  </div>
+                )}
+                {infoActions.length > 0 && (
+                  <Collapse ghost size="small"
+                    items={[{
+                      key: "info",
+                      label: (
+                        <Flex align="center" gap={6}>
+                          <InfoCircleOutlined style={{ color: token.colorInfo, fontSize: 11 }} />
+                          <Text type="secondary" style={{ fontSize: 11 }}>
+                            {t(infoActions.length === 1 ? "{n} low-priority item" : "{n} low-priority items", { n: infoActions.length })}
+                          </Text>
+                        </Flex>
+                      ),
+                      children: infoActions.map((item, i) => <ActionRow key={i} item={item} adminUrl={config.adminUrl} />),
+                    }]}
+                    style={{ marginTop: 8 }}
+                  />
+                )}
+              </>
+            )}
+          </Section>
+
+          {/* Update Details (full width) */}
+          {hasUpdates && (
+            <Section icon={<UpCircleOutlined />} title={t("Available Updates")} description={t("Review before updating — always backup first")}>
+              <Alert
+                type="info" showIcon icon={<InfoCircleOutlined />}
+                message={<Text style={{ fontSize: 12 }}>{t("Create a backup before updating. Most hosting control panels offer one-click backups.")}</Text>}
+                style={{ marginBottom: 14, borderRadius: token.borderRadius }}
+              />
+              <div style={{ display: "grid", gridTemplateColumns: isMd ? "repeat(2, 1fr)" : "1fr", gap: 8 }}>
+                {updates?.coreList?.map((u, i) => (
+                  <Flex key={i} align="center" justify="space-between" gap={8}
+                    style={{ padding: "10px 14px", background: `${token.colorError}08`, borderRadius: token.borderRadius, border: `1px solid ${token.colorError}20` }}>
+                    <div>
+                      <Text style={{ fontSize: 13, fontWeight: 500 }}>{t("WordPress Core")}</Text>
+                      <Text type="secondary" style={{ fontSize: 11, display: "block" }}>{u.currentVersion} → {u.newVersion}</Text>
+                    </div>
+                    <Button size="small" danger onClick={() => navigate("update-core.php", config.adminUrl)}>{t("Update")}</Button>
+                  </Flex>
+                ))}
+                {updates?.pluginList?.map((p, i) => (
+                  <Flex key={i} align="center" justify="space-between" gap={8}
+                    style={{ padding: "10px 14px", background: token.colorBgLayout, borderRadius: token.borderRadius, border: `1px solid ${token.colorBorderSecondary}` }}>
+                    <div style={{ minWidth: 0 }}>
+                      <Text style={{ fontSize: 13, fontWeight: 500, display: "block", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{p.name}</Text>
+                      <Text type="secondary" style={{ fontSize: 11 }}>{p.currentVersion} → {p.newVersion}{p.testedUpTo ? ` · ${t("Tested WP {v}", { v: p.testedUpTo })}` : ""}</Text>
+                    </div>
+                    <Button size="small" onClick={() => navigate("update-core.php", config.adminUrl)} style={{ flexShrink: 0 }}>{t("Update")}</Button>
+                  </Flex>
+                ))}
+                {updates?.themeList?.map((t2, i) => (
+                  <Flex key={i} align="center" justify="space-between" gap={8}
+                    style={{ padding: "10px 14px", background: token.colorBgLayout, borderRadius: token.borderRadius, border: `1px solid ${token.colorBorderSecondary}` }}>
+                    <div>
+                      <Text style={{ fontSize: 13, fontWeight: 500 }}>{t2.name} (Theme)</Text>
+                      <Text type="secondary" style={{ fontSize: 11, display: "block" }}>{t2.currentVersion} → {t2.newVersion}</Text>
+                    </div>
+                    <Button size="small" onClick={() => navigate("update-core.php", config.adminUrl)}>{t("Update")}</Button>
+                  </Flex>
+                ))}
+              </div>
             </Section>
           )}
 
@@ -1057,8 +1119,8 @@ export default function DashboardPage() {
           {(legalData || bizData || seoBasics) && (
             <Section
               icon={<InfoCircleOutlined />}
-              title="Site Status Overview"
-              description="Legal compliance, business functions, and SEO health"
+              title={t("Site Status Overview")}
+              description={t("Legal compliance, business functions, and SEO health")}
             >
               <Collapse ghost
                 items={[
@@ -1067,10 +1129,10 @@ export default function DashboardPage() {
                     label: (
                       <Flex align="center" gap={8}>
                         <FileProtectOutlined style={{ color: token.colorPrimary, fontSize: 13 }} />
-                        <Text style={{ fontSize: 13 }}>Legal & Compliance</Text>
+                        <Text style={{ fontSize: 13 }}>{t("Legal & Compliance")}</Text>
                         {(!legalData.privacyPolicy.published || !legalData.impressum.published || legalData.trackingWithoutConsent)
-                          ? <Tag color="error" style={{ margin: 0, fontSize: 11 }}>Action needed</Tag>
-                          : <Tag color="success" style={{ margin: 0, fontSize: 11 }}>All good</Tag>
+                          ? <Tag color="error" style={{ margin: 0, fontSize: 11 }}>{t("Action needed")}</Tag>
+                          : <Tag color="success" style={{ margin: 0, fontSize: 11 }}>{t("All good")}</Tag>
                         }
                       </Flex>
                     ),
@@ -1081,10 +1143,10 @@ export default function DashboardPage() {
                     label: (
                       <Flex align="center" gap={8}>
                         <BankOutlined style={{ color: token.colorPrimary, fontSize: 13 }} />
-                        <Text style={{ fontSize: 13 }}>Business & Contact Functions</Text>
+                        <Text style={{ fontSize: 13 }}>{t("Business Functions")}</Text>
                         {(!bizData.contactForms.available || !bizData.emailDelivery.smtpPlugin)
                           ? <Tag color="warning" style={{ margin: 0, fontSize: 11 }}>Review</Tag>
-                          : <Tag color="success" style={{ margin: 0, fontSize: 11 }}>Active</Tag>
+                          : <Tag color="success" style={{ margin: 0, fontSize: 11 }}>{t("Active")}</Tag>
                         }
                       </Flex>
                     ),
@@ -1095,7 +1157,7 @@ export default function DashboardPage() {
                     label: (
                       <Flex align="center" gap={8}>
                         <SearchOutlined style={{ color: token.colorPrimary, fontSize: 13 }} />
-                        <Text style={{ fontSize: 13 }}>SEO Basics</Text>
+                        <Text style={{ fontSize: 13 }}>{t("SEO Basics")}</Text>
                         <Tag color={seoBasics.score >= 75 ? "success" : "warning"} style={{ margin: 0, fontSize: 11 }}>
                           {seoBasics.score}%
                         </Tag>

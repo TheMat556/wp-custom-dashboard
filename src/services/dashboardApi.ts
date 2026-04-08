@@ -88,10 +88,21 @@ export interface CalendarBooking {
   isToday: boolean;
 }
 
+export interface WeekDay {
+  date: string;
+  dayLabel: string;
+  dayNum: number;
+  month: string;
+  isToday: boolean;
+  bookings: CalendarBooking[];
+  count: number;
+}
+
 export interface CalendarPreview {
   available: boolean;
   upcoming: CalendarBooking[];
   totalToday: number;
+  weekDays?: WeekDay[];
 }
 
 export interface PageItem {

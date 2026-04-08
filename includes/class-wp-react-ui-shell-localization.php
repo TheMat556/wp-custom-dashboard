@@ -45,6 +45,7 @@ class WP_React_UI_Shell_Localization {
 			'restUrl'   => rest_url( 'wp-react-ui/v1' ),
 			'logoutUrl' => wp_logout_url( admin_url() ),
 			'assetsUrl' => plugins_url( 'dist/', dirname( __DIR__ ) . '/wp-custom-dashboard.php' ),
+			'locale'    => get_locale(),
 			'user'      => array(
 				'name' => $user->display_name,
 				'role' => implode( ', ', $user->roles ),

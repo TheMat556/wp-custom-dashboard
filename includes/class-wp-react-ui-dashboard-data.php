@@ -844,31 +844,44 @@ $table = $wpdb->prefix . 'hbe_bookings';
 if ( $wpdb->get_var( $wpdb->prepare( 'SHOW TABLES LIKE %s', $table ) ) !== $table ) {
 return null;
 }
-$now      = current_time( 'mysql' );
-$in_7days = gmdate( 'Y-m-d H:i:s', strtotime( '+7 days' ) );
+$today          = current_time( 'Y-m-d' );
+$start_of_today = $today . ' 00:00:00';
+$in_7days       = gmdate( 'Y-m-d H:i:s', strtotime( '+7 days', strtotime( $today . ' 00:00:00' ) ) );
 // phpcs:ignore WordPress.DB.DirectDatabaseQuery
 $bookings = $wpdb->get_results(
 $wpdb->prepare(
 "SELECT id, calendar_id, customer_name, start_datetime, end_datetime, status
  FROM {$table}
  WHERE start_datetime >= %s AND start_datetime <= %s AND status != 'cancelled'
- ORDER BY start_datetime ASC LIMIT 10",
-$now, $in_7days
+ ORDER BY start_datetime ASC LIMIT 50",
+$start_of_today, $in_7days
 ),
 ARRAY_A
 );
 if ( empty( $bookings ) ) {
-return array( 'available' => true, 'upcoming' => array(), 'totalToday' => 0 );
+$week_days = array();
+for ( $i = 0; $i < 7; $i++ ) {
+$ts   = strtotime( "+{$i} days", strtotime( $today . ' 00:00:00' ) );
+$date = gmdate( 'Y-m-d', $ts );
+$week_days[] = array(
+'date'     => $date,
+'dayLabel' => gmdate( 'D', $ts ),
+'dayNum'   => (int) gmdate( 'j', $ts ),
+'month'    => gmdate( 'M', $ts ),
+'isToday'  => $date === $today,
+'bookings' => array(),
+'count'    => 0,
+);
 }
-$today       = current_time( 'Y-m-d' );
+return array( 'available' => true, 'upcoming' => array(), 'totalToday' => 0, 'weekDays' => $week_days );
+}
+$now         = current_time( 'mysql' );
 $today_count = 0;
-$items       = array();
+$upcoming    = array();
+$by_date     = array();
 foreach ( $bookings as $b ) {
 $start_date = substr( $b['start_datetime'], 0, 10 );
-if ( $start_date === $today ) {
-$today_count++;
-}
-$items[] = array(
+$item       = array(
 'id'           => (int) $b['id'],
 'customerName' => $b['customer_name'],
 'startDate'    => $b['start_datetime'],
@@ -877,8 +890,32 @@ $items[] = array(
 'calendarId'   => (int) $b['calendar_id'],
 'isToday'      => $start_date === $today,
 );
+if ( $start_date === $today ) {
+$today_count++;
 }
-return array( 'available' => true, 'upcoming' => $items, 'totalToday' => $today_count );
+if ( $b['start_datetime'] >= $now ) {
+$upcoming[] = $item;
+}
+if ( ! isset( $by_date[ $start_date ] ) ) {
+$by_date[ $start_date ] = array();
+}
+$by_date[ $start_date ][] = $item;
+}
+$week_days = array();
+for ( $i = 0; $i < 7; $i++ ) {
+$ts   = strtotime( "+{$i} days", strtotime( $today . ' 00:00:00' ) );
+$date = gmdate( 'Y-m-d', $ts );
+$week_days[] = array(
+'date'     => $date,
+'dayLabel' => gmdate( 'D', $ts ),
+'dayNum'   => (int) gmdate( 'j', $ts ),
+'month'    => gmdate( 'M', $ts ),
+'isToday'  => $date === $today,
+'bookings' => $by_date[ $date ] ?? array(),
+'count'    => isset( $by_date[ $date ] ) ? count( $by_date[ $date ] ) : 0,
+);
+}
+return array( 'available' => true, 'upcoming' => $upcoming, 'totalToday' => $today_count, 'weekDays' => $week_days );
 }
 
 /**
