@@ -1,8 +1,16 @@
 import { EditOutlined } from "@ant-design/icons";
 import { Button, Card, Flex, List, Tag, Typography, theme } from "antd";
-import type { RecentPostData } from "../../services/dashboardApi";
 import { useShellConfig } from "../../context/ShellConfigContext";
 import { navigate } from "../../utils/wp";
+
+interface RecentPostData {
+  id: number;
+  title: string;
+  status: string;
+  author: string;
+  modified: string;
+  editUrl: string | null;
+}
 
 const { Text } = Typography;
 

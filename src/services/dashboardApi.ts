@@ -13,23 +13,15 @@ export interface AtAGlanceData {
   phpVersion: string;
 }
 
-export interface RecentPostData {
-  id: number;
-  title: string;
-  status: string;
-  author: string;
-  modified: string;
-  editUrl: string | null;
-}
-
 export interface SiteHealthData {
   status: string;
   score: number;
 }
 
-export interface PostsPerMonthEntry {
+export interface ActivityPerMonthEntry {
   month: string;
   posts: number;
+  comments: number;
 }
 
 export interface ContentBreakdownEntry {
@@ -37,12 +29,19 @@ export interface ContentBreakdownEntry {
   value: number;
 }
 
+export interface PendingUpdates {
+  plugins: number;
+  themes: number;
+  core: number;
+  total: number;
+}
+
 export interface DashboardData {
   atAGlance: AtAGlanceData;
-  recentPosts: RecentPostData[];
   siteHealth: SiteHealthData;
-  postsPerMonth: PostsPerMonthEntry[];
+  activityPerMonth: ActivityPerMonthEntry[];
   contentBreakdown: ContentBreakdownEntry[];
+  pendingUpdates: PendingUpdates;
 }
 
 export interface DashboardService {

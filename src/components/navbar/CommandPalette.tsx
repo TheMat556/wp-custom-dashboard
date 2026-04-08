@@ -427,6 +427,7 @@ export function CommandPaletteTrigger({ compact: forceCompact = false }: { compa
           style={{
             width: "100%",
             maxWidth: 300,
+            minWidth: 180,
             cursor: "pointer",
           }}
         >

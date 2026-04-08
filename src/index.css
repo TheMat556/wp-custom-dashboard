@@ -91,6 +91,8 @@ body[data-theme="dark"] {
 .wp-react-ui-navbar-breadcrumb .ant-breadcrumb li {
   display: inline-flex;
   align-items: center;
+  min-width: 0;
+  overflow: hidden;
   margin: 0;
 }
 
@@ -100,6 +102,8 @@ body[data-theme="dark"] {
   align-items: center;
   line-height: 1;
   min-width: 0;
+  overflow: hidden;
+  max-width: 100%;
 }
 
 .wp-react-ui-navbar-breadcrumb .ant-breadcrumb-link > *,
@@ -108,6 +112,10 @@ body[data-theme="dark"] {
   align-items: center;
   line-height: 1;
   min-width: 0;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .wp-react-ui-navbar-icon-button,

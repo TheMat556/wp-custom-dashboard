@@ -59,7 +59,7 @@ export default function Navbar() {
   const showExport = containerWidth >= 860;
   const showHistory = containerWidth >= 720;
   const showTheme = containerWidth >= 580;
-  const showSearchFull = containerWidth >= 480;
+  const showSearchFull = containerWidth >= 600;
 
   const overflowMenuItems: { key: string; label: React.ReactNode; icon: React.ReactNode; onClick: () => void }[] = [
     ...(!showExport ? [{ key: "export", label: "Open Frontend", icon: <ExportOutlined />, onClick: () => window.open(publicUrl, "_blank", "noopener,noreferrer") }] : []),
@@ -241,7 +241,7 @@ export default function Navbar() {
           }}
         />
         {!isMobile && (
-          <div className="wp-react-ui-navbar-breadcrumb" style={{ maxWidth: 240, minWidth: 0, overflow: "hidden" }}>
+          <div className="wp-react-ui-navbar-breadcrumb" style={{ maxWidth: 240, minWidth: 0, overflow: "hidden", marginLeft: 16 }}>
             <Breadcrumb
               items={breadcrumbItems}
               separator={<Text style={{ color: token.colorTextTertiary, fontSize: 12 }}>/</Text>}

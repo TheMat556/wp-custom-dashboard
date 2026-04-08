@@ -9,174 +9,177 @@ defined( 'ABSPATH' ) || exit;
 
 class WP_React_UI_Dashboard_Data {
 
-	/**
-	 * Returns aggregated dashboard data for the React shell.
-	 *
-	 * @return array
-	 */
-	public static function get_dashboard_data(): array {
-		return array(
-			'atAGlance'        => self::get_at_a_glance(),
-			'recentPosts'      => self::get_recent_posts(),
-			'siteHealth'       => self::get_site_health(),
-			'postsPerMonth'    => self::get_posts_per_month(),
-			'contentBreakdown' => self::get_content_breakdown(),
-		);
-	}
+/**
+ * Returns aggregated dashboard data for the React shell.
+ *
+ * @return array
+ */
+public static function get_dashboard_data(): array {
+return array(
+'atAGlance'        => self::get_at_a_glance(),
+'siteHealth'       => self::get_site_health(),
+'activityPerMonth' => self::get_activity_per_month(),
+'contentBreakdown' => self::get_content_breakdown(),
+'pendingUpdates'   => self::get_pending_updates(),
+);
+}
 
-	private static function get_at_a_glance(): array {
-		$posts    = wp_count_posts( 'post' );
-		$pages    = wp_count_posts( 'page' );
-		$comments = wp_count_comments();
-		$users    = count_users();
+private static function get_at_a_glance(): array {
+$posts    = wp_count_posts( 'post' );
+$pages    = wp_count_posts( 'page' );
+$comments = wp_count_comments();
+$users    = count_users();
 
-		return array(
-			'posts'           => (int) ( $posts->publish ?? 0 ),
-			'postsDraft'      => (int) ( $posts->draft ?? 0 ),
-			'pages'           => (int) ( $pages->publish ?? 0 ),
-			'pagesDraft'      => (int) ( $pages->draft ?? 0 ),
-			'comments'        => (int) ( $comments->approved ?? 0 ),
-			'commentsPending' => (int) ( $comments->moderated ?? 0 ),
-			'users'           => (int) ( $users['total_users'] ?? 0 ),
-			'wpVersion'       => get_bloginfo( 'version' ),
-			'phpVersion'      => PHP_VERSION,
-		);
-	}
+return array(
+'posts'           => (int) ( $posts->publish ?? 0 ),
+'postsDraft'      => (int) ( $posts->draft ?? 0 ),
+'pages'           => (int) ( $pages->publish ?? 0 ),
+'pagesDraft'      => (int) ( $pages->draft ?? 0 ),
+'comments'        => (int) ( $comments->approved ?? 0 ),
+'commentsPending' => (int) ( $comments->moderated ?? 0 ),
+'users'           => (int) ( $users['total_users'] ?? 0 ),
+'wpVersion'       => get_bloginfo( 'version' ),
+'phpVersion'      => PHP_VERSION,
+);
+}
 
-	private static function get_recent_posts(): array {
-		$posts = get_posts(
-			array(
-				'numberposts' => 5,
-				'post_status' => array( 'publish', 'draft', 'pending' ),
-				'orderby'     => 'modified',
-				'order'       => 'DESC',
-			)
-		);
+private static function get_site_health(): array {
+$result = array(
+'status' => 'unknown',
+'score'  => 0,
+);
 
-		return array_map(
-			function ( $post ) {
-				return array(
-					'id'       => $post->ID,
-					'title'    => $post->post_title ?: '(no title)',
-					'status'   => $post->post_status,
-					'author'   => get_the_author_meta( 'display_name', $post->post_author ),
-					'modified' => $post->post_modified_gmt,
-					'editUrl'  => get_edit_post_link( $post->ID, 'raw' ),
-				);
-			},
-			$posts
-		);
-	}
+$cached = get_transient( 'health-check-site-status-result' );
+if ( $cached && isset( $cached['status'] ) ) {
+$status = sanitize_text_field( $cached['status'] );
+if ( in_array( $status, array( 'good', 'recommended', 'critical' ), true ) ) {
+$result['status'] = $status;
+$result['score']  = 'good' === $status ? 90 : ( 'recommended' === $status ? 65 : 30 );
+return $result;
+}
+}
 
-	private static function get_site_health(): array {
-		$result = array(
-			'status' => 'unknown',
-			'score'  => 0,
-		);
+try {
+if ( ! defined( 'WP_ADMIN' ) ) {
+define( 'WP_ADMIN', true );
+}
+foreach ( array( 'misc.php', 'update.php', 'plugin.php', 'class-wp-site-health.php' ) as $file ) {
+$path = ABSPATH . 'wp-admin/includes/' . $file;
+if ( file_exists( $path ) ) {
+require_once $path;
+}
+}
+if ( ! class_exists( 'WP_Site_Health' ) ) {
+return $result;
+}
+$tests  = WP_Site_Health::get_tests();
+$total  = 0;
+$passed = 0;
+if ( ! empty( $tests['direct'] ) ) {
+foreach ( $tests['direct'] as $test ) {
+if ( ! is_callable( $test['test'] ) ) {
+continue;
+}
+$total++;
+try {
+$r = call_user_func( $test['test'] );
+if ( isset( $r['status'] ) && 'good' === $r['status'] ) {
+$passed++;
+}
+} catch ( \Throwable $e ) {
+// skip.
+}
+}
+}
+if ( $total > 0 ) {
+$result['score'] = round( ( $passed / $total ) * 100 );
+$result['status'] = $result['score'] >= 80 ? 'good' : ( $result['score'] >= 50 ? 'recommended' : 'critical' );
+}
+} catch ( \Throwable $e ) {
+// Site Health checks failed.
+}
 
-		// Prefer the cached transient stored by WP's own Site Health page.
-		$cached = get_transient( 'health-check-site-status-result' );
-		if ( $cached && isset( $cached['status'] ) ) {
-			$status = sanitize_text_field( $cached['status'] );
-			if ( in_array( $status, array( 'good', 'recommended', 'critical' ), true ) ) {
-				$result['status'] = $status;
-				$result['score']  = 'good' === $status ? 90 : ( 'recommended' === $status ? 65 : 30 );
-				return $result;
-			}
-		}
+return $result;
+}
 
-		// Attempt a lightweight live check if admin includes are available.
-		try {
-			if ( ! defined( 'WP_ADMIN' ) ) {
-				define( 'WP_ADMIN', true );
-			}
+/**
+ * Returns post and comment counts for the last 6 months.
+ */
+private static function get_activity_per_month(): array {
+global $wpdb;
+$results = array();
+for ( $i = 5; $i >= 0; $i-- ) {
+$ts    = strtotime( "-{$i} months" );
+$year  = (int) date( 'Y', $ts );
+$month = (int) date( 'n', $ts );
 
-			foreach ( array(
-				'misc.php',
-				'update.php',
-				'plugin.php',
-				'class-wp-site-health.php',
-			) as $file ) {
-				$path = ABSPATH . 'wp-admin/includes/' . $file;
-				if ( file_exists( $path ) ) {
-					require_once $path;
-				}
-			}
+$posts = (int) $wpdb->get_var( $wpdb->prepare(
+"SELECT COUNT(*) FROM {$wpdb->posts}
+ WHERE post_type = 'post' AND post_status = 'publish'
+   AND YEAR(post_date) = %d AND MONTH(post_date) = %d",
+$year, $month
+) );
 
-			if ( ! class_exists( 'WP_Site_Health' ) ) {
-				return $result;
-			}
+$comments = (int) $wpdb->get_var( $wpdb->prepare(
+"SELECT COUNT(*) FROM {$wpdb->comments}
+ WHERE comment_approved = '1'
+   AND YEAR(comment_date) = %d AND MONTH(comment_date) = %d",
+$year, $month
+) );
 
-			$tests = WP_Site_Health::get_tests();
-			$total = 0;
-			$passed = 0;
+$results[] = array(
+'month'    => date( 'M', $ts ),
+'posts'    => $posts,
+'comments' => $comments,
+);
+}
+return $results;
+}
 
-			if ( ! empty( $tests['direct'] ) ) {
-				foreach ( $tests['direct'] as $test ) {
-					if ( ! is_callable( $test['test'] ) ) {
-						continue;
-					}
-					$total++;
-					try {
-						$test_result = call_user_func( $test['test'] );
-						if ( isset( $test_result['status'] ) && 'good' === $test_result['status'] ) {
-							$passed++;
-						}
-					} catch ( \Throwable $e ) {
-						// Individual test failure — skip.
-					}
-				}
-			}
+private static function get_content_breakdown(): array {
+$posts    = wp_count_posts( 'post' );
+$pages    = wp_count_posts( 'page' );
+$comments = wp_count_comments();
+return array(
+array( 'name' => 'Posts',    'value' => (int) ( $posts->publish ?? 0 ) ),
+array( 'name' => 'Drafts',   'value' => (int) ( ( $posts->draft ?? 0 ) + ( $pages->draft ?? 0 ) ) ),
+array( 'name' => 'Pages',    'value' => (int) ( $pages->publish ?? 0 ) ),
+array( 'name' => 'Comments', 'value' => (int) ( $comments->approved ?? 0 ) ),
+);
+}
 
-			if ( $total > 0 ) {
-				$result['score'] = round( ( $passed / $total ) * 100 );
-				if ( $result['score'] >= 80 ) {
-					$result['status'] = 'good';
-				} elseif ( $result['score'] >= 50 ) {
-					$result['status'] = 'recommended';
-				} else {
-					$result['status'] = 'critical';
-				}
-			}
-		} catch ( \Throwable $e ) {
-			// Site Health checks failed — return unknown status.
-		}
+/**
+ * Returns counts of available plugin, theme and core updates.
+ */
+private static function get_pending_updates(): array {
+$plugins = 0;
+$themes  = 0;
+$core    = 0;
 
-		return $result;
-	}
+$plugin_updates = get_site_transient( 'update_plugins' );
+if ( $plugin_updates && ! empty( $plugin_updates->response ) ) {
+$plugins = count( $plugin_updates->response );
+}
 
-	private static function get_posts_per_month(): array {
-		global $wpdb;
-		$results = array();
-		for ( $i = 5; $i >= 0; $i-- ) {
-			$ts    = strtotime( "-{$i} months" );
-			$year  = date( 'Y', $ts );
-			$month = date( 'n', $ts );
-			$count = (int) $wpdb->get_var( $wpdb->prepare(
-				"SELECT COUNT(*) FROM {$wpdb->posts}
-				 WHERE post_type = 'post'
-				   AND post_status = 'publish'
-				   AND YEAR(post_date) = %d
-				   AND MONTH(post_date) = %d",
-				$year, $month
-			) );
-			$results[] = array(
-				'month' => date( 'M Y', $ts ),
-				'posts' => $count,
-			);
-		}
-		return $results;
-	}
+$theme_updates = get_site_transient( 'update_themes' );
+if ( $theme_updates && ! empty( $theme_updates->response ) ) {
+$themes = count( $theme_updates->response );
+}
 
-	private static function get_content_breakdown(): array {
-		$posts    = wp_count_posts( 'post' );
-		$pages    = wp_count_posts( 'page' );
-		$comments = wp_count_comments();
-		return array(
-			array( 'name' => 'Posts',    'value' => (int)( $posts->publish ?? 0 ) ),
-			array( 'name' => 'Drafts',   'value' => (int)( ( $posts->draft ?? 0 ) + ( $pages->draft ?? 0 ) ) ),
-			array( 'name' => 'Pages',    'value' => (int)( $pages->publish ?? 0 ) ),
-			array( 'name' => 'Comments', 'value' => (int)( $comments->approved ?? 0 ) ),
-		);
-	}
+$core_updates = get_site_transient( 'update_core' );
+if ( $core_updates && ! empty( $core_updates->updates ) ) {
+foreach ( $core_updates->updates as $update ) {
+if ( isset( $update->response ) && 'upgrade' === $update->response ) {
+$core++;
+}
+}
+}
+
+return array(
+'plugins' => $plugins,
+'themes'  => $themes,
+'core'    => $core,
+'total'   => $plugins + $themes + $core,
+);
+}
 }
