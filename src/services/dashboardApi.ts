@@ -23,6 +23,7 @@ export interface PendingUpdates {
   themes: number;
   core: number;
   total: number;
+  lastChecked?: number | null;
 }
 
 export interface VisitorTrendEntry {
@@ -38,6 +39,23 @@ export interface CountryStatEntry {
 export interface SiteSpeedData {
   ms: number | null;
   status: "good" | "fair" | "slow" | "error";
+  reason?: string;
+}
+
+export interface CalendarBooking {
+  id: number;
+  customerName: string;
+  startDate: string;
+  endDate: string;
+  status: string;
+  calendarId: number;
+  isToday: boolean;
+}
+
+export interface CalendarPreview {
+  available: boolean;
+  upcoming: CalendarBooking[];
+  totalToday: number;
 }
 
 export interface PageItem {
@@ -68,6 +86,14 @@ export interface ActionItem {
 export interface SeoIssue {
   label: string;
   url: string;
+  editUrl?: string;
+}
+
+export interface OnboardingItem {
+  key: string;
+  label: string;
+  done: boolean;
+  url: string;
 }
 
 export interface SeoOverview {
@@ -87,6 +113,9 @@ export interface DashboardData {
   pagesOverview: PagesOverview;
   actionItems: ActionItem[];
   seoOverview: SeoOverview;
+  onboardingChecklist?: OnboardingItem[];
+  siteReadinessScore?: number;
+  calendarPreview?: CalendarPreview | null;
 }
 
 export interface DashboardService {

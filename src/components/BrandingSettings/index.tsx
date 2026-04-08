@@ -583,11 +583,12 @@ export default function BrandingSettings() {
           </SurfaceCard>
         </div>
 
-        <SurfaceCard
-          title="Typography"
-          description="Choose the font system used across the shell interface."
-          icon={<FontSizeOutlined />}
-        >
+        <div style={{ marginTop: 24 }}>
+          <SurfaceCard
+            title="Typography"
+            description="Choose the font system used across the shell interface."
+            icon={<FontSizeOutlined />}
+          >
           <div
             style={{
               display: "grid",
@@ -675,12 +676,14 @@ export default function BrandingSettings() {
             </div>
           </div>
         </SurfaceCard>
+        </div>
 
-        <SurfaceCard
-          title="Appearance"
-          description="Theme presets and display preferences"
-          icon={<BgColorsOutlined />}
-        >
+        <div style={{ marginTop: 24 }}>
+          <SurfaceCard
+            title="Appearance"
+            description="Theme presets and display preferences"
+            icon={<BgColorsOutlined />}
+          >
           <div style={{ marginBottom: 24 }}>
             <Text strong style={{ display: "block", marginBottom: 4, fontSize: 14 }}>
               Theme Presets
@@ -709,6 +712,7 @@ export default function BrandingSettings() {
             </Flex>
           </div>
         </SurfaceCard>
+        </div>
 
         <Flex
           justify="space-between"

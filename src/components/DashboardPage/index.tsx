@@ -1,14 +1,19 @@
 import {
+  AlertOutlined,
+  CalendarOutlined,
   CheckCircleOutlined,
+  CheckOutlined,
   ClockCircleOutlined,
-  EditOutlined,
+  CloseOutlined,
   ExclamationCircleOutlined,
-  EyeOutlined,
-  FileOutlined,
   GlobalOutlined,
+  HistoryOutlined,
+  InfoCircleOutlined,
   LineChartOutlined,
+  LinkOutlined,
   PlusOutlined,
   QuestionCircleOutlined,
+  RocketOutlined,
   SearchOutlined,
   ThunderboltOutlined,
   UpCircleOutlined,
@@ -16,8 +21,8 @@ import {
 } from "@ant-design/icons";
 import {
   Alert,
+  Badge,
   Button,
-  Card,
   Collapse,
   Flex,
   Grid,
@@ -49,11 +54,13 @@ import {
   bootstrapDashboardStore,
   dashboardStore,
 } from "../../store/dashboardStore";
-import type { ActionItem, CountryStatEntry, PageItem } from "../../services/dashboardApi";
+import { shellPreferencesStore } from "../../store/shellPreferencesStore";
+import type { ActionItem, CalendarBooking, CountryStatEntry } from "../../services/dashboardApi";
 import { navigate } from "../../utils/wp";
 
-const { Title, Text } = Typography;
+const { Title, Text, Link } = Typography;
 
+/* ── Helpers ─────────────────────────────────────────────────────────────────── */
 function getGreeting(): string {
   const h = new Date().getHours();
   if (h >= 5 && h < 12) return "Good morning";
@@ -73,87 +80,114 @@ function countryName(code: string): string {
   catch { return code; }
 }
 
-/* ── Priority icon ─────────────────────────────────────────────────────────── */
-function SeverityDot({ severity, size = 10 }: { severity: ActionItem["severity"]; size?: number }) {
+function relativeTime(unixTs: number): string {
+  const diffMin = Math.round((Date.now() / 1000 - unixTs) / 60);
+  if (diffMin < 2) return "just now";
+  if (diffMin < 60) return `${diffMin} min ago`;
+  const diffH = Math.round(diffMin / 60);
+  if (diffH < 24) return `${diffH}h ago`;
+  const diffD = Math.round(diffH / 24);
+  return `${diffD} day${diffD > 1 ? "s" : ""} ago`;
+}
+
+function formatBookingTime(dtStr: string): string {
+  try {
+    const dt = new Date(dtStr);
+    const today = new Date(); const tomorrow = new Date(); tomorrow.setDate(today.getDate() + 1);
+    const timeStr = dt.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+    if (today.toDateString() === dt.toDateString()) return `Today, ${timeStr}`;
+    if (tomorrow.toDateString() === dt.toDateString()) return `Tomorrow, ${timeStr}`;
+    return dt.toLocaleDateString([], { weekday: "short", month: "short", day: "numeric" }) + `, ${timeStr}`;
+  } catch { return dtStr; }
+}
+
+/* ── Section wrapper (same style as Brand Assets) ───────────────────────────── */
+function Section({ icon, title, description, children, extra }: {
+  icon: React.ReactNode; title: string; description?: string;
+  children: React.ReactNode; extra?: React.ReactNode;
+}) {
   const { token } = theme.useToken();
-  const color = severity === "error" ? token.colorError : severity === "warning" ? token.colorWarning : token.colorInfo;
   return (
-    <div style={{
-      width: size, height: size, borderRadius: "50%", background: color,
-      flexShrink: 0, marginTop: 3,
-      boxShadow: severity === "error" ? `0 0 0 3px ${color}28` : undefined,
-    }} />
+    <section style={{
+      borderRadius: token.borderRadiusLG,
+      border: `1px solid ${token.colorBorderSecondary}`,
+      background: token.colorBgContainer,
+      padding: 28,
+      boxSizing: "border-box",
+    }}>
+      <Flex align="center" justify="space-between" gap={12} style={{ marginBottom: 20 }}>
+        <Flex align="center" gap={10}>
+          <span style={{
+            width: 34, height: 34, borderRadius: 10,
+            background: `${token.colorPrimary}12`, color: token.colorPrimary,
+            fontSize: 18, display: "inline-flex", alignItems: "center", justifyContent: "center", flexShrink: 0,
+          }}>{icon}</span>
+          <div style={{ minWidth: 0 }}>
+            <Text style={{ fontSize: 15, fontWeight: 600, display: "block" }}>{title}</Text>
+            {description && <Text type="secondary" style={{ fontSize: 12 }}>{description}</Text>}
+          </div>
+        </Flex>
+        {extra}
+      </Flex>
+      {children}
+    </section>
   );
 }
 
-/* ── Summary card ──────────────────────────────────────────────────────────── */
-function SummaryCard({
-  icon, label, value, sub, color, tooltip, onClick,
-}: {
-  icon: React.ReactNode;
-  label: string;
-  value: React.ReactNode;
-  sub?: React.ReactNode;
-  color: string;
-  tooltip?: string;
-  onClick?: () => void;
+/* ── Summary stat tile ───────────────────────────────────────────────────────── */
+function StatTile({ icon, label, value, sub, color, tooltip, onClick }: {
+  icon: React.ReactNode; label: string; value: React.ReactNode;
+  sub?: React.ReactNode; color: string; tooltip?: string; onClick?: () => void;
 }) {
   const { token } = theme.useToken();
-  const card = (
-    <Card
-      hoverable={!!onClick}
+  return (
+    <div
       onClick={onClick}
       style={{
-        borderRadius: token.borderRadiusLG,
-        cursor: onClick ? "pointer" : "default",
-        height: "100%",
-        borderTop: `3px solid ${color}`,
+        background: token.colorBgContainer, borderRadius: token.borderRadius,
+        border: `1px solid ${token.colorBorderSecondary}`,
+        borderTop: `2px solid ${color}`,
+        padding: "12px 14px", cursor: onClick ? "pointer" : "default",
+        transition: "box-shadow 0.15s",
       }}
-      styles={{ body: { padding: "14px 18px" } }}
+      onMouseEnter={(e) => { if (onClick) (e.currentTarget as HTMLElement).style.boxShadow = token.boxShadow; }}
+      onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.boxShadow = "none"; }}
     >
       <Flex align="flex-start" gap={10}>
         <div style={{
-          width: 38, height: 38, borderRadius: token.borderRadius,
-          background: `${color}18`, color, fontSize: 18,
+          width: 32, height: 32, borderRadius: 8,
+          background: `${color}15`, color, fontSize: 15,
           display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0,
-        }}>
-          {icon}
-        </div>
+        }}>{icon}</div>
         <div style={{ minWidth: 0, flex: 1 }}>
           <Flex align="center" gap={4}>
-            <Text type="secondary" style={{ fontSize: 10, textTransform: "uppercase", letterSpacing: "0.05em" }}>
-              {label}
-            </Text>
+            <Text type="secondary" style={{ fontSize: 10, textTransform: "uppercase", letterSpacing: "0.06em" }}>{label}</Text>
             {tooltip && (
-              <Tooltip title={tooltip} overlayStyle={{ maxWidth: 260 }}>
+              <Tooltip title={tooltip} overlayStyle={{ maxWidth: 240 }}>
                 <QuestionCircleOutlined style={{ fontSize: 10, color: token.colorTextTertiary }} />
               </Tooltip>
             )}
           </Flex>
-          <div style={{ fontSize: 20, fontWeight: 700, lineHeight: 1.25, color: token.colorText, marginTop: 2 }}>
-            {value}
-          </div>
-          {sub && <div style={{ marginTop: 4 }}>{sub}</div>}
+          <div style={{ fontSize: 18, fontWeight: 700, lineHeight: 1.25, color: token.colorText, marginTop: 1 }}>{value}</div>
+          {sub && <div style={{ marginTop: 3 }}>{sub}</div>}
         </div>
       </Flex>
-    </Card>
+    </div>
   );
-  return card;
 }
 
-/* ── Action item row with expandable description ───────────────────────────── */
+/* ── Action item row ─────────────────────────────────────────────────────────── */
 function ActionRow({ item, adminUrl }: { item: ActionItem; adminUrl: string }) {
   const { token } = theme.useToken();
   const [open, setOpen] = useState(item.severity === "error");
+  const severityColor = item.severity === "error" ? token.colorError : item.severity === "warning" ? token.colorWarning : token.colorInfo;
   const tagColor = item.severity === "error" ? "error" : item.severity === "warning" ? "warning" : "processing";
+  const SevIcon = item.severity === "error" ? AlertOutlined : item.severity === "warning" ? WarningOutlined : InfoCircleOutlined;
 
   return (
-    <div style={{
-      borderBottom: `1px solid ${token.colorBorderSecondary}`,
-      paddingBottom: 10, marginBottom: 10,
-    }}>
+    <div style={{ borderBottom: `1px solid ${token.colorBorderSecondary}`, paddingBottom: 10, marginBottom: 10 }}>
       <Flex align="flex-start" gap={10}>
-        <SeverityDot severity={item.severity} />
+        <SevIcon style={{ color: severityColor, fontSize: 13, marginTop: 2, flexShrink: 0 }} />
         <div style={{ flex: 1, minWidth: 0 }}>
           <Flex align="center" justify="space-between" gap={8} wrap="wrap">
             <Text
@@ -162,28 +196,19 @@ function ActionRow({ item, adminUrl }: { item: ActionItem; adminUrl: string }) {
             >
               {item.title}
               {item.description && (
-                <span style={{ marginLeft: 6, fontSize: 11, color: token.colorTextTertiary }}>
-                  {open ? "▲" : "▼"}
-                </span>
+                <Text type="secondary" style={{ marginLeft: 6, fontSize: 11 }}>{open ? "▲" : "▼"}</Text>
               )}
             </Text>
-            <Tag
-              color={tagColor}
-              style={{ margin: 0, fontSize: 11, cursor: "pointer", flexShrink: 0 }}
-              onClick={() => navigate(item.url, adminUrl)}
-            >
+            <Tag color={tagColor} style={{ margin: 0, fontSize: 11, cursor: "pointer", flexShrink: 0 }}
+              onClick={() => navigate(item.url, adminUrl)}>
               {item.action}
             </Tag>
           </Flex>
           {open && item.description && (
-            <Text
-              type="secondary"
-              style={{
-                fontSize: 12, display: "block", marginTop: 6, lineHeight: 1.5,
-                background: token.colorBgLayout, borderRadius: token.borderRadius,
-                padding: "6px 10px",
-              }}
-            >
+            <Text type="secondary" style={{
+              fontSize: 12, display: "block", marginTop: 6, lineHeight: 1.6,
+              background: token.colorBgLayout, borderRadius: token.borderRadius, padding: "6px 10px",
+            }}>
               {item.description}
             </Text>
           )}
@@ -193,58 +218,33 @@ function ActionRow({ item, adminUrl }: { item: ActionItem; adminUrl: string }) {
   );
 }
 
-/* ── Page row ──────────────────────────────────────────────────────────────── */
-function PageRow({ page }: { page: PageItem }) {
-  const { token } = theme.useToken();
-  const isStale = (page.daysOld ?? 0) > 90;
-  return (
-    <Flex align="center" gap={8} style={{
-      padding: "8px 0", borderBottom: `1px solid ${token.colorBorderSecondary}`,
-    }}>
-      <FileOutlined style={{ color: token.colorTextTertiary, fontSize: 12, flexShrink: 0 }} />
-      <Text
-        style={{ flex: 1, fontSize: 13, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}
-        title={page.title}
-      >
-        {page.title}
-      </Text>
-      {isStale && (
-        <Tooltip title="Not updated in 90+ days">
-          <WarningOutlined style={{ color: token.colorWarning, fontSize: 12 }} />
-        </Tooltip>
-      )}
-      <Text type="secondary" style={{ fontSize: 11, whiteSpace: "nowrap", flexShrink: 0 }}>
-        {page.modified}
-      </Text>
-      <Flex gap={2} style={{ flexShrink: 0 }}>
-        <Tooltip title="Edit">
-          <Button size="small" type="text" icon={<EditOutlined />}
-            onClick={() => window.location.assign(page.editUrl)}
-            style={{ color: token.colorTextTertiary }} />
-        </Tooltip>
-        <Tooltip title="View">
-          <Button size="small" type="text" icon={<EyeOutlined />}
-            onClick={() => window.open(page.viewUrl, "_blank", "noopener,noreferrer")}
-            style={{ color: token.colorTextTertiary }} />
-        </Tooltip>
-      </Flex>
-    </Flex>
-  );
-}
+const CHECKLIST_CLOSED_KEY = "wp-react-ui-checklist-closed";
 
-/* ── Main component ─────────────────────────────────────────────────────────── */
+/* ── Main ───────────────────────────────────────────────────────────────────── */
 export default function DashboardPage() {
-  const config = useShellConfig();
-  const { token } = theme.useToken();
-  const screens = Grid.useBreakpoint();
-  const data = useStore(dashboardStore, (s) => s.data);
-  const loading = useStore(dashboardStore, (s) => s.loading);
-  const greeting = useMemo(() => getGreeting(), []);
+  const config      = useShellConfig();
+  const { token }   = theme.useToken();
+  const screens     = Grid.useBreakpoint();
+  const data        = useStore(dashboardStore, (s) => s.data);
+  const loading     = useStore(dashboardStore, (s) => s.loading);
+  const recentPages = useStore(shellPreferencesStore, (s) => s.recentPages);
+  const greeting    = useMemo(() => getGreeting(), []);
+  const isMd        = screens.md;
+  const isLg        = screens.lg;
+
+  const [checklistClosed, setChecklistClosed] = useState(
+    () => localStorage.getItem(CHECKLIST_CLOSED_KEY) === "1"
+  );
 
   useEffect(() => {
     bootstrapDashboardStore(config);
     dashboardStore.getState().load();
   }, [config]);
+
+  const closeChecklist = () => {
+    localStorage.setItem(CHECKLIST_CLOSED_KEY, "1");
+    setChecklistClosed(true);
+  };
 
   if (loading && !data) {
     return (
@@ -254,259 +254,314 @@ export default function DashboardPage() {
     );
   }
 
-  const health  = data?.siteHealth;
-  const updates = data?.pendingUpdates;
-  const trend   = data?.visitorTrend ?? [];
+  const health    = data?.siteHealth;
+  const updates   = data?.pendingUpdates;
+  const trend     = data?.visitorTrend ?? [];
   const countries = data?.countryStats ?? [];
-  const speed   = data?.siteSpeed;
-  const pages   = data?.pagesOverview;
-  const actions = data?.actionItems ?? [];
-  const seo     = data?.seoOverview;
-  const stats   = data?.atAGlance;
+  const speed     = data?.siteSpeed;
+  const baseActions = data?.actionItems ?? [];
+  const seo       = data?.seoOverview;
+  const stats     = data?.atAGlance;
+  const checklist = data?.onboardingChecklist ?? [];
+  const readiness = data?.siteReadinessScore ?? null;
+  const calendar  = data?.calendarPreview ?? null;
 
-  const total30Views = trend.reduce((s, d) => s + d.views, 0);
-  const sparkline    = trend.slice(-7);
-  const yesterday    = trend[trend.length - 2]?.views ?? 0;
-  const todayViews   = trend[trend.length - 1]?.views ?? 0;
-  const viewTrend    = yesterday > 0 ? Math.round(((todayViews - yesterday) / yesterday) * 100) : 0;
+  // Merge SEO issues into action items (if not already included)
+  const seoActionIds = new Set(baseActions.map((a) => a.title));
+  const seoActions: ActionItem[] = (seo?.issues ?? [])
+    .filter((issue) => !seoActionIds.has(issue.label))
+    .map((issue) => ({
+      type: "seo" as const,
+      title: issue.label,
+      url: issue.editUrl ?? issue.url,
+      action: "View page",
+      severity: "warning" as const,
+      description: "This page has an SEO issue that may reduce its visibility in search results.",
+    }));
+  const actions = [...baseActions, ...seoActions];
 
+  const total30Views    = trend.reduce((s, d) => s + d.views, 0);
+  const sparkline       = trend.slice(-7);
+  const viewTrend       = (() => {
+    const y = trend[trend.length - 2]?.views ?? 0;
+    const t = trend[trend.length - 1]?.views ?? 0;
+    return y > 0 ? Math.round(((t - y) / y) * 100) : 0;
+  })();
   const criticalActions = actions.filter((a) => a.severity === "error");
   const warningActions  = actions.filter((a) => a.severity === "warning");
   const infoActions     = actions.filter((a) => a.severity === "info");
+  const hasUpdates      = (updates?.total ?? 0) > 0;
+  const isSiteDown      = speed?.status === "error";
+  const checklistDone   = checklist.filter((c) => c.done).length;
+  const showChecklist   = checklist.length > 0 && checklistDone < checklist.length && !checklistClosed;
 
-  const isSiteDown = speed?.status === "error";
+  const recentAdminPages = recentPages
+    .filter((p) => !p.pageUrl.endsWith("index.php"))
+    .slice(0, 6);
 
   const tooltipStyle = {
-    background: token.colorBgElevated,
-    border: `1px solid ${token.colorBorderSecondary}`,
-    borderRadius: token.borderRadius,
-    fontSize: 12,
-    color: token.colorText,
+    background: token.colorBgElevated, border: `1px solid ${token.colorBorderSecondary}`,
+    borderRadius: token.borderRadius, fontSize: 12, color: token.colorText,
   };
-
-  const isLg = screens.lg;
-  const isMd = screens.md;
+  const chartColors = [token.colorPrimary, token.colorInfo, token.colorSuccess, token.colorWarning, "#722ed1", "#eb2f96", "#13c2c2"];
 
   return (
-    <div style={{
-      height: "100%", overflow: "auto",
-      background: token.colorBgLayout,
-      padding: isMd ? "28px 36px" : "16px 14px",
-    }}>
+    <div style={{ width: "100%", height: "100%", overflowY: "auto", overflowX: "hidden", background: token.colorBgLayout, pointerEvents: "auto" }}>
+      <div style={{ maxWidth: 1240, margin: "0 auto", padding: isMd ? 40 : 20, boxSizing: "border-box" }}>
 
-      {/* ── CRITICAL: Site unreachable banner ───────────────────────────── */}
-      {isSiteDown && (
-        <Alert
-          type="error"
-          showIcon
-          icon={<ExclamationCircleOutlined />}
-          message={<strong>Your website is not reachable right now</strong>}
-          description="We could not connect to your homepage. Your visitors may see an error when trying to visit your site. This could be caused by your hosting provider or a recent change. Contact your host and share this message."
-          style={{ marginBottom: 20, borderRadius: token.borderRadiusLG }}
-          action={
-            <Button danger size="small" onClick={() => navigate("site-health.php", config.adminUrl)}>
-              Check Site Health
-            </Button>
-          }
-        />
-      )}
-
-      {/* ── Welcome hero ─────────────────────────────────────────────────── */}
-      <Card
-        style={{
-          marginBottom: 20,
-          borderRadius: token.borderRadiusLG * 1.5,
-          background: token.colorBgContainer,
-          border: `1px solid ${token.colorBorderSecondary}`,
-          boxShadow: token.boxShadowTertiary,
-        }}
-        styles={{ body: { padding: isMd ? "22px 30px" : "16px 18px" } }}
-      >
-        <Flex justify="space-between" align="center" wrap="wrap" gap={16}>
-          <Flex vertical gap={3} style={{ minWidth: 0 }}>
-            <Flex align="center" gap={10} wrap="wrap">
-              <Title level={3} style={{ margin: 0, fontSize: isMd ? 22 : 17 }}>
-                {greeting}, {config.user.name}!
-              </Title>
-              {health && health.status !== "unknown" && !isSiteDown && (
-                <Tag
-                  icon={health.status === "good" ? <CheckCircleOutlined /> : <WarningOutlined />}
-                  color={health.status === "good" ? "success" : health.status === "critical" ? "error" : "warning"}
-                  style={{ borderRadius: 999 }}
-                >
-                  {health.status === "good" ? "All good" : health.status === "recommended" ? "Needs attention" : "Critical"}
-                </Tag>
+        {/* ── Welcome hero with sidebar-style gradient ─────────────────────── */}
+        <div style={{
+          borderRadius: token.borderRadiusLG,
+          border: "1px solid var(--wp-react-ui-shell-border-strong)",
+          background: "linear-gradient(135deg, var(--wp-react-ui-shell-accent-soft) 0%, transparent 100%)",
+          padding: isMd ? "22px 28px" : "16px 18px",
+          marginBottom: 16,
+          boxSizing: "border-box",
+        }}>
+          <Flex justify="space-between" align="center" wrap gap={14}>
+            <Flex vertical gap={4} style={{ minWidth: 0 }}>
+              <Flex align="center" gap={10} wrap>
+                <Title level={3} style={{ margin: 0, fontSize: isMd ? 22 : 18 }}>
+                  {greeting}, {config.user.name}!
+                </Title>
+                {readiness !== null && (
+                  <Tooltip title={`${readiness}% of setup checklist complete`}>
+                    <Tag
+                      color={readiness >= 100 ? "success" : readiness >= 60 ? "warning" : "error"}
+                      style={{ borderRadius: 999, cursor: "default" }}
+                    >
+                      {readiness}% ready
+                    </Tag>
+                  </Tooltip>
+                )}
+              </Flex>
+              {total30Views > 0 ? (
+                <Flex align="center" gap={8} style={{ marginTop: 2 }}>
+                  <Text type="secondary" style={{ fontSize: 13 }}>
+                    {total30Views.toLocaleString()} page views in the last 30 days
+                  </Text>
+                  {viewTrend !== 0 && (
+                    <Tag color={viewTrend > 0 ? "success" : "error"} style={{ margin: 0, fontSize: 11, borderRadius: 999 }}>
+                      {viewTrend > 0 ? "↑" : "↓"} {Math.abs(viewTrend)}%
+                    </Tag>
+                  )}
+                </Flex>
+              ) : (
+                <Text type="secondary" style={{ fontSize: 13, marginTop: 2 }}>
+                  Visitor tracking is active — data will appear as people visit your site.
+                </Text>
+              )}
+              {stats && (
+                <Flex gap={12} style={{ marginTop: 6 }}>
+                  <Text type="secondary" style={{ fontSize: 11 }}>WordPress {stats.wpVersion}</Text>
+                  <Text type="secondary" style={{ fontSize: 11 }}>PHP {stats.phpVersion}</Text>
+                </Flex>
               )}
             </Flex>
-            <Text type="secondary" style={{ fontSize: 13 }}>
-              {config.branding.siteName} — here's how your site is doing today.
-            </Text>
-            {total30Views > 0 ? (
-              <Text type="secondary" style={{ fontSize: 12, marginTop: 2 }}>
-                <LineChartOutlined style={{ marginRight: 4 }} />
-                {total30Views.toLocaleString()} page views in the last 30 days
-                {viewTrend !== 0 && (
-                  <span style={{ marginLeft: 6, color: viewTrend > 0 ? token.colorSuccess : token.colorError }}>
-                    {viewTrend > 0 ? "↑" : "↓"} {Math.abs(viewTrend)}% today
-                  </span>
-                )}
-              </Text>
-            ) : (
-              <Text type="secondary" style={{ fontSize: 12, marginTop: 2 }}>
-                Visitor tracking is active — data will appear as people visit your site.
-              </Text>
-            )}
-          </Flex>
-
-          <Flex align="center" gap={14}>
-            {isMd && sparkline.some((d) => d.views > 0) && (
-              <Tooltip title="Page views — last 7 days">
-                <div style={{ width: 110, height: 40 }}>
-                  <ResponsiveContainer width="100%" height="100%">
-                    <LineChart data={sparkline}>
-                      <Line type="monotone" dataKey="views" stroke={token.colorPrimary} strokeWidth={2} dot={false} />
-                    </LineChart>
-                  </ResponsiveContainer>
-                </div>
-              </Tooltip>
-            )}
-            <Flex gap={8} wrap="wrap">
-              <Button type="primary" icon={<PlusOutlined />} onClick={() => navigate("post-new.php?post_type=page", config.adminUrl)}>
+            <Flex align="center" gap={8} wrap>
+              {isMd && sparkline.some((d) => d.views > 0) && (
+                <Tooltip title="Page views — last 7 days">
+                  <div style={{ width: 90, height: 34 }}>
+                    <ResponsiveContainer width="100%" height="100%">
+                      <LineChart data={sparkline}>
+                        <Line type="monotone" dataKey="views" stroke={token.colorPrimary} strokeWidth={2} dot={false} />
+                      </LineChart>
+                    </ResponsiveContainer>
+                  </div>
+                </Tooltip>
+              )}
+              <Button icon={<LinkOutlined />}
+                onClick={() => window.open(config.adminUrl.replace(/wp-admin\/?$/, ""), "_blank", "noopener,noreferrer")}>
+                View Site
+              </Button>
+              <Button icon={<PlusOutlined />}
+                onClick={() => navigate("post-new.php?post_type=page", config.adminUrl)}>
                 New Page
               </Button>
-              <Button icon={<FileOutlined />} onClick={() => navigate("edit.php?post_type=page", config.adminUrl)}>
-                All Pages
+              <Button type="primary" icon={<PlusOutlined />}
+                onClick={() => navigate("post-new.php", config.adminUrl)}>
+                New Post
               </Button>
             </Flex>
           </Flex>
-        </Flex>
-      </Card>
+        </div>
 
-      {/* ── Summary cards ─────────────────────────────────────────────────── */}
-      <div style={{
-        display: "grid",
-        gridTemplateColumns: isLg ? "repeat(5, 1fr)" : isMd ? "repeat(3, 1fr)" : "repeat(2, 1fr)",
-        gap: 12,
-        marginBottom: 20,
-      }}>
-        <SummaryCard
-          icon={isSiteDown ? <ExclamationCircleOutlined /> : health?.status === "good" ? <CheckCircleOutlined /> : <WarningOutlined />}
-          label="Website"
-          value={isSiteDown ? "Offline" : health?.status === "good" ? "Online" : health?.status === "critical" ? "Critical" : "Needs check"}
-          sub={
-            health && health.score > 0 && !isSiteDown ? (
-              <Progress
-                percent={health.score}
-                size="small"
-                showInfo={false}
-                strokeColor={health.status === "good" ? token.colorSuccess : health.status === "critical" ? token.colorError : token.colorWarning}
-                style={{ margin: 0 }}
-              />
-            ) : isSiteDown ? (
-              <Text style={{ fontSize: 11, color: token.colorError }}>Visitors can't reach you</Text>
-            ) : undefined
-          }
-          color={isSiteDown ? token.colorError : health?.status === "good" ? token.colorSuccess : health?.status === "critical" ? token.colorError : token.colorWarning}
-          tooltip={isSiteDown ? "We couldn't connect to your homepage" : health?.status !== "good" ? "WordPress found configuration issues — click for details" : "Your site is running and reachable"}
-          onClick={() => navigate("site-health.php", config.adminUrl)}
-        />
-
-        <SummaryCard
-          icon={<LineChartOutlined />}
-          label="Visitors (30d)"
-          value={total30Views > 0 ? total30Views.toLocaleString() : "—"}
-          sub={
-            total30Views > 0 ? (
-              viewTrend !== 0 ? (
-                <Text style={{ fontSize: 11, color: viewTrend > 0 ? token.colorSuccess : token.colorError }}>
-                  {viewTrend > 0 ? "↑" : "↓"} {Math.abs(viewTrend)}% vs yesterday
+        {/* ── Offline alert ───────────────────────────────────────────────── */}
+        {isSiteDown && (
+          <Alert
+            type="error" showIcon icon={<ExclamationCircleOutlined />}
+            message={<strong>Your website is not reachable right now</strong>}
+            description={
+              <div>
+                <p style={{ margin: "4px 0 8px" }}>
+                  {speed?.reason ?? "We could not connect to your homepage."}{" "}
+                  Your visitors may see an error page.
+                </p>
+                <Text type="secondary" style={{ fontSize: 12 }}>
+                  <strong>What to do:</strong> Contact your hosting provider and tell them your website is not loading.
+                  Common causes: server is down, domain expired, or a recent plugin change broke something.
                 </Text>
-              ) : (
-                <Text type="secondary" style={{ fontSize: 11 }}>Stable traffic</Text>
-              )
-            ) : (
-              <Text type="secondary" style={{ fontSize: 11 }}>Tracking active</Text>
-            )
-          }
-          color={token.colorPrimary}
-          tooltip="Page views tracked since the plugin was installed. Unique visitor count requires WP Statistics."
-        />
+              </div>
+            }
+            style={{ marginBottom: 16, borderRadius: token.borderRadiusLG }}
+            action={
+              <Button danger size="small" onClick={() => navigate("site-health.php", config.adminUrl)}>
+                Site Health
+              </Button>
+            }
+          />
+        )}
 
-        <SummaryCard
-          icon={<UpCircleOutlined />}
-          label="Updates"
-          value={updates?.total ?? 0}
-          sub={
-            updates && updates.total > 0 ? (
-              <Flex gap={3} wrap="wrap">
-                {updates.plugins > 0 && <Tag color="blue" style={{ margin: 0, fontSize: 10 }}>{updates.plugins} plugins</Tag>}
-                {updates.themes > 0 && <Tag color="purple" style={{ margin: 0, fontSize: 10 }}>{updates.themes} themes</Tag>}
-                {updates.core > 0 && <Tag color="red" style={{ margin: 0, fontSize: 10 }}>core</Tag>}
+        {/* ── Summary tiles ─────────────────────────────────────────────────── */}
+        <div style={{
+          display: "grid",
+          gridTemplateColumns: isLg ? "repeat(5, 1fr)" : isMd ? "repeat(3, 1fr)" : "repeat(2, 1fr)",
+          gap: 10, marginBottom: 20,
+        }}>
+          <StatTile
+            icon={isSiteDown ? <ExclamationCircleOutlined /> : health?.status === "good" ? <CheckCircleOutlined /> : <WarningOutlined />}
+            label="Website"
+            value={isSiteDown ? "Offline" : health?.status === "good" ? "Online" : "Check"}
+            sub={
+              health && health.score > 0 && !isSiteDown
+                ? <Progress percent={health.score} size="small" showInfo={false}
+                    strokeColor={health.status === "good" ? token.colorSuccess : health.status === "critical" ? token.colorError : token.colorWarning}
+                    style={{ margin: 0 }} />
+                : <Text style={{ fontSize: 11, color: isSiteDown ? token.colorError : token.colorTextTertiary }}>
+                    {isSiteDown ? "Not reachable" : "Click for details"}
+                  </Text>
+            }
+            color={isSiteDown ? token.colorError : health?.status === "good" ? token.colorSuccess : health?.status === "critical" ? token.colorError : token.colorWarning}
+            tooltip={isSiteDown ? (speed?.reason ?? "Site unreachable") : health?.status !== "good" ? "WordPress found configuration issues" : "Site is running and reachable"}
+            onClick={() => navigate("site-health.php", config.adminUrl)}
+          />
+          <StatTile
+            icon={<LineChartOutlined />}
+            label="Visitors 30d"
+            value={total30Views > 0 ? total30Views.toLocaleString() : "—"}
+            sub={
+              total30Views > 0
+                ? viewTrend !== 0
+                  ? <Text style={{ fontSize: 11, color: viewTrend > 0 ? token.colorSuccess : token.colorError }}>{viewTrend > 0 ? "↑" : "↓"} {Math.abs(viewTrend)}% vs yesterday</Text>
+                  : <Text type="secondary" style={{ fontSize: 11 }}>Stable traffic</Text>
+                : <Text type="secondary" style={{ fontSize: 11 }}>Tracking active</Text>
+            }
+            color={token.colorPrimary}
+            tooltip="Page views tracked automatically. Install WP Statistics (free) for country-level data."
+          />
+          <StatTile
+            icon={<UpCircleOutlined />}
+            label="Updates"
+            value={updates?.total ?? 0}
+            sub={
+              hasUpdates
+                ? <Flex gap={3} wrap="wrap">
+                    {(updates?.plugins ?? 0) > 0 && <Tag color="blue" style={{ margin: 0, fontSize: 10 }}>{updates!.plugins} plugins</Tag>}
+                    {(updates?.themes ?? 0) > 0 && <Tag color="purple" style={{ margin: 0, fontSize: 10 }}>{updates!.themes} themes</Tag>}
+                    {(updates?.core ?? 0) > 0 && <Tag color="red" style={{ margin: 0, fontSize: 10 }}>core</Tag>}
+                  </Flex>
+                : updates?.lastChecked
+                  ? <Text type="secondary" style={{ fontSize: 11 }}>Checked {relativeTime(updates.lastChecked)}</Text>
+                  : <Text type="secondary" style={{ fontSize: 11 }}>All up to date</Text>
+            }
+            color={hasUpdates ? token.colorWarning : token.colorSuccess}
+            tooltip={hasUpdates ? "Updates fix security issues. Make a backup first, then update." : "Everything is up to date"}
+            onClick={() => navigate("update-core.php", config.adminUrl)}
+          />
+          <StatTile
+            icon={<ThunderboltOutlined />}
+            label="Speed"
+            value={isSiteDown ? "Error" : speed?.ms != null ? `${speed.ms} ms` : "—"}
+            sub={
+              !isSiteDown && speed?.status
+                ? <Text style={{ fontSize: 11, color: speed.status === "good" ? token.colorSuccess : speed.status === "fair" ? token.colorWarning : token.colorError }}>
+                    {speed.status === "good" ? "Fast" : speed.status === "fair" ? "Acceptable" : "Slow"}
+                  </Text>
+                : <Text style={{ fontSize: 11, color: token.colorError }}>Unreachable</Text>
+            }
+            color={isSiteDown ? token.colorError : speed?.status === "good" ? token.colorSuccess : speed?.status === "fair" ? token.colorWarning : token.colorError}
+            tooltip="Homepage load time. Under 600 ms is good. Refreshes every 5 minutes."
+          />
+          <StatTile
+            icon={<SearchOutlined />}
+            label="SEO"
+            value={seo?.plugin ? `${seo.score}%` : "—"}
+            sub={
+              seo?.plugin
+                ? seo.issues.length === 0
+                  ? <Text style={{ fontSize: 11, color: token.colorSuccess }}>No issues</Text>
+                  : <Text style={{ fontSize: 11, color: token.colorWarning }}>{seo.issues.length} issue{seo.issues.length > 1 ? "s" : ""}</Text>
+                : <Text type="secondary" style={{ fontSize: 11 }}>No plugin</Text>
+            }
+            color={!seo?.plugin ? token.colorTextSecondary : seo.score >= 80 ? token.colorSuccess : seo.score >= 50 ? token.colorWarning : token.colorError}
+            tooltip={seo?.plugin ? "Based on page titles and meta descriptions" : "Install Yoast SEO (free) to track your search visibility"}
+            onClick={seo?.plugin ? () => navigate("edit.php?post_type=page", config.adminUrl) : undefined}
+          />
+        </div>
+
+        {/* ── First Steps ───────────────────────────────────────────────────── */}
+        {showChecklist && (
+          <Section
+            icon={<RocketOutlined />}
+            title={`First Steps — ${checklistDone} of ${checklist.length} done`}
+            description="Complete these steps to get your site fully ready. Each one takes just a few minutes."
+            extra={
+              <Flex align="center" gap={12}>
+                <Progress
+                  type="circle"
+                  percent={Math.round((checklistDone / checklist.length) * 100)}
+                  size={40}
+                  strokeColor={token.colorPrimary}
+                />
+                <Tooltip title="Dismiss checklist">
+                  <Button type="text" icon={<CloseOutlined />} size="small"
+                    onClick={closeChecklist} style={{ color: token.colorTextTertiary }} />
+                </Tooltip>
               </Flex>
-            ) : (
-              <Text type="secondary" style={{ fontSize: 11 }}>All up to date ✓</Text>
-            )
-          }
-          color={updates && updates.total > 0 ? token.colorWarning : token.colorSuccess}
-          tooltip={updates && updates.total > 0 ? "Updates often fix security issues. Your content won't be affected." : "Everything is up to date"}
-          onClick={() => navigate("update-core.php", config.adminUrl)}
-        />
-
-        <SummaryCard
-          icon={<ThunderboltOutlined />}
-          label="Response Time"
-          value={isSiteDown ? "Error" : speed?.ms != null ? `${speed.ms} ms` : "—"}
-          sub={
-            speed?.status && !isSiteDown ? (
-              <Text style={{
-                fontSize: 11,
-                color: speed.status === "good" ? token.colorSuccess : speed.status === "fair" ? token.colorWarning : token.colorError,
-              }}>
-                {speed.status === "good" ? "Fast load time" : speed.status === "fair" ? "Acceptable" : "Slow — check hosting"}
-              </Text>
-            ) : isSiteDown ? (
-              <Text style={{ fontSize: 11, color: token.colorError }}>Could not connect</Text>
-            ) : undefined
-          }
-          color={isSiteDown ? token.colorError : speed?.status === "good" ? token.colorSuccess : speed?.status === "fair" ? token.colorWarning : token.colorError}
-          tooltip="How long your homepage takes to load. Under 600ms is good. Refreshes every 5 minutes."
-        />
-
-        <SummaryCard
-          icon={<SearchOutlined />}
-          label="SEO Health"
-          value={seo?.plugin ? `${seo.score}%` : "—"}
-          sub={
-            seo?.plugin ? (
-              seo.issues.length === 0
-                ? <Text style={{ fontSize: 11, color: token.colorSuccess }}>No issues found ✓</Text>
-                : <Text style={{ fontSize: 11, color: token.colorWarning }}>{seo.issues.length} issue{seo.issues.length > 1 ? "s" : ""} found</Text>
-            ) : (
-              <Text type="secondary" style={{ fontSize: 11 }}>Install Yoast or RankMath</Text>
-            )
-          }
-          color={!seo?.plugin ? token.colorTextSecondary : seo.score >= 80 ? token.colorSuccess : seo.score >= 50 ? token.colorWarning : token.colorError}
-          tooltip={seo?.plugin ? "SEO score based on page titles and meta descriptions" : "Install an SEO plugin like Yoast SEO to track and improve your search engine visibility"}
-          onClick={seo?.plugin ? () => navigate("edit.php?post_type=page", config.adminUrl) : undefined}
-        />
-      </div>
-
-      {/* ── Main grid ─────────────────────────────────────────────────────── */}
-      <div style={{
-        display: "grid",
-        gridTemplateColumns: isLg ? "2fr 1fr" : "1fr",
-        gap: 20,
-        marginBottom: 20,
-      }}>
-        {/* LEFT: Traffic */}
-        <Flex vertical gap={16}>
-          <Card
-            title={<Flex align="center" gap={8}><LineChartOutlined />Page Views — Last 30 Days</Flex>}
-            style={{ borderRadius: token.borderRadiusLG, background: token.colorBgContainer }}
-            styles={{ body: { padding: "12px 20px 20px" } }}
+            }
           >
+            <div style={{ display: "grid", gridTemplateColumns: isMd ? "1fr 1fr" : "1fr", gap: 8 }}>
+              {checklist.map((item) => (
+                <Flex key={item.key} align="center" gap={10}
+                  style={{
+                    padding: "10px 14px", borderRadius: token.borderRadius,
+                    background: item.done ? `${token.colorSuccess}08` : token.colorBgLayout,
+                    border: `1px solid ${item.done ? token.colorSuccess + "30" : token.colorBorderSecondary}`,
+                    cursor: item.done ? "default" : "pointer",
+                    transition: "border-color 0.15s",
+                  }}
+                  onClick={item.done ? undefined : () => navigate(item.url, config.adminUrl)}
+                >
+                  <div style={{
+                    width: 20, height: 20, borderRadius: "50%", flexShrink: 0,
+                    background: item.done ? token.colorSuccess : "transparent",
+                    border: `2px solid ${item.done ? token.colorSuccess : token.colorBorderSecondary}`,
+                    display: "flex", alignItems: "center", justifyContent: "center",
+                  }}>
+                    {item.done && <CheckOutlined style={{ fontSize: 10, color: "#fff" }} />}
+                  </div>
+                  <Text style={{
+                    flex: 1, fontSize: 13,
+                    color: item.done ? token.colorTextTertiary : token.colorText,
+                    textDecoration: item.done ? "line-through" : undefined,
+                  }}>
+                    {item.label}
+                  </Text>
+                  {!item.done && (
+                    <Text type="secondary" style={{ fontSize: 11, flexShrink: 0 }}>Open →</Text>
+                  )}
+                </Flex>
+              ))}
+            </div>
+          </Section>
+        )}
+        {showChecklist && <div style={{ height: 20 }} />}
+
+        {/* ── Charts ────────────────────────────────────────────────────────── */}
+        <div style={{ display: "grid", gridTemplateColumns: isMd ? "1fr 1fr" : "1fr", gap: 16, marginBottom: 16 }}>
+          <Section icon={<LineChartOutlined />} title="Page Views" description="Last 30 days">
             {trend.some((d) => d.views > 0) ? (
-              <ResponsiveContainer width="100%" height={190}>
+              <ResponsiveContainer width="100%" height={170}>
                 <AreaChart data={trend}>
                   <defs>
                     <linearGradient id="viewsGrad" x1="0" y1="0" x2="0" y2="1">
@@ -516,235 +571,197 @@ export default function DashboardPage() {
                   </defs>
                   <CartesianGrid strokeDasharray="3 3" stroke={token.colorBorderSecondary} />
                   <XAxis dataKey="date" tick={{ fontSize: 10, fill: token.colorTextSecondary }} interval={4} />
-                  <YAxis allowDecimals={false} tick={{ fontSize: 10, fill: token.colorTextSecondary }} width={34} />
+                  <YAxis allowDecimals={false} tick={{ fontSize: 10, fill: token.colorTextSecondary }} width={30} />
                   <RechartsTooltip contentStyle={tooltipStyle} />
-                  <Area type="monotone" dataKey="views" name="Page Views" stroke={token.colorPrimary} fill="url(#viewsGrad)" strokeWidth={2} />
+                  <Area type="monotone" dataKey="views" name="Views" stroke={token.colorPrimary} fill="url(#viewsGrad)" strokeWidth={2} />
                 </AreaChart>
               </ResponsiveContainer>
             ) : (
-              <Flex vertical align="center" justify="center" style={{ height: 190 }} gap={10}>
-                <LineChartOutlined style={{ fontSize: 36, color: token.colorTextQuaternary }} />
-                <Flex vertical align="center" gap={4}>
-                  <Text type="secondary" style={{ textAlign: "center", fontSize: 13 }}>No visitor data yet</Text>
-                  <Text type="secondary" style={{ textAlign: "center", fontSize: 12 }}>
-                    Tracking started automatically. Visit your website to record the first data point.
-                  </Text>
-                </Flex>
+              <Flex vertical align="center" justify="center" style={{ height: 170 }} gap={10}>
+                <LineChartOutlined style={{ fontSize: 32, color: token.colorTextQuaternary }} />
+                <Text type="secondary" style={{ textAlign: "center", fontSize: 12, maxWidth: 240 }}>
+                  No data yet. Tracking is active — views appear as people visit your site.
+                </Text>
               </Flex>
             )}
-          </Card>
+          </Section>
 
-          {/* Country chart */}
-          <Card
-            title={<Flex align="center" gap={8}><GlobalOutlined />Visitors by Country (30 days)</Flex>}
-            style={{ borderRadius: token.borderRadiusLG, background: token.colorBgContainer }}
-            styles={{ body: { padding: "12px 20px 20px" } }}
-          >
+          <Section icon={<GlobalOutlined />} title="Visitors by Country" description="Last 30 days">
             {countries.length > 0 ? (
-              <ResponsiveContainer width="100%" height={190}>
+              <ResponsiveContainer width="100%" height={170}>
                 <BarChart
                   data={countries.slice(0, 7).map((c: CountryStatEntry) => ({
                     ...c, label: `${countryFlag(c.country)} ${countryName(c.country)}`,
                   }))}
-                  layout="vertical" margin={{ left: 8, right: 16 }}
+                  layout="vertical" margin={{ left: 8, right: 12 }}
                 >
                   <XAxis type="number" tick={{ fontSize: 10, fill: token.colorTextSecondary }} allowDecimals={false} />
-                  <YAxis type="category" dataKey="label" width={120} tick={{ fontSize: 11, fill: token.colorTextSecondary }} />
+                  <YAxis type="category" dataKey="label" width={116} tick={{ fontSize: 11, fill: token.colorTextSecondary }} />
                   <RechartsTooltip contentStyle={tooltipStyle} formatter={(v) => [`${v}`, "Visits"] as [string, string]} />
                   <Bar dataKey="visits" radius={[0, 4, 4, 0]}>
-                    {countries.slice(0, 7).map((_, i) => (
-                      <Cell key={i} fill={[token.colorPrimary, token.colorInfo, token.colorSuccess, token.colorWarning, "#722ed1", "#eb2f96", "#13c2c2"][i % 7]} />
-                    ))}
+                    {countries.slice(0, 7).map((_, i) => <Cell key={i} fill={chartColors[i % chartColors.length]} />)}
                   </Bar>
                 </BarChart>
               </ResponsiveContainer>
             ) : (
-              <Flex vertical align="center" justify="center" style={{ height: 160 }} gap={8}>
+              <Flex vertical align="center" justify="center" style={{ height: 170 }} gap={10}>
                 <GlobalOutlined style={{ fontSize: 32, color: token.colorTextQuaternary }} />
                 <Text type="secondary" style={{ textAlign: "center", fontSize: 12 }}>
-                  Country data requires{" "}
-                  <a href="https://wordpress.org/plugins/wp-statistics/" target="_blank" rel="noopener noreferrer">
+                  Install{" "}
+                  <Link href="https://wordpress.org/plugins/wp-statistics/" target="_blank" rel="noopener noreferrer">
                     WP Statistics
-                  </a>
+                  </Link>{" "}
+                  (free) to track visitor countries.
                 </Text>
               </Flex>
             )}
-          </Card>
-        </Flex>
+          </Section>
+        </div>
 
-        {/* RIGHT: Action Center */}
-        <Card
-          title={
-            <Flex align="center" gap={8}>
-              What Needs Your Attention
-              {criticalActions.length > 0 && (
-                <Tag color="error" style={{ margin: 0, fontSize: 11 }}>
-                  {criticalActions.length} urgent
-                </Tag>
-              )}
-            </Flex>
-          }
-          style={{ borderRadius: token.borderRadiusLG, background: token.colorBgContainer, height: "fit-content" }}
-          styles={{ body: { padding: "8px 20px 16px" } }}
-        >
-          {actions.length === 0 ? (
-            <Flex vertical align="center" gap={8} style={{ padding: "28px 0" }}>
-              <CheckCircleOutlined style={{ fontSize: 36, color: token.colorSuccess }} />
-              <Text type="secondary" style={{ textAlign: "center", fontSize: 13 }}>
-                Everything looks great!<br />No action required right now.
-              </Text>
-            </Flex>
-          ) : (
-            <div>
-              {/* 🔴 Critical */}
-              {criticalActions.length > 0 && (
-                <div style={{ marginBottom: 4 }}>
-                  <Text style={{ fontSize: 10, fontWeight: 600, textTransform: "uppercase", color: token.colorError, letterSpacing: "0.06em", display: "block", marginBottom: 8, marginTop: 8 }}>
-                    🔴 Act Now
-                  </Text>
-                  {criticalActions.map((item, i) => <ActionRow key={i} item={item} adminUrl={config.adminUrl} />)}
-                </div>
-              )}
-              {/* 🟡 Warnings */}
-              {warningActions.length > 0 && (
-                <div style={{ marginBottom: 4 }}>
-                  <Text style={{ fontSize: 10, fontWeight: 600, textTransform: "uppercase", color: token.colorWarning, letterSpacing: "0.06em", display: "block", marginBottom: 8, marginTop: criticalActions.length > 0 ? 12 : 8 }}>
-                    🟡 Review Soon
-                  </Text>
-                  {warningActions.map((item, i) => <ActionRow key={i} item={item} adminUrl={config.adminUrl} />)}
-                </div>
-              )}
-              {/* 🟢 Info */}
-              {infoActions.length > 0 && (
-                <Collapse
-                  ghost
-                  size="small"
-                  items={[{
-                    key: "info",
-                    label: (
-                      <Text type="secondary" style={{ fontSize: 11 }}>
-                        🟢 {infoActions.length} low-priority item{infoActions.length > 1 ? "s" : ""}
+        {/* ── Action Center + Right sidebar ─────────────────────────────────── */}
+        <div style={{ display: "grid", gridTemplateColumns: isLg ? "1fr 320px" : "1fr", gap: 16, marginBottom: 16 }}>
+
+          {/* Action Center */}
+          <Section
+            icon={<AlertOutlined />}
+            title="What Needs Your Attention"
+            description={actions.length === 0 ? "All clear" : `${criticalActions.length} urgent, ${warningActions.length} to review`}
+            extra={criticalActions.length > 0 ? <Tag color="error" style={{ margin: 0 }}>{criticalActions.length} urgent</Tag> : undefined}
+          >
+            {actions.length === 0 ? (
+              <Flex vertical align="center" gap={8} style={{ padding: "20px 0" }}>
+                <CheckCircleOutlined style={{ fontSize: 32, color: token.colorSuccess }} />
+                <Text type="secondary" style={{ fontSize: 13 }}>Everything looks great! No action required.</Text>
+              </Flex>
+            ) : (
+              <>
+                <Text type="secondary" style={{ fontSize: 12, display: "block", marginBottom: 14 }}>
+                  {criticalActions.length > 0
+                    ? "Start with the red items first — everything else can wait."
+                    : "A few things to review. Start with the orange items."}
+                </Text>
+                {hasUpdates && (
+                  <Alert
+                    type="info" showIcon
+                    message={<Text style={{ fontSize: 12 }}>Make a backup before applying updates — most hosts offer this in one click.</Text>}
+                    style={{ marginBottom: 14, borderRadius: token.borderRadius }}
+                  />
+                )}
+                {criticalActions.length > 0 && (
+                  <div style={{ marginBottom: 4 }}>
+                    <Flex align="center" gap={6} style={{ marginBottom: 8 }}>
+                      <AlertOutlined style={{ color: token.colorError, fontSize: 11 }} />
+                      <Text style={{ fontSize: 10, fontWeight: 700, textTransform: "uppercase", color: token.colorError, letterSpacing: "0.07em" }}>
+                        Act Now
                       </Text>
-                    ),
-                    children: infoActions.map((item, i) => <ActionRow key={i} item={item} adminUrl={config.adminUrl} />),
-                  }]}
-                  style={{ marginTop: 8 }}
-                />
-              )}
-            </div>
-          )}
-
-          {/* Quick stats */}
-          {stats && (
-            <div style={{ marginTop: 20, paddingTop: 16, borderTop: `1px solid ${token.colorBorderSecondary}` }}>
-              <Text type="secondary" style={{ fontSize: 10, textTransform: "uppercase", letterSpacing: "0.05em", display: "block", marginBottom: 10 }}>
-                Site Overview
-              </Text>
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
-                {[
-                  { label: "Live Pages", value: pages?.totalPublished ?? stats.pages },
-                  { label: "Draft Pages", value: pages?.totalDrafts ?? stats.pagesDraft },
-                  { label: "Users", value: stats.users },
-                  { label: "WP Version", value: stats.wpVersion },
-                ].map(({ label, value }) => (
-                  <div key={label} style={{
-                    background: token.colorBgLayout, borderRadius: token.borderRadius,
-                    padding: "8px 10px",
-                  }}>
-                    <Text type="secondary" style={{ fontSize: 10, display: "block" }}>{label}</Text>
-                    <Text strong style={{ fontSize: 15 }}>{value}</Text>
+                    </Flex>
+                    {criticalActions.map((item, i) => <ActionRow key={i} item={item} adminUrl={config.adminUrl} />)}
                   </div>
-                ))}
-              </div>
-            </div>
-          )}
+                )}
+                {warningActions.length > 0 && (
+                  <div style={{ marginTop: criticalActions.length ? 12 : 0 }}>
+                    <Flex align="center" gap={6} style={{ marginBottom: 8 }}>
+                      <WarningOutlined style={{ color: token.colorWarning, fontSize: 11 }} />
+                      <Text style={{ fontSize: 10, fontWeight: 700, textTransform: "uppercase", color: token.colorWarning, letterSpacing: "0.07em" }}>
+                        Review Soon
+                      </Text>
+                    </Flex>
+                    {warningActions.map((item, i) => <ActionRow key={i} item={item} adminUrl={config.adminUrl} />)}
+                  </div>
+                )}
+                {infoActions.length > 0 && (
+                  <Collapse ghost size="small"
+                    items={[{
+                      key: "info",
+                      label: (
+                        <Flex align="center" gap={6}>
+                          <InfoCircleOutlined style={{ color: token.colorInfo, fontSize: 11 }} />
+                          <Text type="secondary" style={{ fontSize: 11 }}>{infoActions.length} low-priority item{infoActions.length > 1 ? "s" : ""}</Text>
+                        </Flex>
+                      ),
+                      children: infoActions.map((item, i) => <ActionRow key={i} item={item} adminUrl={config.adminUrl} />),
+                    }]}
+                    style={{ marginTop: 8 }}
+                  />
+                )}
+              </>
+            )}
+          </Section>
 
-          {/* SEO issues */}
-          {seo && seo.issues.length > 0 && (
-            <div style={{ marginTop: 16, paddingTop: 12, borderTop: `1px solid ${token.colorBorderSecondary}` }}>
-              <Text type="secondary" style={{ fontSize: 10, textTransform: "uppercase", letterSpacing: "0.05em", display: "block", marginBottom: 8 }}>
-                SEO Issues
-              </Text>
-              {seo.issues.map((issue, i) => (
-                <Flex key={i} align="center" gap={8} style={{ padding: "6px 0", borderBottom: `1px solid ${token.colorBorderSecondary}` }}>
-                  <WarningOutlined style={{ color: token.colorWarning, fontSize: 11 }} />
-                  <Text
-                    style={{ flex: 1, fontSize: 12, cursor: "pointer", color: token.colorWarning }}
-                    onClick={() => navigate(issue.url, config.adminUrl)}
+          {/* Right column */}
+          <Flex vertical gap={16}>
+
+            {/* Calendar */}
+            {calendar?.available && (
+              <Section
+                icon={<CalendarOutlined />}
+                title="Upcoming Bookings"
+                description="Next 7 days"
+                extra={
+                  <Flex align="center" gap={8}>
+                    {calendar.totalToday > 0 && <Badge count={calendar.totalToday} color={token.colorPrimary} />}
+                    <Button type="link" size="small" style={{ padding: 0 }}
+                      onClick={() => navigate("admin.php?page=h-bricks-elements", config.adminUrl)}>
+                      View all
+                    </Button>
+                  </Flex>
+                }
+              >
+                {calendar.upcoming.length === 0 ? (
+                  <Flex align="center" justify="center" style={{ height: 60 }}>
+                    <Text type="secondary" style={{ fontSize: 12 }}>No bookings in the next 7 days</Text>
+                  </Flex>
+                ) : (
+                  calendar.upcoming.map((booking: CalendarBooking) => (
+                    <Flex key={booking.id} align="center" gap={10}
+                      style={{ padding: "8px 0", borderBottom: `1px solid ${token.colorBorderSecondary}` }}>
+                      <div style={{
+                        width: 6, height: 6, borderRadius: "50%", flexShrink: 0,
+                        background: booking.isToday ? token.colorPrimary : token.colorTextQuaternary,
+                      }} />
+                      <Flex vertical style={{ flex: 1, minWidth: 0 }}>
+                        <Text style={{ fontSize: 13, fontWeight: 500, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                          {booking.customerName || "—"}
+                        </Text>
+                        <Text type="secondary" style={{ fontSize: 11 }}>
+                          {formatBookingTime(booking.startDate)}
+                        </Text>
+                      </Flex>
+                      {booking.isToday && <Tag color="blue" style={{ margin: 0, fontSize: 10 }}>Today</Tag>}
+                    </Flex>
+                  ))
+                )}
+              </Section>
+            )}
+
+            {/* Recent pages */}
+            {recentAdminPages.length > 0 && (
+              <Section icon={<HistoryOutlined />} title="Recently Visited" description="Your navigation history">
+                {recentAdminPages.map((page, i) => (
+                  <Flex key={i} align="center" gap={8}
+                    style={{
+                      padding: "8px 0",
+                      borderBottom: i < recentAdminPages.length - 1 ? `1px solid ${token.colorBorderSecondary}` : undefined,
+                      cursor: "pointer",
+                    }}
+                    onClick={() => navigate(page.pageUrl, config.adminUrl)}
                   >
-                    {issue.label}
-                  </Text>
-                </Flex>
-              ))}
-            </div>
-          )}
-        </Card>
+                    <ClockCircleOutlined style={{ color: token.colorTextTertiary, fontSize: 11, flexShrink: 0 }} />
+                    <Text style={{ flex: 1, fontSize: 13, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", color: token.colorPrimary }}
+                      title={page.title}>
+                      {page.title}
+                    </Text>
+                    <Text type="secondary" style={{ fontSize: 11, flexShrink: 0 }}>
+                      {relativeTime(Math.round(page.visitedAt / 1000))}
+                    </Text>
+                  </Flex>
+                ))}
+              </Section>
+            )}
+
+          </Flex>
+        </div>
       </div>
-
-      {/* ── Pages section ────────────────────────────────────────────────── */}
-      <div style={{
-        display: "grid",
-        gridTemplateColumns: isMd ? "1fr 1fr" : "1fr",
-        gap: 16,
-        marginBottom: 24,
-      }}>
-        <Card
-          title={
-            <Flex align="center" justify="space-between">
-              <Flex align="center" gap={8}><ClockCircleOutlined />Recently Updated Pages</Flex>
-              <Tag color="default" style={{ margin: 0, fontSize: 11 }}>{pages?.totalPublished ?? 0} live</Tag>
-            </Flex>
-          }
-          style={{ borderRadius: token.borderRadiusLG, background: token.colorBgContainer }}
-          styles={{ body: { padding: "4px 20px 16px" } }}
-          extra={<Button type="link" size="small" onClick={() => navigate("edit.php?post_type=page", config.adminUrl)}>View all</Button>}
-        >
-          {pages?.recent && pages.recent.length > 0 ? (
-            pages.recent.map((page) => <PageRow key={page.id} page={page} />)
-          ) : (
-            <Flex align="center" justify="center" style={{ height: 70 }}>
-              <Text type="secondary" style={{ fontSize: 13 }}>No published pages yet.</Text>
-            </Flex>
-          )}
-        </Card>
-
-        <Card
-          title={
-            <Flex align="center" justify="space-between">
-              <Flex align="center" gap={8}><EditOutlined />Draft Pages</Flex>
-              {(pages?.totalDrafts ?? 0) > 0 && (
-                <Tag color="orange" style={{ margin: 0, fontSize: 11 }}>
-                  {pages!.totalDrafts} unpublished
-                </Tag>
-              )}
-            </Flex>
-          }
-          style={{ borderRadius: token.borderRadiusLG, background: token.colorBgContainer }}
-          styles={{ body: { padding: "4px 20px 16px" } }}
-          extra={
-            <Button type="primary" size="small" icon={<PlusOutlined />}
-              onClick={() => navigate("post-new.php?post_type=page", config.adminUrl)}>
-              New
-            </Button>
-          }
-        >
-          {pages?.drafts && pages.drafts.length > 0 ? (
-            pages.drafts.map((page) => <PageRow key={page.id} page={page} />)
-          ) : (
-            <Flex align="center" justify="center" style={{ height: 70 }}>
-              <Text type="secondary" style={{ fontSize: 13 }}>No draft pages — you're all caught up! 🎉</Text>
-            </Flex>
-          )}
-        </Card>
-      </div>
-
-      {/* Footer */}
-      {stats && (
-        <Flex gap={16} style={{ paddingBottom: 8 }}>
-          <Text type="secondary" style={{ fontSize: 11 }}>WordPress {stats.wpVersion}</Text>
-          <Text type="secondary" style={{ fontSize: 11 }}>PHP {stats.phpVersion}</Text>
-        </Flex>
-      )}
     </div>
   );
 }

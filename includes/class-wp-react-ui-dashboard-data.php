@@ -40,15 +40,18 @@ set_transient( $key, $count + 1, 2 * DAY_IN_SECONDS );
  */
 public static function get_dashboard_data(): array {
 	return array(
-		'atAGlance'        => self::get_at_a_glance(),
-		'siteHealth'       => self::get_site_health(),
-		'pendingUpdates'   => self::get_pending_updates(),
-		'visitorTrend'     => self::get_visitor_trend(),
-		'countryStats'     => self::get_country_stats(),
-		'siteSpeed'        => self::get_site_speed(),
-		'pagesOverview'    => self::get_pages_overview(),
-		'actionItems'      => self::get_action_items(),
-		'seoOverview'      => self::get_seo_overview(),
+		'atAGlance'           => self::get_at_a_glance(),
+		'siteHealth'          => self::get_site_health(),
+		'pendingUpdates'      => self::get_pending_updates(),
+		'visitorTrend'        => self::get_visitor_trend(),
+		'countryStats'        => self::get_country_stats(),
+		'siteSpeed'           => self::get_site_speed(),
+		'pagesOverview'       => self::get_pages_overview(),
+		'actionItems'         => self::get_action_items(),
+		'seoOverview'         => self::get_seo_overview(),
+		'onboardingChecklist' => self::get_onboarding_checklist(),
+		'siteReadinessScore'  => self::get_site_readiness_score(),
+		'calendarPreview'     => self::get_calendar_preview(),
 	);
 }
 
@@ -204,10 +207,11 @@ $core++;
 }
 
 return array(
-'plugins' => $plugins,
-'themes'  => $themes,
-'core'    => $core,
-'total'   => $plugins + $themes + $core,
+'plugins'     => $plugins,
+'themes'      => $themes,
+'core'        => $core,
+'total'       => $plugins + $themes + $core,
+'lastChecked' => isset( $plugin_updates->last_checked ) ? (int) $plugin_updates->last_checked : null,
 );
 }
 
@@ -293,7 +297,18 @@ array(
 );
 $ms = (int) round( ( microtime( true ) - $start ) * 1000 );
 if ( is_wp_error( $response ) ) {
-return array( 'ms' => null, 'status' => 'error' );
+$error_msg = $response->get_error_message();
+$reason    = 'Could not connect to your homepage.';
+if ( false !== strpos( $error_msg, 'timed out' ) || false !== strpos( $error_msg, 'timeout' ) ) {
+$reason = 'The server timed out — it took too long to respond.';
+} elseif ( false !== strpos( $error_msg, 'SSL' ) || false !== strpos( $error_msg, 'ssl' ) ) {
+$reason = 'SSL certificate issue — the security certificate may be expired or misconfigured.';
+} elseif ( false !== strpos( $error_msg, 'dns' ) || false !== strpos( $error_msg, 'resolve' ) || false !== strpos( $error_msg, 'Name or service not known' ) ) {
+$reason = 'Domain could not be resolved — the DNS settings may have changed.';
+} elseif ( false !== strpos( $error_msg, 'refused' ) ) {
+$reason = 'Connection refused — the web server may not be running.';
+}
+return array( 'ms' => null, 'status' => 'error', 'reason' => $reason );
 }
 $status = $ms < 600 ? 'good' : ( $ms < 1500 ? 'fair' : 'slow' );
 $result = array( 'ms' => $ms, 'status' => $status );
@@ -498,6 +513,157 @@ return array_merge( $errors, $warnings, $infos );
 }
 
 /**
+ * Returns upcoming bookings from the H-Bricks-Elements calendar plugin.
+ * Returns null if the plugin is not active.
+ */
+private static function get_calendar_preview(): ?array {
+global $wpdb;
+
+if ( ! function_exists( 'is_plugin_active' ) ) {
+require_once ABSPATH . 'wp-admin/includes/plugin.php';
+}
+
+$plugin_file = 'h-bricks-elements/plugin.php';
+if ( ! is_plugin_active( $plugin_file ) ) {
+return null;
+}
+
+$table = $wpdb->prefix . 'hbe_bookings';
+// phpcs:ignore WordPress.DB.DirectDatabaseQuery.NoCaching
+if ( $wpdb->get_var( $wpdb->prepare( 'SHOW TABLES LIKE %s', $table ) ) !== $table ) {
+return null;
+}
+
+$now      = current_time( 'mysql' );
+$in_7days = gmdate( 'Y-m-d H:i:s', strtotime( '+7 days' ) );
+
+// phpcs:ignore WordPress.DB.DirectDatabaseQuery
+$bookings = $wpdb->get_results(
+$wpdb->prepare(
+"SELECT id, calendar_id, customer_name, start_datetime, end_datetime, status
+ FROM {$table}
+ WHERE start_datetime >= %s
+   AND start_datetime <= %s
+   AND status != 'cancelled'
+ ORDER BY start_datetime ASC
+ LIMIT 10",
+$now,
+$in_7days
+),
+ARRAY_A
+);
+
+if ( empty( $bookings ) ) {
+return array( 'available' => true, 'upcoming' => array(), 'totalToday' => 0 );
+}
+
+$today = current_time( 'Y-m-d' );
+$today_count = 0;
+$items = array();
+foreach ( $bookings as $b ) {
+$start_date = substr( $b['start_datetime'], 0, 10 );
+if ( $start_date === $today ) {
+$today_count++;
+}
+$items[] = array(
+'id'           => (int) $b['id'],
+'customerName' => $b['customer_name'],
+'startDate'    => $b['start_datetime'],
+'endDate'      => $b['end_datetime'],
+'status'       => $b['status'],
+'calendarId'   => (int) $b['calendar_id'],
+'isToday'      => $start_date === $today,
+);
+}
+
+return array(
+'available'  => true,
+'upcoming'   => $items,
+'totalToday' => $today_count,
+);
+}
+
+/**
+ * Returns an onboarding checklist for new site owners.
+ */
+private static function get_onboarding_checklist(): array {
+$checklist = array();
+
+// 1. Site title not default.
+$site_title    = get_bloginfo( 'name' );
+$default_names = array( 'My WordPress Blog', 'My Blog', 'WordPress', '' );
+$title_ok      = ! in_array( $site_title, $default_names, true ) && strlen( $site_title ) > 3;
+$checklist[] = array(
+'key'   => 'site-title',
+'label' => 'Set your site name and tagline',
+'done'  => $title_ok,
+'url'   => 'options-general.php',
+);
+
+// 2. At least one published page.
+$page_count  = (int) ( wp_count_posts( 'page' )->publish ?? 0 );
+$checklist[] = array(
+'key'   => 'first-page',
+'label' => 'Create and publish your first page',
+'done'  => $page_count > 0,
+'url'   => 'post-new.php?post_type=page',
+);
+
+// 3. No legal pages still in draft.
+$legal_keywords = array( 'datenschutz', 'impressum', 'privacy', 'legal', 'cookie', 'terms', 'agb' );
+$all_drafts     = get_posts( array( 'post_type' => 'page', 'post_status' => 'draft', 'posts_per_page' => 50 ) );
+$has_legal_draft = false;
+foreach ( $all_drafts as $dp ) {
+$lower = strtolower( $dp->post_title );
+foreach ( $legal_keywords as $kw ) {
+if ( false !== strpos( $lower, $kw ) ) {
+$has_legal_draft = true;
+break 2;
+}
+}
+}
+$checklist[] = array(
+'key'   => 'legal-pages',
+'label' => 'Publish your privacy policy & legal pages',
+'done'  => ! $has_legal_draft,
+'url'   => 'edit.php?post_status=draft&post_type=page',
+);
+
+// 4. No pending updates.
+$updates     = self::get_pending_updates();
+$checklist[] = array(
+'key'   => 'updates',
+'label' => 'Apply all available updates',
+'done'  => 0 === $updates['total'],
+'url'   => 'update-core.php',
+);
+
+// 5. Site health good.
+$health      = get_transient( 'health-check-site-status-result' );
+$health_ok   = $health && isset( $health['status'] ) && 'good' === $health['status'];
+$checklist[] = array(
+'key'   => 'site-health',
+'label' => 'Fix site health issues',
+'done'  => $health_ok,
+'url'   => 'site-health.php',
+);
+
+return $checklist;
+}
+
+/**
+ * Calculates an overall site readiness score (0–100) based on the onboarding checklist.
+ */
+private static function get_site_readiness_score(): int {
+$checklist = self::get_onboarding_checklist();
+if ( empty( $checklist ) ) {
+return 100;
+}
+$done = count( array_filter( $checklist, function ( $item ) { return (bool) $item['done']; } ) );
+return (int) round( ( $done / count( $checklist ) ) * 100 );
+}
+
+/**
  * Returns a basic SEO overview.
  */
 private static function get_seo_overview(): array {
@@ -531,16 +697,19 @@ $issues_count += $missing_meta;
 }
 }
 if ( $total_pages > 0 ) {
-$short_titles = (int) $wpdb->get_var(
-"SELECT COUNT(*) FROM {$wpdb->posts}
- WHERE post_type = 'page' AND post_status = 'publish' AND CHAR_LENGTH(post_title) < 10"
+$short_title_pages = $wpdb->get_results( // phpcs:ignore WordPress.DB.DirectDatabaseQuery
+"SELECT ID, post_title FROM {$wpdb->posts}
+ WHERE post_type = 'page' AND post_status = 'publish' AND CHAR_LENGTH(post_title) < 10
+ LIMIT 5"
 );
-if ( $short_titles > 0 ) {
-$issues[]      = array(
-'label' => $short_titles . ' page' . ( $short_titles > 1 ? 's' : '' ) . ' with very short title',
-'url'   => 'edit.php?post_type=page',
+foreach ( $short_title_pages as $sp ) {
+$title = $sp->post_title ?: '(untitled)';
+$issues[] = array(
+'label'   => '"' . $title . '" has a very short title',
+'url'     => 'post.php?post=' . $sp->ID . '&action=edit',
+'editUrl' => admin_url( 'post.php?post=' . $sp->ID . '&action=edit' ),
 );
-$issues_count += $short_titles;
+$issues_count++;
 }
 }
 $score = $total_pages > 0
