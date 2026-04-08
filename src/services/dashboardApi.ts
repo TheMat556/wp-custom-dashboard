@@ -6,8 +6,6 @@ export interface AtAGlanceData {
   postsDraft: number;
   pages: number;
   pagesDraft: number;
-  comments: number;
-  commentsPending: number;
   users: number;
   wpVersion: string;
   phpVersion: string;
@@ -18,12 +16,31 @@ export interface SiteHealthData {
   score: number;
 }
 
+export interface UpdateItem {
+  slug: string;
+  name: string;
+  currentVersion: string;
+  newVersion: string;
+  url?: string;
+  requiresWP?: string | null;
+  requiresPHP?: string | null;
+  testedUpTo?: string | null;
+}
+
+export interface CoreUpdateItem {
+  currentVersion: string;
+  newVersion: string;
+}
+
 export interface PendingUpdates {
   plugins: number;
   themes: number;
   core: number;
   total: number;
   lastChecked?: number | null;
+  pluginList?: UpdateItem[];
+  themeList?: UpdateItem[];
+  coreList?: CoreUpdateItem[];
 }
 
 export interface VisitorTrendEntry {
@@ -31,15 +48,34 @@ export interface VisitorTrendEntry {
   views: number;
 }
 
+export interface VisitorTrendData {
+  days: VisitorTrendEntry[];
+  total: number;
+  prevTotal: number;
+  trendPct: number;
+}
+
 export interface CountryStatEntry {
   country: string;
   visits: number;
+}
+
+export interface SpeedHistoryItem {
+  ts: number;
+  ok: boolean;
+  ms: number | null;
 }
 
 export interface SiteSpeedData {
   ms: number | null;
   status: "good" | "fair" | "slow" | "error";
   reason?: string;
+  errorClass?: string;
+  errorDetail?: string;
+  checkedAt?: number;
+  firstFailAt?: number;
+  history?: SpeedHistoryItem[];
+  httpCode?: number;
 }
 
 export interface CalendarBooking {
@@ -78,6 +114,7 @@ export interface ActionItem {
   type: "update" | "content" | "health" | "seo";
   severity: "error" | "warning" | "info";
   title: string;
+  impact?: string;
   description?: string;
   action: string;
   url: string;
@@ -103,16 +140,84 @@ export interface SeoOverview {
   totalPages: number;
 }
 
+export interface SeoBasicCheck {
+  ok: boolean;
+  label: string;
+  critical?: boolean;
+  url?: string;
+  value?: string;
+  shortCount?: number;
+}
+
+export interface SeoBasics {
+  score: number;
+  checks: {
+    searchVisible: SeoBasicCheck;
+    homeTitle: SeoBasicCheck;
+    sitemap: SeoBasicCheck;
+    pageTitles: SeoBasicCheck;
+  };
+  plugin?: string | null;
+}
+
+export interface LegalItem {
+  exists: boolean;
+  published: boolean;
+  status?: string;
+  title?: string;
+  daysOld?: number;
+  editUrl?: string;
+  viewUrl?: string | null;
+}
+
+export interface LegalCompliance {
+  privacyPolicy: LegalItem;
+  impressum: LegalItem;
+  cookiePlugin: string | null;
+  trackingWithoutConsent: boolean;
+}
+
+export interface BusinessBookings {
+  available: boolean;
+  status: string;
+  totalUpcoming?: number;
+  totalToday?: number;
+  note?: string;
+  testUrl?: string;
+}
+
+export interface BusinessForms {
+  available: boolean;
+  plugin?: string;
+  status: string;
+  note?: string;
+}
+
+export interface BusinessEmail {
+  smtpPlugin: string | null;
+  status: string;
+  note?: string;
+}
+
+export interface BusinessFunctions {
+  bookings: BusinessBookings;
+  contactForms: BusinessForms;
+  emailDelivery: BusinessEmail;
+}
+
 export interface DashboardData {
   atAGlance: AtAGlanceData;
   siteHealth: SiteHealthData;
   pendingUpdates: PendingUpdates;
-  visitorTrend: VisitorTrendEntry[];
+  visitorTrend: VisitorTrendData;
   countryStats: CountryStatEntry[];
   siteSpeed: SiteSpeedData;
   pagesOverview: PagesOverview;
   actionItems: ActionItem[];
   seoOverview: SeoOverview;
+  seoBasics?: SeoBasics;
+  legalCompliance?: LegalCompliance;
+  businessFunctions?: BusinessFunctions;
   onboardingChecklist?: OnboardingItem[];
   siteReadinessScore?: number;
   calendarPreview?: CalendarPreview | null;

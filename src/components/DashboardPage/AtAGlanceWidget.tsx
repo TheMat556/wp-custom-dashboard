@@ -1,5 +1,4 @@
 import {
-  CommentOutlined,
   FileOutlined,
   FileTextOutlined,
   TeamOutlined,
@@ -30,12 +29,6 @@ export function AtAGlanceWidget({ data }: { data: AtAGlanceData }) {
           value={data.pages}
           prefix={<FileOutlined />}
           suffix={data.pagesDraft > 0 ? <Text type="secondary" style={{ fontSize: 12 }}>({data.pagesDraft} drafts)</Text> : undefined}
-        />
-        <Statistic
-          title="Comments"
-          value={data.comments}
-          prefix={<CommentOutlined />}
-          suffix={data.commentsPending > 0 ? <Text type="warning" style={{ fontSize: 12 }}>({data.commentsPending} pending)</Text> : undefined}
         />
         <Statistic
           title="Users"

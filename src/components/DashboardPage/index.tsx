@@ -1,16 +1,20 @@
 import {
   AlertOutlined,
+  BankOutlined,
   CalendarOutlined,
   CheckCircleOutlined,
   CheckOutlined,
   ClockCircleOutlined,
   CloseOutlined,
   ExclamationCircleOutlined,
+  FileProtectOutlined,
   GlobalOutlined,
   HistoryOutlined,
   InfoCircleOutlined,
   LineChartOutlined,
   LinkOutlined,
+  MailOutlined,
+  PhoneOutlined,
   PlusOutlined,
   QuestionCircleOutlined,
   RocketOutlined,
@@ -18,6 +22,7 @@ import {
   ThunderboltOutlined,
   UpCircleOutlined,
   WarningOutlined,
+  WifiOutlined as _WifiOutlined,
 } from "@ant-design/icons";
 import {
   Alert,
@@ -55,7 +60,7 @@ import {
   dashboardStore,
 } from "../../store/dashboardStore";
 import { shellPreferencesStore } from "../../store/shellPreferencesStore";
-import type { ActionItem, CalendarBooking, CountryStatEntry } from "../../services/dashboardApi";
+import type { ActionItem, BusinessFunctions, CalendarBooking, CountryStatEntry, LegalCompliance, SeoBasics } from "../../services/dashboardApi";
 import { navigate } from "../../utils/wp";
 
 const { Title, Text, Link } = Typography;
@@ -191,11 +196,11 @@ function ActionRow({ item, adminUrl }: { item: ActionItem; adminUrl: string }) {
         <div style={{ flex: 1, minWidth: 0 }}>
           <Flex align="center" justify="space-between" gap={8} wrap="wrap">
             <Text
-              style={{ fontSize: 13, fontWeight: 500, cursor: item.description ? "pointer" : "default", flex: 1 }}
-              onClick={() => item.description && setOpen((o) => !o)}
+              style={{ fontSize: 13, fontWeight: 500, cursor: (item.impact || item.description) ? "pointer" : "default", flex: 1 }}
+              onClick={() => (item.impact || item.description) && setOpen((o) => !o)}
             >
               {item.title}
-              {item.description && (
+              {(item.impact || item.description) && (
                 <Text type="secondary" style={{ marginLeft: 6, fontSize: 11 }}>{open ? "▲" : "▼"}</Text>
               )}
             </Text>
@@ -204,13 +209,22 @@ function ActionRow({ item, adminUrl }: { item: ActionItem; adminUrl: string }) {
               {item.action}
             </Tag>
           </Flex>
-          {open && item.description && (
-            <Text type="secondary" style={{
-              fontSize: 12, display: "block", marginTop: 6, lineHeight: 1.6,
-              background: token.colorBgLayout, borderRadius: token.borderRadius, padding: "6px 10px",
+          {open && (item.impact || item.description) && (
+            <div style={{
+              marginTop: 6, background: token.colorBgLayout, borderRadius: token.borderRadius,
+              padding: "8px 12px", borderLeft: `3px solid ${severityColor}`,
             }}>
-              {item.description}
-            </Text>
+              {item.impact && (
+                <Text style={{ fontSize: 12, display: "block", marginBottom: item.description ? 6 : 0, fontWeight: 500, color: severityColor }}>
+                  Impact: {item.impact}
+                </Text>
+              )}
+              {item.description && (
+                <Text type="secondary" style={{ fontSize: 12, display: "block", lineHeight: 1.6 }}>
+                  {item.description}
+                </Text>
+              )}
+            </div>
           )}
         </div>
       </Flex>
@@ -219,6 +233,208 @@ function ActionRow({ item, adminUrl }: { item: ActionItem; adminUrl: string }) {
 }
 
 const CHECKLIST_CLOSED_KEY = "wp-react-ui-checklist-closed";
+
+/* ── Legal compliance section ────────────────────────────────────────────────── */
+function LegalSection({ legal, adminUrl }: { legal: LegalCompliance; adminUrl: string }) {
+  const { token } = theme.useToken();
+  const rows = [
+    {
+      key: "privacy",
+      label: legal.privacyPolicy.title ?? "Privacy Policy",
+      item: legal.privacyPolicy,
+      url: legal.privacyPolicy.editUrl ?? "options-privacy.php",
+    },
+    {
+      key: "impressum",
+      label: legal.impressum.title ?? "Imprint / Impressum",
+      item: legal.impressum,
+      url: legal.impressum.editUrl ?? "post-new.php?post_type=page",
+    },
+  ];
+  const allOk = rows.every((r) => r.item.exists && r.item.published) && !legal.trackingWithoutConsent;
+
+  return (
+    <Section
+      icon={<FileProtectOutlined />}
+      title="Legal & Compliance"
+      description="Required pages and data protection status"
+      extra={allOk ? <Tag color="success" style={{ margin: 0 }}>All good</Tag> : <Tag color="error" style={{ margin: 0 }}>Action needed</Tag>}
+    >
+      {rows.map((row) => {
+        const ok = row.item.exists && row.item.published;
+        const warn = row.item.exists && !row.item.published;
+        const color = ok ? token.colorSuccess : warn ? token.colorError : token.colorWarning;
+        const statusLabel = ok ? "Published" : warn ? `Draft${row.item.daysOld ? ` (${row.item.daysOld}d old)` : ""}` : "Missing";
+        return (
+          <Flex key={row.key} align="center" justify="space-between" gap={8}
+            style={{ padding: "10px 0", borderBottom: `1px solid ${token.colorBorderSecondary}` }}>
+            <Flex align="center" gap={8}>
+              <div style={{ width: 8, height: 8, borderRadius: "50%", background: color, flexShrink: 0 }} />
+              <div>
+                <Text style={{ fontSize: 13 }}>{row.label}</Text>
+                {!ok && (
+                  <Text type="secondary" style={{ fontSize: 11, display: "block" }}>
+                    {warn ? "This legal page exists but is not published — visitors cannot access it." : "This required page is missing."}
+                  </Text>
+                )}
+              </div>
+            </Flex>
+            <Flex align="center" gap={8} style={{ flexShrink: 0 }}>
+              <Tag color={ok ? "success" : warn ? "error" : "warning"} style={{ margin: 0, fontSize: 11 }}>{statusLabel}</Tag>
+              {!ok && (
+                <Button size="small" onClick={() => navigate(row.url, adminUrl)}>
+                  {warn ? "Publish now" : "Create"}
+                </Button>
+              )}
+            </Flex>
+          </Flex>
+        );
+      })}
+      <Flex align="center" justify="space-between" gap={8}
+        style={{ padding: "10px 0", borderBottom: `1px solid ${token.colorBorderSecondary}` }}>
+        <Flex align="center" gap={8}>
+          <div style={{ width: 8, height: 8, borderRadius: "50%", background: legal.cookiePlugin ? token.colorSuccess : token.colorWarning, flexShrink: 0 }} />
+          <div>
+            <Text style={{ fontSize: 13 }}>Cookie Consent</Text>
+            {!legal.cookiePlugin && (
+              <Text type="secondary" style={{ fontSize: 11, display: "block" }}>No cookie notice plugin detected.</Text>
+            )}
+          </div>
+        </Flex>
+        <Tag color={legal.cookiePlugin ? "success" : "warning"} style={{ margin: 0, fontSize: 11 }}>
+          {legal.cookiePlugin ?? "Not configured"}
+        </Tag>
+      </Flex>
+      {legal.trackingWithoutConsent && (
+        <Alert
+          type="warning" showIcon
+          message={<Text style={{ fontSize: 12 }}>Tracking plugin active without cookie consent banner — this may violate GDPR.</Text>}
+          style={{ marginTop: 12, borderRadius: token.borderRadius }}
+          action={
+            <Button size="small" onClick={() => navigate("plugins.php", adminUrl)}>
+              Review plugins
+            </Button>
+          }
+        />
+      )}
+    </Section>
+  );
+}
+
+/* ── Business functions section ──────────────────────────────────────────────── */
+function BusinessSection({ biz, adminUrl }: { biz: BusinessFunctions; adminUrl: string }) {
+  const { token } = theme.useToken();
+  return (
+    <Section
+      icon={<BankOutlined />}
+      title="Business & Contact Functions"
+      description="Key tools your customers use to reach you"
+    >
+      {/* Bookings */}
+      <Flex align="center" justify="space-between" gap={8}
+        style={{ padding: "10px 0", borderBottom: `1px solid ${token.colorBorderSecondary}` }}>
+        <Flex align="center" gap={8}>
+          <CalendarOutlined style={{ color: biz.bookings.available ? token.colorSuccess : token.colorTextTertiary, fontSize: 14, flexShrink: 0 }} />
+          <div>
+            <Text style={{ fontSize: 13 }}>Booking System</Text>
+            {biz.bookings.note && <Text type="secondary" style={{ fontSize: 11, display: "block" }}>{biz.bookings.note}</Text>}
+          </div>
+        </Flex>
+        <Flex align="center" gap={8} style={{ flexShrink: 0 }}>
+          {biz.bookings.available && biz.bookings.totalUpcoming != null && (
+            <Tag color="blue" style={{ margin: 0, fontSize: 11 }}>{biz.bookings.totalUpcoming} upcoming</Tag>
+          )}
+          <Tag color={biz.bookings.available ? "success" : "default"} style={{ margin: 0, fontSize: 11 }}>
+            {biz.bookings.available ? "Active" : "Not installed"}
+          </Tag>
+        </Flex>
+      </Flex>
+
+      {/* Contact Forms */}
+      <Flex align="center" justify="space-between" gap={8}
+        style={{ padding: "10px 0", borderBottom: `1px solid ${token.colorBorderSecondary}` }}>
+        <Flex align="center" gap={8}>
+          <PhoneOutlined style={{ color: biz.contactForms.available ? token.colorSuccess : token.colorWarning, fontSize: 14, flexShrink: 0 }} />
+          <div>
+            <Text style={{ fontSize: 13 }}>Contact Forms</Text>
+            {biz.contactForms.note && <Text type="secondary" style={{ fontSize: 11, display: "block" }}>{biz.contactForms.note}</Text>}
+          </div>
+        </Flex>
+        <Tag color={biz.contactForms.available ? "success" : "warning"} style={{ margin: 0, fontSize: 11 }}>
+          {biz.contactForms.available ? biz.contactForms.plugin ?? "Active" : "Not installed"}
+        </Tag>
+      </Flex>
+
+      {/* Email Delivery */}
+      <Flex align="center" justify="space-between" gap={8} style={{ paddingTop: 10 }}>
+        <Flex align="center" gap={8}>
+          <MailOutlined style={{ color: biz.emailDelivery.smtpPlugin ? token.colorSuccess : token.colorWarning, fontSize: 14, flexShrink: 0 }} />
+          <div>
+            <Text style={{ fontSize: 13 }}>Email Delivery</Text>
+            {biz.emailDelivery.note && <Text type="secondary" style={{ fontSize: 11, display: "block", maxWidth: 280 }}>{biz.emailDelivery.note}</Text>}
+          </div>
+        </Flex>
+        <Tag color={biz.emailDelivery.smtpPlugin ? "success" : "warning"} style={{ margin: 0, fontSize: 11, flexShrink: 0 }}>
+          {biz.emailDelivery.smtpPlugin ? "Configured" : "Default (unreliable)"}
+        </Tag>
+      </Flex>
+      {!biz.emailDelivery.smtpPlugin && (
+        <Alert
+          type="warning" showIcon
+          message={<Text style={{ fontSize: 12 }}>Without an SMTP plugin, contact form emails may end up in spam. Install WP Mail SMTP (free) to fix this.</Text>}
+          style={{ marginTop: 12, borderRadius: token.borderRadius }}
+          action={<Button size="small" onClick={() => navigate("plugin-install.php?s=wp+mail+smtp&tab=search&type=term", adminUrl)}>Install free</Button>}
+        />
+      )}
+    </Section>
+  );
+}
+
+/* ── SEO basics section ──────────────────────────────────────────────────────── */
+function SeoBasicsSection({ seoBasics, adminUrl }: { seoBasics: SeoBasics; adminUrl: string }) {
+  const { token } = theme.useToken();
+  const checks = Object.values(seoBasics.checks);
+  return (
+    <Section
+      icon={<SearchOutlined />}
+      title="SEO Basics"
+      description={seoBasics.plugin ? `Powered by ${seoBasics.plugin}` : "Basic checks — no SEO plugin required"}
+      extra={
+        <Flex align="center" gap={8}>
+          <Progress type="circle" percent={seoBasics.score} size={36}
+            strokeColor={seoBasics.score >= 75 ? token.colorSuccess : token.colorWarning} />
+        </Flex>
+      }
+    >
+      {checks.map((check, i) => (
+        <Flex key={i} align="center" justify="space-between" gap={8}
+          style={{ padding: "9px 0", borderBottom: i < checks.length - 1 ? `1px solid ${token.colorBorderSecondary}` : undefined }}>
+          <Flex align="center" gap={8}>
+            {check.ok
+              ? <CheckCircleOutlined style={{ color: token.colorSuccess, fontSize: 13 }} />
+              : <ExclamationCircleOutlined style={{ color: check.critical ? token.colorError : token.colorWarning, fontSize: 13 }} />
+            }
+            <Text style={{ fontSize: 13 }}>{check.label}</Text>
+          </Flex>
+          {!check.ok && check.url && (
+            <Button size="small" type="link" style={{ padding: 0, fontSize: 12, flexShrink: 0 }}
+              onClick={() => navigate(check.url!, adminUrl)}>
+              Fix →
+            </Button>
+          )}
+        </Flex>
+      ))}
+      {!seoBasics.plugin && (
+        <Alert
+          type="info" showIcon icon={<InfoCircleOutlined />}
+          message={<Text style={{ fontSize: 12 }}>Install Yoast SEO (free) for full SEO tracking, meta descriptions, and XML sitemaps.</Text>}
+          style={{ marginTop: 12, borderRadius: token.borderRadius }}
+          action={<Button size="small" onClick={() => navigate("plugin-install.php?s=yoast+seo&tab=search&type=term", adminUrl)}>Install free</Button>}
+        />
+      )}
+    </Section>
+  );
+}
 
 /* ── Main ───────────────────────────────────────────────────────────────────── */
 export default function DashboardPage() {
@@ -256,11 +472,15 @@ export default function DashboardPage() {
 
   const health    = data?.siteHealth;
   const updates   = data?.pendingUpdates;
-  const trend     = data?.visitorTrend ?? [];
+  const trendData = data?.visitorTrend;
+  const trend     = trendData?.days ?? [];
   const countries = data?.countryStats ?? [];
   const speed     = data?.siteSpeed;
   const baseActions = data?.actionItems ?? [];
   const seo       = data?.seoOverview;
+  const seoBasics = data?.seoBasics;
+  const legalData = data?.legalCompliance;
+  const bizData   = data?.businessFunctions;
   const stats     = data?.atAGlance;
   const checklist = data?.onboardingChecklist ?? [];
   const readiness = data?.siteReadinessScore ?? null;
@@ -280,9 +500,9 @@ export default function DashboardPage() {
     }));
   const actions = [...baseActions, ...seoActions];
 
-  const total30Views    = trend.reduce((s, d) => s + d.views, 0);
+  const total30Views    = trendData?.total ?? trend.reduce((s, d) => s + d.views, 0);
   const sparkline       = trend.slice(-7);
-  const viewTrend       = (() => {
+  const viewTrend       = trendData?.trendPct ?? (() => {
     const y = trend[trend.length - 2]?.views ?? 0;
     const t = trend[trend.length - 1]?.views ?? 0;
     return y > 0 ? Math.round(((t - y) / y) * 100) : 0;
@@ -388,28 +608,90 @@ export default function DashboardPage() {
 
         {/* ── Offline alert ───────────────────────────────────────────────── */}
         {isSiteDown && (
-          <Alert
-            type="error" showIcon icon={<ExclamationCircleOutlined />}
-            message={<strong>Your website is not reachable right now</strong>}
-            description={
-              <div>
-                <p style={{ margin: "4px 0 8px" }}>
-                  {speed?.reason ?? "We could not connect to your homepage."}{" "}
-                  Your visitors may see an error page.
-                </p>
-                <Text type="secondary" style={{ fontSize: 12 }}>
-                  <strong>What to do:</strong> Contact your hosting provider and tell them your website is not loading.
-                  Common causes: server is down, domain expired, or a recent plugin change broke something.
-                </Text>
+          <div style={{ marginBottom: 16 }}>
+            <Alert
+              type="error" showIcon icon={<ExclamationCircleOutlined />}
+              message={<strong>Your website is not reachable right now</strong>}
+              description={
+                <div>
+                  <p style={{ margin: "4px 0 8px" }}>
+                    {speed?.reason ?? "We could not connect to your homepage."}{" "}
+                    Your visitors may see an error page.
+                  </p>
+                  {speed?.firstFailAt && (
+                    <p style={{ margin: "0 0 8px", fontSize: 12 }}>
+                      <strong>Problem started:</strong>{" "}
+                      {new Date(speed.firstFailAt * 1000).toLocaleString([], { dateStyle: "medium", timeStyle: "short" })}
+                      {" "}({relativeTime(speed.firstFailAt)})
+                    </p>
+                  )}
+                  <Text type="secondary" style={{ fontSize: 12 }}>
+                    <strong>Recommended next step:</strong>{" "}
+                    {speed?.errorClass === "ssl"
+                      ? "Contact your hosting provider about your SSL certificate — it may be expired."
+                      : speed?.errorClass === "dns"
+                        ? "Check if your domain registration is still active and DNS settings are correct."
+                        : speed?.errorClass === "timeout"
+                          ? "Contact your hosting provider — the server may be overloaded or a plugin may have caused a PHP error."
+                          : "Contact your hosting provider. Tell them your website is not loading and ask them to check the server."}
+                  </Text>
+                  {speed?.errorDetail && (
+                    <Collapse ghost size="small" style={{ marginTop: 8 }}
+                      items={[{
+                        key: "tech",
+                        label: <Text type="secondary" style={{ fontSize: 11 }}>Technical details (for developers)</Text>,
+                        children: (
+                          <div style={{
+                            fontFamily: "monospace", fontSize: 11,
+                            background: token.colorBgLayout, borderRadius: token.borderRadius,
+                            padding: "8px 12px", color: token.colorTextSecondary,
+                          }}>
+                            <div><strong>Error class:</strong> {speed.errorClass ?? "connection"}</div>
+                            <div><strong>Detail:</strong> {speed.errorDetail}</div>
+                            {speed.checkedAt && <div><strong>Last checked:</strong> {new Date(speed.checkedAt * 1000).toLocaleString()}</div>}
+                          </div>
+                        ),
+                      }]}
+                    />
+                  )}
+                </div>
+              }
+              style={{ borderRadius: token.borderRadiusLG }}
+              action={
+                <Button danger size="small" onClick={() => navigate("site-health.php", config.adminUrl)}>
+                  Site Health
+                </Button>
+              }
+            />
+            {/* Speed history mini-bar */}
+            {speed?.history && speed.history.length > 1 && (
+              <div style={{
+                background: token.colorBgContainer,
+                border: `1px solid ${token.colorBorderSecondary}`,
+                borderTop: "none",
+                borderRadius: `0 0 ${token.borderRadiusLG}px ${token.borderRadiusLG}px`,
+                padding: "8px 16px",
+              }}>
+                <Flex align="center" gap={8}>
+                  <Text type="secondary" style={{ fontSize: 11, flexShrink: 0 }}>Uptime history:</Text>
+                  <Flex gap={2} align="center">
+                    {speed.history.slice(-24).map((h, i) => (
+                      <Tooltip key={i} title={`${new Date(h.ts * 1000).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })} — ${h.ok ? `${h.ms}ms` : "unreachable"}`}>
+                        <div style={{
+                          width: 6, height: 14, borderRadius: 2,
+                          background: h.ok ? token.colorSuccess : token.colorError,
+                          opacity: 0.7,
+                        }} />
+                      </Tooltip>
+                    ))}
+                  </Flex>
+                  <Text type="secondary" style={{ fontSize: 11 }}>
+                    {Math.round((speed.history.filter(h => h.ok).length / speed.history.length) * 100)}% uptime
+                  </Text>
+                </Flex>
               </div>
-            }
-            style={{ marginBottom: 16, borderRadius: token.borderRadiusLG }}
-            action={
-              <Button danger size="small" onClick={() => navigate("site-health.php", config.adminUrl)}>
-                Site Health
-              </Button>
-            }
-          />
+            )}
+          </div>
         )}
 
         {/* ── Summary tiles ─────────────────────────────────────────────────── */}
@@ -485,17 +767,25 @@ export default function DashboardPage() {
           <StatTile
             icon={<SearchOutlined />}
             label="SEO"
-            value={seo?.plugin ? `${seo.score}%` : "—"}
+            value={seo?.plugin ? `${seo.score}%` : seoBasics ? `${seoBasics.score}%` : "—"}
             sub={
               seo?.plugin
                 ? seo.issues.length === 0
                   ? <Text style={{ fontSize: 11, color: token.colorSuccess }}>No issues</Text>
                   : <Text style={{ fontSize: 11, color: token.colorWarning }}>{seo.issues.length} issue{seo.issues.length > 1 ? "s" : ""}</Text>
-                : <Text type="secondary" style={{ fontSize: 11 }}>No plugin</Text>
+                : seoBasics
+                  ? <Text style={{ fontSize: 11, color: seoBasics.score >= 75 ? token.colorSuccess : token.colorWarning }}>Basic check</Text>
+                  : <Text type="secondary" style={{ fontSize: 11 }}>No plugin</Text>
             }
-            color={!seo?.plugin ? token.colorTextSecondary : seo.score >= 80 ? token.colorSuccess : seo.score >= 50 ? token.colorWarning : token.colorError}
-            tooltip={seo?.plugin ? "Based on page titles and meta descriptions" : "Install Yoast SEO (free) to track your search visibility"}
-            onClick={seo?.plugin ? () => navigate("edit.php?post_type=page", config.adminUrl) : undefined}
+            color={
+              seo?.plugin
+                ? seo.score >= 80 ? token.colorSuccess : seo.score >= 50 ? token.colorWarning : token.colorError
+                : seoBasics
+                  ? seoBasics.score >= 75 ? token.colorSuccess : token.colorWarning
+                  : token.colorTextSecondary
+            }
+            tooltip={seo?.plugin ? "Based on Yoast SEO data" : seoBasics ? "Basic SEO checks — install Yoast SEO (free) for full tracking" : "Install Yoast SEO (free) to track your search visibility"}
+            onClick={() => navigate("edit.php?post_type=page", config.adminUrl)}
           />
         </div>
 
@@ -622,6 +912,7 @@ export default function DashboardPage() {
         <div style={{ display: "grid", gridTemplateColumns: isLg ? "1fr 320px" : "1fr", gap: 16, marginBottom: 16 }}>
 
           {/* Action Center */}
+          <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
           <Section
             icon={<AlertOutlined />}
             title="What Needs Your Attention"
@@ -687,6 +978,84 @@ export default function DashboardPage() {
               </>
             )}
           </Section>
+
+          {/* Update Details */}
+          {hasUpdates && (
+            <Section icon={<UpCircleOutlined />} title="Available Updates" description="Review before updating — always backup first">
+              <Alert
+                type="info" showIcon icon={<InfoCircleOutlined />}
+                message={<Text style={{ fontSize: 12 }}>Create a backup before updating. Most hosting control panels offer one-click backups. Updates are usually safe and take under a minute.</Text>}
+                style={{ marginBottom: 14, borderRadius: token.borderRadius }}
+              />
+              {(updates?.coreList?.length ?? 0) > 0 && (
+                <div style={{ marginBottom: 14 }}>
+                  <Text style={{ fontSize: 12, fontWeight: 600, display: "block", marginBottom: 8, color: token.colorError }}>WordPress Core</Text>
+                  {updates!.coreList!.map((u, i) => (
+                    <Flex key={i} align="center" justify="space-between" gap={8}
+                      style={{ padding: "8px 12px", background: `${token.colorError}08`, borderRadius: token.borderRadius, marginBottom: 6 }}>
+                      <div>
+                        <Text style={{ fontSize: 13, fontWeight: 500 }}>WordPress</Text>
+                        <Text type="secondary" style={{ fontSize: 11, display: "block" }}>{u.currentVersion} → {u.newVersion}</Text>
+                      </div>
+                      <Tag color="red" style={{ margin: 0 }}>Security</Tag>
+                    </Flex>
+                  ))}
+                </div>
+              )}
+              {(updates?.pluginList?.length ?? 0) > 0 && (
+                <div style={{ marginBottom: 14 }}>
+                  <Text style={{ fontSize: 12, fontWeight: 600, display: "block", marginBottom: 8 }}>Plugins ({updates!.plugins})</Text>
+                  {updates!.pluginList!.map((p, i) => (
+                    <Flex key={i} align="center" justify="space-between" gap={8} wrap="wrap"
+                      style={{ padding: "8px 12px", background: token.colorBgLayout, borderRadius: token.borderRadius, marginBottom: 6 }}>
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                        <Text style={{ fontSize: 13, fontWeight: 500 }}>{p.name}</Text>
+                        <Text type="secondary" style={{ fontSize: 11, display: "block" }}>{p.currentVersion} → {p.newVersion}</Text>
+                        {p.testedUpTo && (
+                          <Text type="secondary" style={{ fontSize: 11 }}>Tested up to WP {p.testedUpTo}</Text>
+                        )}
+                      </div>
+                      <Button size="small" icon={<LinkOutlined />}
+                        onClick={() => navigate("update-core.php", config.adminUrl)}>
+                        Update
+                      </Button>
+                    </Flex>
+                  ))}
+                </div>
+              )}
+              {(updates?.themeList?.length ?? 0) > 0 && (
+                <div>
+                  <Text style={{ fontSize: 12, fontWeight: 600, display: "block", marginBottom: 8 }}>Themes ({updates!.themes})</Text>
+                  {updates!.themeList!.map((t, i) => (
+                    <Flex key={i} align="center" justify="space-between" gap={8}
+                      style={{ padding: "8px 12px", background: token.colorBgLayout, borderRadius: token.borderRadius, marginBottom: 6 }}>
+                      <div>
+                        <Text style={{ fontSize: 13, fontWeight: 500 }}>{t.name}</Text>
+                        <Text type="secondary" style={{ fontSize: 11, display: "block" }}>{t.currentVersion} → {t.newVersion}</Text>
+                      </div>
+                      <Button size="small" onClick={() => navigate("update-core.php", config.adminUrl)}>Update</Button>
+                    </Flex>
+                  ))}
+                </div>
+              )}
+            </Section>
+          )}
+
+          {/* Legal & Compliance */}
+          {legalData && (
+            <LegalSection legal={legalData} adminUrl={config.adminUrl} />
+          )}
+
+          {/* Business Functions */}
+          {bizData && (
+            <BusinessSection biz={bizData} adminUrl={config.adminUrl} />
+          )}
+
+          {/* SEO Basics */}
+          {seoBasics && (
+            <SeoBasicsSection seoBasics={seoBasics} adminUrl={config.adminUrl} />
+          )}
+          </div>{/* end left column */}
 
           {/* Right column */}
           <Flex vertical gap={16}>
