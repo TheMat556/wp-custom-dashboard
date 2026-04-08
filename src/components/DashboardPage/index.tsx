@@ -4,12 +4,12 @@ import {
   CalendarOutlined,
   CheckCircleOutlined,
   CheckOutlined,
-  ClockCircleOutlined,
+  ClockCircleOutlined as _ClockCircleOutlined,
   CloseOutlined,
   ExclamationCircleOutlined,
   FileProtectOutlined,
   GlobalOutlined,
-  HistoryOutlined,
+  HistoryOutlined as _HistoryOutlined,
   InfoCircleOutlined,
   LineChartOutlined,
   LinkOutlined,
@@ -55,11 +55,7 @@ import {
 } from "recharts";
 import { useStore } from "zustand";
 import { useShellConfig } from "../../context/ShellConfigContext";
-import {
-  bootstrapDashboardStore,
-  dashboardStore,
-} from "../../store/dashboardStore";
-import { shellPreferencesStore } from "../../store/shellPreferencesStore";
+import { bootstrapDashboardStore, dashboardStore } from "../../store/dashboardStore";
 import type { ActionItem, BusinessFunctions, CalendarBooking, CountryStatEntry, LegalCompliance, SeoBasics } from "../../services/dashboardApi";
 import { navigate } from "../../utils/wp";
 
@@ -443,7 +439,6 @@ export default function DashboardPage() {
   const screens     = Grid.useBreakpoint();
   const data        = useStore(dashboardStore, (s) => s.data);
   const loading     = useStore(dashboardStore, (s) => s.loading);
-  const recentPages = useStore(shellPreferencesStore, (s) => s.recentPages);
   const greeting    = useMemo(() => getGreeting(), []);
   const isMd        = screens.md;
   const isLg        = screens.lg;
@@ -514,10 +509,6 @@ export default function DashboardPage() {
   const isSiteDown      = speed?.status === "error";
   const checklistDone   = checklist.filter((c) => c.done).length;
   const showChecklist   = checklist.length > 0 && checklistDone < checklist.length && !checklistClosed;
-
-  const recentAdminPages = recentPages
-    .filter((p) => !p.pageUrl.endsWith("index.php"))
-    .slice(0, 6);
 
   const tooltipStyle = {
     background: token.colorBgElevated, border: `1px solid ${token.colorBorderSecondary}`,
@@ -908,11 +899,8 @@ export default function DashboardPage() {
           </Section>
         </div>
 
-        {/* ── Action Center + Right sidebar ─────────────────────────────────── */}
-        <div style={{ display: "grid", gridTemplateColumns: isLg ? "1fr 320px" : "1fr", gap: 16, marginBottom: 16 }}>
-
-          {/* Action Center */}
-          <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+        {/* ── Action Center (full width) ────────────────────────────────────── */}
+        <div style={{ display: "flex", flexDirection: "column", gap: 16, marginBottom: 16 }}>
           <Section
             icon={<AlertOutlined />}
             title="What Needs Your Attention"
@@ -979,61 +967,85 @@ export default function DashboardPage() {
             )}
           </Section>
 
-          {/* Update Details */}
+          {/* Update Details (full width) */}
           {hasUpdates && (
             <Section icon={<UpCircleOutlined />} title="Available Updates" description="Review before updating — always backup first">
               <Alert
                 type="info" showIcon icon={<InfoCircleOutlined />}
-                message={<Text style={{ fontSize: 12 }}>Create a backup before updating. Most hosting control panels offer one-click backups. Updates are usually safe and take under a minute.</Text>}
+                message={<Text style={{ fontSize: 12 }}>Create a backup before updating. Most hosting control panels offer one-click backups.</Text>}
                 style={{ marginBottom: 14, borderRadius: token.borderRadius }}
               />
-              {(updates?.coreList?.length ?? 0) > 0 && (
-                <div style={{ marginBottom: 14 }}>
-                  <Text style={{ fontSize: 12, fontWeight: 600, display: "block", marginBottom: 8, color: token.colorError }}>WordPress Core</Text>
-                  {updates!.coreList!.map((u, i) => (
-                    <Flex key={i} align="center" justify="space-between" gap={8}
-                      style={{ padding: "8px 12px", background: `${token.colorError}08`, borderRadius: token.borderRadius, marginBottom: 6 }}>
-                      <div>
-                        <Text style={{ fontSize: 13, fontWeight: 500 }}>WordPress</Text>
-                        <Text type="secondary" style={{ fontSize: 11, display: "block" }}>{u.currentVersion} → {u.newVersion}</Text>
-                      </div>
-                      <Tag color="red" style={{ margin: 0 }}>Security</Tag>
-                    </Flex>
-                  ))}
-                </div>
-              )}
-              {(updates?.pluginList?.length ?? 0) > 0 && (
-                <div style={{ marginBottom: 14 }}>
-                  <Text style={{ fontSize: 12, fontWeight: 600, display: "block", marginBottom: 8 }}>Plugins ({updates!.plugins})</Text>
-                  {updates!.pluginList!.map((p, i) => (
-                    <Flex key={i} align="center" justify="space-between" gap={8} wrap="wrap"
-                      style={{ padding: "8px 12px", background: token.colorBgLayout, borderRadius: token.borderRadius, marginBottom: 6 }}>
+              <div style={{ display: "grid", gridTemplateColumns: isMd ? "repeat(2, 1fr)" : "1fr", gap: 8 }}>
+                {updates?.coreList?.map((u, i) => (
+                  <Flex key={i} align="center" justify="space-between" gap={8}
+                    style={{ padding: "10px 14px", background: `${token.colorError}08`, borderRadius: token.borderRadius, border: `1px solid ${token.colorError}20` }}>
+                    <div>
+                      <Text style={{ fontSize: 13, fontWeight: 500 }}>WordPress Core</Text>
+                      <Text type="secondary" style={{ fontSize: 11, display: "block" }}>{u.currentVersion} → {u.newVersion}</Text>
+                    </div>
+                    <Button size="small" danger onClick={() => navigate("update-core.php", config.adminUrl)}>Update</Button>
+                  </Flex>
+                ))}
+                {updates?.pluginList?.map((p, i) => (
+                  <Flex key={i} align="center" justify="space-between" gap={8}
+                    style={{ padding: "10px 14px", background: token.colorBgLayout, borderRadius: token.borderRadius, border: `1px solid ${token.colorBorderSecondary}` }}>
+                    <div style={{ minWidth: 0 }}>
+                      <Text style={{ fontSize: 13, fontWeight: 500, display: "block", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{p.name}</Text>
+                      <Text type="secondary" style={{ fontSize: 11 }}>{p.currentVersion} → {p.newVersion}{p.testedUpTo ? ` · Tested WP ${p.testedUpTo}` : ""}</Text>
+                    </div>
+                    <Button size="small" onClick={() => navigate("update-core.php", config.adminUrl)} style={{ flexShrink: 0 }}>Update</Button>
+                  </Flex>
+                ))}
+                {updates?.themeList?.map((t, i) => (
+                  <Flex key={i} align="center" justify="space-between" gap={8}
+                    style={{ padding: "10px 14px", background: token.colorBgLayout, borderRadius: token.borderRadius, border: `1px solid ${token.colorBorderSecondary}` }}>
+                    <div>
+                      <Text style={{ fontSize: 13, fontWeight: 500 }}>{t.name} (Theme)</Text>
+                      <Text type="secondary" style={{ fontSize: 11, display: "block" }}>{t.currentVersion} → {t.newVersion}</Text>
+                    </div>
+                    <Button size="small" onClick={() => navigate("update-core.php", config.adminUrl)}>Update</Button>
+                  </Flex>
+                ))}
+              </div>
+            </Section>
+          )}
+
+          {/* Upcoming Bookings (full width) */}
+          {calendar?.available && (
+            <Section
+              icon={<CalendarOutlined />}
+              title="Upcoming Bookings"
+              description="Next 7 days"
+              extra={
+                <Flex align="center" gap={8}>
+                  {calendar.totalToday > 0 && <Badge count={calendar.totalToday} color={token.colorPrimary} />}
+                  <Button type="link" size="small" style={{ padding: 0 }}
+                    onClick={() => navigate("admin.php?page=h-bricks-elements", config.adminUrl)}>
+                    View all
+                  </Button>
+                </Flex>
+              }
+            >
+              {calendar.upcoming.length === 0 ? (
+                <Flex align="center" justify="center" style={{ height: 60 }}>
+                  <Text type="secondary" style={{ fontSize: 12 }}>No bookings in the next 7 days</Text>
+                </Flex>
+              ) : (
+                <div style={{ display: "grid", gridTemplateColumns: isMd ? "repeat(2, 1fr)" : "1fr", gap: 8 }}>
+                  {calendar.upcoming.map((booking: CalendarBooking) => (
+                    <Flex key={booking.id} align="center" gap={10}
+                      style={{ padding: "10px 14px", background: token.colorBgLayout, borderRadius: token.borderRadius, border: `1px solid ${token.colorBorderSecondary}` }}>
+                      <div style={{
+                        width: 8, height: 8, borderRadius: "50%", flexShrink: 0,
+                        background: booking.isToday ? token.colorPrimary : token.colorTextQuaternary,
+                      }} />
                       <div style={{ flex: 1, minWidth: 0 }}>
-                        <Text style={{ fontSize: 13, fontWeight: 500 }}>{p.name}</Text>
-                        <Text type="secondary" style={{ fontSize: 11, display: "block" }}>{p.currentVersion} → {p.newVersion}</Text>
-                        {p.testedUpTo && (
-                          <Text type="secondary" style={{ fontSize: 11 }}>Tested up to WP {p.testedUpTo}</Text>
-                        )}
+                        <Text style={{ fontSize: 13, fontWeight: 500, display: "block", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                          {booking.customerName || "—"}
+                        </Text>
+                        <Text type="secondary" style={{ fontSize: 11 }}>{formatBookingTime(booking.startDate)}</Text>
                       </div>
-                      <Button size="small" icon={<LinkOutlined />}
-                        onClick={() => navigate("update-core.php", config.adminUrl)}>
-                        Update
-                      </Button>
-                    </Flex>
-                  ))}
-                </div>
-              )}
-              {(updates?.themeList?.length ?? 0) > 0 && (
-                <div>
-                  <Text style={{ fontSize: 12, fontWeight: 600, display: "block", marginBottom: 8 }}>Themes ({updates!.themes})</Text>
-                  {updates!.themeList!.map((t, i) => (
-                    <Flex key={i} align="center" justify="space-between" gap={8}
-                      style={{ padding: "8px 12px", background: token.colorBgLayout, borderRadius: token.borderRadius, marginBottom: 6 }}>
-                      <div>
-                        <Text style={{ fontSize: 13, fontWeight: 500 }}>{t.name}</Text>
-                        <Text type="secondary" style={{ fontSize: 11, display: "block" }}>{t.currentVersion} → {t.newVersion}</Text>
-                      </div>
-                      <Button size="small" onClick={() => navigate("update-core.php", config.adminUrl)}>Update</Button>
+                      {booking.isToday && <Tag color="blue" style={{ margin: 0, fontSize: 10 }}>Today</Tag>}
                     </Flex>
                   ))}
                 </div>
@@ -1041,94 +1053,60 @@ export default function DashboardPage() {
             </Section>
           )}
 
-          {/* Legal & Compliance */}
-          {legalData && (
-            <LegalSection legal={legalData} adminUrl={config.adminUrl} />
-          )}
-
-          {/* Business Functions */}
-          {bizData && (
-            <BusinessSection biz={bizData} adminUrl={config.adminUrl} />
-          )}
-
-          {/* SEO Basics */}
-          {seoBasics && (
-            <SeoBasicsSection seoBasics={seoBasics} adminUrl={config.adminUrl} />
-          )}
-          </div>{/* end left column */}
-
-          {/* Right column */}
-          <Flex vertical gap={16}>
-
-            {/* Calendar */}
-            {calendar?.available && (
-              <Section
-                icon={<CalendarOutlined />}
-                title="Upcoming Bookings"
-                description="Next 7 days"
-                extra={
-                  <Flex align="center" gap={8}>
-                    {calendar.totalToday > 0 && <Badge count={calendar.totalToday} color={token.colorPrimary} />}
-                    <Button type="link" size="small" style={{ padding: 0 }}
-                      onClick={() => navigate("admin.php?page=h-bricks-elements", config.adminUrl)}>
-                      View all
-                    </Button>
-                  </Flex>
-                }
-              >
-                {calendar.upcoming.length === 0 ? (
-                  <Flex align="center" justify="center" style={{ height: 60 }}>
-                    <Text type="secondary" style={{ fontSize: 12 }}>No bookings in the next 7 days</Text>
-                  </Flex>
-                ) : (
-                  calendar.upcoming.map((booking: CalendarBooking) => (
-                    <Flex key={booking.id} align="center" gap={10}
-                      style={{ padding: "8px 0", borderBottom: `1px solid ${token.colorBorderSecondary}` }}>
-                      <div style={{
-                        width: 6, height: 6, borderRadius: "50%", flexShrink: 0,
-                        background: booking.isToday ? token.colorPrimary : token.colorTextQuaternary,
-                      }} />
-                      <Flex vertical style={{ flex: 1, minWidth: 0 }}>
-                        <Text style={{ fontSize: 13, fontWeight: 500, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-                          {booking.customerName || "—"}
-                        </Text>
-                        <Text type="secondary" style={{ fontSize: 11 }}>
-                          {formatBookingTime(booking.startDate)}
-                        </Text>
+          {/* Site Status accordion — Legal, Business, SEO consolidated */}
+          {(legalData || bizData || seoBasics) && (
+            <Section
+              icon={<InfoCircleOutlined />}
+              title="Site Status Overview"
+              description="Legal compliance, business functions, and SEO health"
+            >
+              <Collapse ghost
+                items={[
+                  ...(legalData ? [{
+                    key: "legal",
+                    label: (
+                      <Flex align="center" gap={8}>
+                        <FileProtectOutlined style={{ color: token.colorPrimary, fontSize: 13 }} />
+                        <Text style={{ fontSize: 13 }}>Legal & Compliance</Text>
+                        {(!legalData.privacyPolicy.published || !legalData.impressum.published || legalData.trackingWithoutConsent)
+                          ? <Tag color="error" style={{ margin: 0, fontSize: 11 }}>Action needed</Tag>
+                          : <Tag color="success" style={{ margin: 0, fontSize: 11 }}>All good</Tag>
+                        }
                       </Flex>
-                      {booking.isToday && <Tag color="blue" style={{ margin: 0, fontSize: 10 }}>Today</Tag>}
-                    </Flex>
-                  ))
-                )}
-              </Section>
-            )}
-
-            {/* Recent pages */}
-            {recentAdminPages.length > 0 && (
-              <Section icon={<HistoryOutlined />} title="Recently Visited" description="Your navigation history">
-                {recentAdminPages.map((page, i) => (
-                  <Flex key={i} align="center" gap={8}
-                    style={{
-                      padding: "8px 0",
-                      borderBottom: i < recentAdminPages.length - 1 ? `1px solid ${token.colorBorderSecondary}` : undefined,
-                      cursor: "pointer",
-                    }}
-                    onClick={() => navigate(page.pageUrl, config.adminUrl)}
-                  >
-                    <ClockCircleOutlined style={{ color: token.colorTextTertiary, fontSize: 11, flexShrink: 0 }} />
-                    <Text style={{ flex: 1, fontSize: 13, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", color: token.colorPrimary }}
-                      title={page.title}>
-                      {page.title}
-                    </Text>
-                    <Text type="secondary" style={{ fontSize: 11, flexShrink: 0 }}>
-                      {relativeTime(Math.round(page.visitedAt / 1000))}
-                    </Text>
-                  </Flex>
-                ))}
-              </Section>
-            )}
-
-          </Flex>
+                    ),
+                    children: <LegalSection legal={legalData} adminUrl={config.adminUrl} />,
+                  }] : []),
+                  ...(bizData ? [{
+                    key: "business",
+                    label: (
+                      <Flex align="center" gap={8}>
+                        <BankOutlined style={{ color: token.colorPrimary, fontSize: 13 }} />
+                        <Text style={{ fontSize: 13 }}>Business & Contact Functions</Text>
+                        {(!bizData.contactForms.available || !bizData.emailDelivery.smtpPlugin)
+                          ? <Tag color="warning" style={{ margin: 0, fontSize: 11 }}>Review</Tag>
+                          : <Tag color="success" style={{ margin: 0, fontSize: 11 }}>Active</Tag>
+                        }
+                      </Flex>
+                    ),
+                    children: <BusinessSection biz={bizData} adminUrl={config.adminUrl} />,
+                  }] : []),
+                  ...(seoBasics ? [{
+                    key: "seo",
+                    label: (
+                      <Flex align="center" gap={8}>
+                        <SearchOutlined style={{ color: token.colorPrimary, fontSize: 13 }} />
+                        <Text style={{ fontSize: 13 }}>SEO Basics</Text>
+                        <Tag color={seoBasics.score >= 75 ? "success" : "warning"} style={{ margin: 0, fontSize: 11 }}>
+                          {seoBasics.score}%
+                        </Tag>
+                      </Flex>
+                    ),
+                    children: <SeoBasicsSection seoBasics={seoBasics} adminUrl={config.adminUrl} />,
+                  }] : []),
+                ]}
+              />
+            </Section>
+          )}
         </div>
       </div>
     </div>
