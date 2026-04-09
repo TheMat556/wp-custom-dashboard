@@ -87,8 +87,8 @@ export function ActionCenter({
                   {t("Act Now")}
                 </Typography.Text>
               </Flex>
-              {criticalActions.map((item, i) => (
-                <ActionRow key={item.label} item={item} adminUrl={adminUrl} />
+              {criticalActions.map((item) => (
+                <ActionRow key={item.title} item={item} adminUrl={adminUrl} />
               ))}
             </div>
           )}
@@ -109,8 +109,8 @@ export function ActionCenter({
                   {t("Review Soon")}
                 </Typography.Text>
               </Flex>
-              {warningActions.map((item, i) => (
-                <ActionRow key={item.label} item={item} adminUrl={adminUrl} />
+              {warningActions.map((item) => (
+                <ActionRow key={item.title} item={item} adminUrl={adminUrl} />
               ))}
             </div>
           )}
@@ -135,8 +135,8 @@ export function ActionCenter({
                       </Typography.Text>
                     </Flex>
                   ),
-                  children: infoActions.map((item, i) => (
-                    <ActionRow key={item.label} item={item} adminUrl={adminUrl} />
+                  children: infoActions.map((item) => (
+                    <ActionRow key={item.title} item={item} adminUrl={adminUrl} />
                   )),
                 },
               ]}

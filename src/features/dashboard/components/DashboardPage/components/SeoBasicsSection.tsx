@@ -34,7 +34,7 @@ export function SeoBasicsSection({ seoBasics, adminUrl }: SeoBasicsSectionProps)
         </Flex>
       }
     >
-      {checks.map((check) => (
+      {checks.map((check, i) => (
         <Flex
           key={check.label}
           align="center"
