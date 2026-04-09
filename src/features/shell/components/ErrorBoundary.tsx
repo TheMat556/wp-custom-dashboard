@@ -1,4 +1,5 @@
 import { Component, type ErrorInfo, type ReactNode } from "react";
+import { theme } from "antd";
 
 interface Props {
   name: string;
@@ -8,6 +9,28 @@ interface Props {
 interface State {
   hasError: boolean;
   error: Error | null;
+}
+
+/** Inner functional component so the error UI can access Ant Design theme tokens. */
+function ErrorDisplay({ name }: { name: string }) {
+  const { token } = theme.useToken();
+  return (
+    <div
+      role="alert"
+      style={{
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        height: "100%",
+        padding: 16,
+        fontFamily: '"Inter", -apple-system, BlinkMacSystemFont, sans-serif',
+        color: token.colorTextDescription,
+        fontSize: 13,
+      }}
+    >
+      Something went wrong in {name}.
+    </div>
+  );
 }
 
 export class ErrorBoundary extends Component<Props, State> {
@@ -23,22 +46,7 @@ export class ErrorBoundary extends Component<Props, State> {
 
   render() {
     if (this.state.hasError) {
-      return (
-        <div
-          style={{
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            height: "100%",
-            padding: 16,
-            fontFamily: '"Inter", -apple-system, BlinkMacSystemFont, sans-serif',
-            color: "#64748b",
-            fontSize: 13,
-          }}
-        >
-          Something went wrong in {this.props.name}.
-        </div>
-      );
+      return <ErrorDisplay name={this.props.name} />;
     }
 
     return this.props.children;

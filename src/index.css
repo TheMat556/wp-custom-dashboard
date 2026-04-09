@@ -396,14 +396,6 @@ body[data-theme="dark"] {
     transform var(--motion-fast) var(--ease-standard);
 }
 
-.wp-react-ui-metric-tile::before {
-  content: "";
-  position: absolute;
-  inset: 0 0 auto;
-  height: 3px;
-  background: var(--metric-accent, var(--color-accent-primary));
-}
-
 .wp-react-ui-metric-tile--interactive {
   appearance: none;
   border: 1px solid var(--color-border-subtle);
@@ -660,6 +652,104 @@ body[data-theme="dark"] {
     linear-gradient(180deg, var(--shell-chrome-bg) 0%, var(--color-bg-app) 100%);
 }
 
+/* ── Sidebar brand / logo ── */
+
+.wp-react-ui-sidebar-brand {
+  flex-shrink: 0;
+  height: 64px;
+  border-bottom: 1px solid var(--color-border-subtle);
+}
+
+.wp-react-ui-sidebar-brand__inner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: 100%;
+  padding: 0 16px 0 20px;
+}
+
+.wp-react-ui-sidebar-brand__inner--with-close {
+  gap: 12px;
+}
+
+.wp-react-ui-sidebar-brand__inner--centered {
+  justify-content: center;
+  padding-inline: 16px;
+}
+
+.wp-react-ui-sidebar-brand--collapsed .wp-react-ui-sidebar-brand__inner {
+  padding: 0;
+  width: 100%;
+  justify-content: center;
+}
+
+.wp-react-ui-sidebar-brand--collapsed .wp-react-ui-sidebar-brand__identity {
+  flex: 0 0 auto;
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.wp-react-ui-sidebar-brand__identity {
+  display: flex;
+  align-items: center;
+  min-width: 0;
+  flex: 1;
+}
+
+.wp-react-ui-sidebar-brand__identity--centered {
+  flex: 0 1 auto;
+  justify-content: center;
+  margin-inline: auto;
+}
+
+.wp-react-ui-sidebar-brand__identity--collapsed {
+  flex: 0 1 auto;
+  margin-inline: auto;
+}
+
+.wp-react-ui-sidebar-brand__mark {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.wp-react-ui-sidebar-brand__mark img {
+  width: 36px;
+  height: 36px;
+  display: block;
+  object-fit: contain;
+  flex-shrink: 0;
+}
+
+.wp-react-ui-sidebar-brand__copy {
+  min-width: 0;
+  line-height: 1.2;
+  text-align: center;
+}
+
+.wp-react-ui-sidebar-brand__title {
+  display: block;
+  font-size: 17px !important;
+  font-weight: 700 !important;
+  letter-spacing: -0.02em;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.wp-react-ui-sidebar-brand__subtitle {
+  display: block;
+  font-size: 10px !important;
+  font-weight: 700 !important;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--color-text-muted) !important;
+}
+
+/* ── End sidebar brand ── */
+
 .wp-react-ui-sidebar-scroll,
 .wp-react-ui-sidebar-menu,
 .wp-react-ui-sidebar-menu .ant-menu-overflow,
@@ -779,6 +869,321 @@ body[data-theme="dark"] {
   font-weight: 500;
   color: inherit;
 }
+
+/* ── Nav tree (new sidebar navigation) ── */
+
+.wp-react-ui-nav-tree {
+  padding: 12px 10px 8px;
+}
+
+.wp-react-ui-nav-list,
+.wp-react-ui-nav-sublist {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.wp-react-ui-nav-section {
+  margin-bottom: 4px;
+}
+
+.wp-react-ui-nav-section__label {
+  padding: 0 10px 4px;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--color-text-muted);
+  margin-top: 12px;
+}
+
+.wp-react-ui-nav-section:first-child .wp-react-ui-nav-section__label {
+  margin-top: 0;
+}
+
+.wp-react-ui-nav-section__divider {
+  margin: 8px 12px;
+  border-bottom: 1px solid var(--wp-react-ui-shell-border-strong);
+  opacity: 0.5;
+}
+
+.wp-react-ui-nav-item {
+  margin: 2px 0;
+}
+
+.wp-react-ui-nav-item__button {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  min-height: var(--shell-menu-item-height, 42px);
+  padding: 0 12px;
+  border: 0;
+  border-radius: 12px;
+  background: transparent;
+  color: var(--color-text-secondary);
+  font-size: var(--text-sm);
+  font-family: inherit;
+  font-weight: 500;
+  text-align: left;
+  cursor: pointer;
+  transition:
+    background-color 160ms ease,
+    color 160ms ease,
+    box-shadow 160ms ease;
+}
+
+.wp-react-ui-nav-item__button:hover {
+  background: var(--wp-react-ui-shell-surface-soft);
+  color: var(--color-text-primary);
+}
+
+.wp-react-ui-nav-item__button--active-branch {
+  color: var(--color-text-primary);
+}
+
+.wp-react-ui-nav-item__button--active {
+  background: linear-gradient(135deg, var(--wp-react-ui-shell-accent-soft) 0%, transparent 100%);
+  box-shadow: inset 0 0 0 1px var(--wp-react-ui-shell-border-strong);
+  color: var(--color-text-primary);
+  font-weight: 600;
+}
+
+.wp-react-ui-nav-item__button--active:hover {
+  transform: none;
+}
+
+.wp-react-ui-nav-item__button--collapsed {
+  padding: 0;
+  justify-content: center;
+  border-radius: 14px;
+}
+
+.wp-react-ui-nav-item__rail {
+  position: absolute;
+  left: 0;
+  top: 50%;
+  transform: translateY(-50%) scaleY(0);
+  width: 3px;
+  height: 60%;
+  background: var(--color-accent-primary);
+  border-radius: 0 3px 3px 0;
+  transition: transform 160ms ease;
+}
+
+.wp-react-ui-nav-item__button--active .wp-react-ui-nav-item__rail {
+  transform: translateY(-50%) scaleY(1);
+}
+
+.wp-react-ui-nav-item__icon {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  width: 20px;
+  height: 20px;
+  font-size: 16px;
+  color: inherit;
+}
+
+.wp-react-ui-nav-item__icon img {
+  filter: opacity(0.7);
+}
+
+.wp-react-ui-nav-item__button--active .wp-react-ui-nav-item__icon img,
+.wp-react-ui-nav-item__button:hover .wp-react-ui-nav-item__icon img {
+  filter: opacity(1);
+}
+
+.wp-react-ui-nav-item__icon-badge {
+  position: absolute;
+  top: -2px;
+  right: -2px;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--color-accent-primary);
+}
+
+.wp-react-ui-nav-item__label {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.wp-react-ui-nav-item__meta {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  flex-shrink: 0;
+}
+
+.wp-react-ui-nav-item__chevron {
+  display: flex;
+  align-items: center;
+  font-size: 10px;
+  color: var(--color-text-muted);
+  transition: transform 220ms ease;
+}
+
+.wp-react-ui-nav-item__chevron--open {
+  transform: rotate(180deg);
+}
+
+/* Children drawer */
+
+.wp-react-ui-nav-item__children {
+  overflow: hidden;
+  max-height: 0;
+  transition: max-height 240ms ease;
+}
+
+.wp-react-ui-nav-item__children--open {
+  max-height: 600px;
+}
+
+.wp-react-ui-nav-item__children-inner {
+  margin: 4px 0 8px 17px;
+  padding-left: 12px;
+  border-left: 1px solid var(--wp-react-ui-shell-border-strong);
+}
+
+.wp-react-ui-nav-subitem {
+  margin: 2px 0;
+}
+
+.wp-react-ui-nav-subitem__button {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  width: 100%;
+  min-height: var(--shell-submenu-item-height, 38px);
+  padding: 0 10px;
+  border: 0;
+  border-radius: 10px;
+  background: transparent;
+  color: var(--color-text-secondary);
+  font-size: 12.5px;
+  font-family: inherit;
+  font-weight: 500;
+  text-align: left;
+  cursor: pointer;
+  transition:
+    background-color 160ms ease,
+    color 160ms ease;
+}
+
+.wp-react-ui-nav-subitem__button:hover {
+  background: var(--wp-react-ui-shell-surface-soft);
+  color: var(--color-text-primary);
+}
+
+.wp-react-ui-nav-subitem__button--active {
+  color: var(--color-text-primary);
+  font-weight: 600;
+}
+
+.wp-react-ui-nav-subitem__label {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Nav footer */
+
+.wp-react-ui-shell-action.ant-btn {
+  min-height: 40px;
+  border: 1px solid transparent;
+  border-radius: 12px;
+  font-weight: 600;
+  justify-content: flex-start;
+  transition:
+    background-color 160ms ease,
+    color 160ms ease,
+    border-color 160ms ease;
+}
+
+.wp-react-ui-shell-action--ghost.ant-btn:hover,
+.wp-react-ui-shell-action--ghost.ant-btn:focus-visible {
+  background: var(--wp-react-ui-shell-surface-soft) !important;
+  border-color: var(--wp-react-ui-shell-border-strong) !important;
+  color: var(--color-text-primary) !important;
+}
+
+.wp-react-ui-shell-action--icon-only.ant-btn,
+.wp-react-ui-sidebar-brand .wp-react-ui-shell-action.ant-btn {
+  width: 40px;
+  min-width: 40px;
+  padding-inline: 0;
+  justify-content: center;
+}
+
+.wp-react-ui-nav-footer .wp-react-ui-shell-action.ant-btn {
+  width: 100%;
+}
+
+.wp-react-ui-nav-footer .wp-react-ui-shell-action--icon-only.ant-btn {
+  width: 40px;
+}
+
+.wp-react-ui-nav-footer {
+  padding: 6px 10px;
+}
+
+/* Nav badges */
+
+.wp-react-ui-nav-badge {
+  display: inline-flex;
+  align-items: center;
+}
+
+.wp-react-ui-nav-badge--pulse .ant-badge-count {
+  animation: wp-react-ui-badge-pulse 600ms ease-out;
+}
+
+/* Primary: accent indigo (solid) */
+.wp-react-ui-nav-badge--primary .ant-badge-count {
+  background: var(--color-accent-primary);
+  color: var(--color-text-on-accent);
+  font-weight: 600;
+  font-size: 11px;
+}
+
+.wp-react-ui-nav-badge--warning .ant-badge-count {
+  background: var(--color-warning);
+  color: var(--color-text-on-accent);
+  font-weight: 600;
+  font-size: 11px;
+}
+
+.wp-react-ui-nav-badge--danger .ant-badge-count {
+  background: var(--color-danger);
+  color: var(--color-text-on-accent);
+  font-weight: 600;
+  font-size: 11px;
+}
+
+/* Soft variant used for child/subitem badges */
+.wp-react-ui-nav-subitem__button .wp-react-ui-nav-badge--primary .ant-badge-count {
+  background: var(--color-accent-soft);
+  color: var(--color-accent-primary);
+}
+
+/* High contrast overrides */
+
+.wp-react-ui-high-contrast .wp-react-ui-nav-item__button--active {
+  background: var(--wp-react-ui-shell-accent-soft);
+  box-shadow: inset 0 0 0 2px var(--wp-react-ui-shell-border-strong);
+}
+
+/* ── End nav tree ── */
 
 .wp-react-ui-sidebar-bottom-actions {
   background: linear-gradient(180deg, transparent 0%, var(--shell-chrome-raised) 100%);
@@ -1010,6 +1415,10 @@ body[data-theme="dark"] {
 
   .wp-react-ui-sidebar-menu .ant-menu-item,
   .wp-react-ui-sidebar-menu .ant-menu-submenu-title {
+    min-height: max(var(--shell-menu-item-height, 42px), 46px);
+  }
+
+  .wp-react-ui-nav-item__button {
     min-height: max(var(--shell-menu-item-height, 42px), 46px);
   }
 }

@@ -18,11 +18,10 @@ import {
 } from "antd";
 import { useCallback, useEffect, useState } from "react";
 import { useStore } from "zustand";
-import { useShellConfig } from "../../../../context/ShellConfigContext";
 import {
   activityStore,
-  bootstrapActivityStore,
 } from "../../store/activityStore";
+import { loadActivity, setActivityFilters } from "../../store/activityActions";
 import type { ActivityEntry } from "../../services/activityApi";
 
 const { Text, Title } = Typography;
@@ -139,7 +138,6 @@ export default function ActivityLogPanel({
   open: boolean;
   onClose: () => void;
 }) {
-  const config = useShellConfig();
   const { token } = theme.useToken();
   const entries = useStore(activityStore, (s) => s.entries);
   const total = useStore(activityStore, (s) => s.total);
@@ -150,23 +148,20 @@ export default function ActivityLogPanel({
 
   useEffect(() => {
     if (!open) return;
-    bootstrapActivityStore(config);
-    activityStore.getState().load();
-  }, [open, config]);
+    void loadActivity();
+  }, [open]);
 
   const handleRefresh = useCallback(() => {
-    activityStore.getState().load();
+    void loadActivity();
   }, []);
 
   const handleActionFilter = useCallback((value: string) => {
     setActionFilter(value);
-    activityStore
-      .getState()
-      .setFilters({ action: value || undefined, page: 1 });
+    setActivityFilters({ action: value || undefined, page: 1 });
   }, []);
 
   const handleLoadMore = useCallback(() => {
-    activityStore.getState().load({ page: page + 1 });
+    void loadActivity({ page: page + 1 });
   }, [page]);
 
   const hasMore = page * perPage < total;

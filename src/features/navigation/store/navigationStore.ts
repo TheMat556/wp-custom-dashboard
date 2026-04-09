@@ -24,6 +24,7 @@ import {
   replaceHistory,
 } from "../../../utils/historyManager";
 import { matchesOpenInNewTabPattern } from "../../../utils/openInNewTab";
+import { sessionStore } from "../../session/store/sessionStore";
 
 type Listener = () => void;
 
@@ -50,6 +51,7 @@ export interface NavigationActions {
   navigate(url: string): void;
   handleIframeLoad(iframeWindow: Window): void;
   handleIframeMessage(event: MessageEvent): void;
+  markShellPageReady(): void;
 }
 
 export interface NavigationBootstrapOptions {
@@ -124,10 +126,6 @@ export const navigationStore = createStore<NavigationState & NavigationActions>(
       if (null === pendingNavigationSource) {
         pushHistory({ iframeUrl: href, pageUrl: cleanUrl }, title);
       }
-
-      if (typeof document !== "undefined") {
-        document.title = title;
-      }
     } catch {
       set({ status: "ready", pendingNavigationSource: null });
     }
@@ -147,26 +145,29 @@ export const navigationStore = createStore<NavigationState & NavigationActions>(
         pageTitle: msg.title,
         status: "ready",
       });
-      document.title = msg.title;
       return;
     }
 
     if (msg.type === "title-change") {
       set({ pageTitle: msg.title });
-      document.title = msg.title;
       return;
     }
 
     if (msg.type === "session-expired") {
-      import("../../../store/sessionStore").then(({ sessionStore: ss }) => ss.getState().markExpired());
+      sessionStore.getState().markExpired();
       return;
     }
 
     window.location.href = msg.url;
   },
+
+  markShellPageReady() {
+    set({ status: "ready", pendingNavigationSource: null });
+  },
 }));
 
 let teardownPopstateListener: (() => void) | null = null;
+let unsubTitle: (() => void) | null = null;
 
 export function bootstrapNavigationStore(
   config: Pick<WpReactUiNavigationConfig, "breakoutPagenow" | "openInNewTabPatterns"> & {
@@ -179,6 +180,7 @@ export function bootstrapNavigationStore(
   }
 
   teardownPopstateListener?.();
+  unsubTitle?.();
 
   resetNavigationStore({
     pageUrl: config.pageUrl ?? getDefaultBootstrapOptions().pageUrl,
@@ -193,6 +195,13 @@ export function bootstrapNavigationStore(
   const initial = navigationStore.getState();
   replaceHistory({ iframeUrl: initial.iframeUrl, pageUrl: initial.pageUrl }, document.title);
 
+  // Subscriber: sync document.title whenever pageTitle state changes.
+  unsubTitle = navigationStore.subscribe((state, prev) => {
+    if (state.pageTitle !== prev.pageTitle && typeof document !== "undefined") {
+      document.title = state.pageTitle;
+    }
+  });
+
   teardownPopstateListener = listenPopstate((entry: HistoryEntry) => {
     navigationStore.setState({
       iframeUrl: entry.iframeUrl,
@@ -205,6 +214,8 @@ export function bootstrapNavigationStore(
   return () => {
     teardownPopstateListener?.();
     teardownPopstateListener = null;
+    unsubTitle?.();
+    unsubTitle = null;
   };
 }
 

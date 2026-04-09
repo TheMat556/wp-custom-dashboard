@@ -14,8 +14,8 @@
     "yoast/phpunit-polyfills": "^2"
   },
   "scripts": {
-    "lint": "phpcs --standard=WordPress --extensions=php --ignore=vendor/,node_modules/ --warning-severity=0 wp-custom-dashboard.php includes/ app/ contracts/php/ tests/php/",
-    "lint-fix": "phpcbf --standard=WordPress --extensions=php --ignore=vendor/,node_modules/ wp-custom-dashboard.php includes/ app/ contracts/php/ tests/php/",
+    "lint": "phpcs --standard=phpcs.xml.dist --warning-severity=0",
+    "lint-fix": "phpcbf --standard=phpcs.xml.dist",
     "test": "phpunit",
     "test:contracts": "phpunit tests/php/BootPayloadContractTest.php tests/php/RestRouteContractTest.php tests/php/RestRoutePermissionCompatibilityTest.php tests/php/PluginEntryCompatibilityTest.php tests/php/ArtifactContractTest.php"
   },

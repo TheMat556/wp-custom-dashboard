@@ -2,7 +2,7 @@
  * Shared WordPress admin helpers.
  */
 
-import { navigationStore } from "../store/navigationStore";
+import { navigationStore } from "../features/navigation/store/navigationStore";
 
 export function getAdminBaseUrl(adminUrl: string): string {
   return adminUrl.replace(/\/+$/, "");

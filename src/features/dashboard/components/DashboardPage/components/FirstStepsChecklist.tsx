@@ -53,55 +53,89 @@ export function FirstStepsChecklist({
           gap: 8,
         }}
       >
-        {checklist.map((item) => (
-          <Flex
-            key={item.key}
-            align="center"
-            gap={10}
-            className={
-              item.done
-                ? "wp-react-ui-inset-panel wp-react-ui-inset-panel--success"
-                : "wp-react-ui-inset-panel"
-            }
-            style={{
-              padding: "10px 14px",
-              cursor: item.done ? "default" : "pointer",
-              transition: "border-color 0.15s",
-            }}
-            onClick={item.done ? undefined : () => navigate(item.url, adminUrl)}
-          >
-            <div
+        {checklist.map((item) =>
+          item.done ? (
+            <Flex
+              key={item.key}
+              align="center"
+              gap={10}
+              className="wp-react-ui-inset-panel wp-react-ui-inset-panel--success"
+              style={{ padding: "10px 14px" }}
+            >
+              <div
+                style={{
+                  width: 20,
+                  height: 20,
+                  borderRadius: "50%",
+                  flexShrink: 0,
+                  background: token.colorSuccess,
+                  border: `2px solid ${token.colorSuccess}`,
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                }}
+              >
+                <CheckOutlined style={{ fontSize: 11, color: "#fff" }} />
+              </div>
+              <Text
+                style={{
+                  flex: 1,
+                  fontSize: 14,
+                  color: token.colorTextTertiary,
+                  textDecoration: "line-through",
+                }}
+              >
+                {item.label}
+              </Text>
+            </Flex>
+          ) : (
+            <button
+              key={item.key}
+              type="button"
+              className="wp-react-ui-inset-panel"
               style={{
-                width: 20,
-                height: 20,
-                borderRadius: "50%",
-                flexShrink: 0,
-                background: item.done ? token.colorSuccess : "transparent",
-                border: `2px solid ${item.done ? token.colorSuccess : token.colorBorderSecondary}`,
                 display: "flex",
                 alignItems: "center",
-                justifyContent: "center",
+                gap: 10,
+                padding: "10px 14px",
+                cursor: "pointer",
+                transition: "border-color 0.15s",
+                background: "transparent",
+                border: "none",
+                width: "100%",
+                textAlign: "left",
+                appearance: "none",
               }}
+              onClick={() => navigate(item.url, adminUrl)}
             >
-              {item.done && <CheckOutlined style={{ fontSize: 11, color: "#fff" }} />}
-            </div>
-            <Text
-              style={{
-                flex: 1,
-                fontSize: 14,
-                color: item.done ? token.colorTextTertiary : token.colorText,
-                textDecoration: item.done ? "line-through" : undefined,
-              }}
-            >
-              {item.label}
-            </Text>
-            {!item.done && (
+              <div
+                style={{
+                  width: 20,
+                  height: 20,
+                  borderRadius: "50%",
+                  flexShrink: 0,
+                  background: "transparent",
+                  border: `2px solid ${token.colorBorderSecondary}`,
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                }}
+              />
+              <Text
+                style={{
+                  flex: 1,
+                  fontSize: 14,
+                  color: token.colorText,
+                }}
+              >
+                {item.label}
+              </Text>
               <Text type="secondary" style={{ fontSize: 12, flexShrink: 0 }}>
                 {t("Open →")}
               </Text>
-            )}
-          </Flex>
-        ))}
+            </button>
+          )
+        )}
       </div>
     </Section>
   );

@@ -10,7 +10,7 @@
  */
 
 import { useSyncExternalStore } from "react";
-import { activeKeyStore } from "../store/navigationStore";
+import { activeKeyStore } from "../features/navigation/store/navigationStore";
 
 export { isAdminUrl } from "./embedUrl";
 

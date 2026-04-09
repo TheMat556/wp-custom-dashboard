@@ -42,29 +42,17 @@ function getInitialTheme(theme: string): Theme {
 
 export interface ThemeStoreState {
   theme: Theme;
-  service: ThemeService | null;
   toggle: () => void;
 }
 
+let themeService: ReturnType<typeof createThemeService> | null = null;
+
 export const themeStore = createStore<ThemeStoreState>((set, get) => ({
   theme: "light",
-  service: null,
   toggle() {
     const nextTheme: Theme = get().theme === "light" ? "dark" : "light";
-
     set({ theme: nextTheme });
-    applyThemeToDOM(nextTheme);
-    window.dispatchEvent(
-      new CustomEvent(THEME_CHANGE_EVENT, {
-        detail: { theme: nextTheme },
-      })
-    );
-
-    void get()
-      .service?.saveTheme(nextTheme)
-      .catch((error) => {
-        console.warn("[WP React UI] Could not save theme:", error);
-      });
+    // DOM effects and service call are handled by subscribers added in bootstrapThemeStore.
   },
 }));
 
@@ -74,16 +62,37 @@ export function bootstrapThemeStore(
 ) {
   const initialTheme = getInitialTheme(config.theme);
 
-  themeStore.setState({
-    theme: initialTheme,
-    service,
+  const unsubDom = themeStore.subscribe((state, prev) => {
+    if (state.theme !== prev.theme) {
+      applyThemeToDOM(state.theme);
+      window.dispatchEvent(
+        new CustomEvent(THEME_CHANGE_EVENT, { detail: { theme: state.theme } })
+      );
+    }
   });
+
+  const unsubService = themeStore.subscribe((state, prev) => {
+    if (state.theme !== prev.theme && themeService) {
+      void themeService.saveTheme(state.theme).catch((error) => {
+        console.warn("[WP React UI] Could not save theme:", error);
+      });
+    }
+  });
+
+  // Set initial state while service is still null so subscribers won't save on bootstrap.
+  themeStore.setState({ theme: initialTheme });
+  // Apply DOM explicitly for initial render (subscriber only fires when theme *changes*).
   applyThemeToDOM(initialTheme);
+  // Attach service after initial setState so bootstrap doesn't trigger a saveTheme call.
+  themeService = service;
+
+  return () => {
+    unsubDom();
+    unsubService();
+  };
 }
 
 export function resetThemeStore() {
-  themeStore.setState({
-    theme: "light",
-    service: null,
-  });
+  themeService = null;
+  themeStore.setState({ theme: "light" });
 }

@@ -30,10 +30,11 @@ final class ActivityRouteController {
 	}
 
 	public function index( WP_REST_Request $request ) {
-		$page     = max( 1, (int) $request->get_param( 'page' ) );
-		$per_page = min( 50, max( 1, (int) ( $request->get_param( 'perPage' ) ?: 20 ) ) );
-		$user_id  = $request->get_param( 'userId' ) ? (int) $request->get_param( 'userId' ) : null;
-		$action   = $request->get_param( 'action' ) ? sanitize_text_field( $request->get_param( 'action' ) ) : null;
+		$page           = max( 1, (int) $request->get_param( 'page' ) );
+		$per_page_param = $request->get_param( 'perPage' );
+		$per_page       = min( 50, max( 1, (int) ( null !== $per_page_param ? $per_page_param : 20 ) ) );
+		$user_id        = $request->get_param( 'userId' ) ? (int) $request->get_param( 'userId' ) : null;
+		$action         = $request->get_param( 'action' ) ? sanitize_text_field( $request->get_param( 'action' ) ) : null;
 
 		return rest_ensure_response( $this->service->get_activity_payload( $page, $per_page, $user_id, $action ) );
 	}

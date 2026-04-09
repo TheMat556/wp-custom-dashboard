@@ -1,6 +1,6 @@
 import { notifyApiError } from "../../../store/notificationStore";
 import type { WpReactUiConfig } from "../../../types/wp";
-import type { PersistedShellPreferences } from "../store/shellPreferencesStore";
+import type { PersistedShellPreferences } from "../../../types/shellPreferences";
 import { createPluginRouteApi } from "../../../shared/services/pluginRouteApi";
 
 export interface PreferencesService {

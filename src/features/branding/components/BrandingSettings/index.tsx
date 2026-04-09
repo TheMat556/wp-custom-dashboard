@@ -2,9 +2,9 @@ import { Button, Flex, Grid, Spin, Switch, Typography, theme } from "antd";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useStore } from "zustand";
 import { CUSTOM_PRESET_KEY, THEME_PRESETS } from "../../../../config/themePresets";
-import { useShellConfig } from "../../../../context/ShellConfigContext";
+import { useShellConfig } from "../../../shell/context/ShellConfigContext";
 import PageCanvas from "../../../../shared/ui/PageCanvas";
-import { shellPreferencesStore } from "../../../../store/shellPreferencesStore";
+import { shellPreferencesStore } from "../../../shell/store/shellPreferencesStore";
 import { FONT_PRESETS, type FontPresetKey } from "../../../../utils/fontPresets";
 import { createT } from "../../../../utils/i18n";
 import {
@@ -16,6 +16,7 @@ import {
   isBrandingDraftDirty,
 } from "../../brandingDraft";
 import { brandingStore } from "../../store/brandingStore";
+import { loadBranding, saveBranding } from "../../store/brandingActions";
 import { BrandAssetsSection } from "./BrandAssetsSection";
 import { ColorSettingsSection } from "./ColorSettingsSection";
 import { LinkRulesSection } from "./LinkRulesSection";
@@ -36,8 +37,6 @@ export default function BrandingSettings() {
   const settings = useStore(brandingStore, (state) => state.settings);
   const loading = useStore(brandingStore, (state) => state.loading);
   const saving = useStore(brandingStore, (state) => state.saving);
-  const load = useStore(brandingStore, (state) => state.load);
-  const save = useStore(brandingStore, (state) => state.save);
   const highContrast = useStore(shellPreferencesStore, (state) => state.highContrast);
   const [draft, setDraft] = useState(() => createEmptyBrandingDraft(getThemePreferenceSnapshot()));
   const { token } = theme.useToken();
@@ -63,8 +62,8 @@ export default function BrandingSettings() {
   );
 
   useEffect(() => {
-    void load();
-  }, [load]);
+    void loadBranding();
+  }, []);
 
   useEffect(() => {
     if (!settings) {
@@ -95,9 +94,9 @@ export default function BrandingSettings() {
   );
 
   const handleSave = useCallback(async () => {
-    await save(buildBrandingSaveInput(draft));
+    await saveBranding(buildBrandingSaveInput(draft));
     shellPreferencesStore.getState().setThemePreset(draft.themePreset, draft.customPresetColor);
-  }, [draft, save]);
+  }, [draft]);
 
   if (loading && !settings) {
     return (

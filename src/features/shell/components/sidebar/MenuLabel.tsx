@@ -58,7 +58,7 @@ export function MenuLabel({
             overflowCount={99}
             size="small"
             color={isSubmenu ? token.colorPrimaryBg : getBadgeColor(badgeType, token)}
-            aria-label={`${count} pending`}
+            aria-label={`${label}: ${count} pending`}
             style={{
               color: isSubmenu ? token.colorPrimary : "#fff",
               fontWeight: 600,
@@ -75,9 +75,10 @@ export interface IconWithBadgeProps {
   icon: ReactNode;
   count?: number | null;
   badgeType?: BadgeType;
+  label?: string;
 }
 
-export function IconWithBadge({ icon, count, badgeType = "primary" }: IconWithBadgeProps) {
+export function IconWithBadge({ icon, count, badgeType = "primary", label }: IconWithBadgeProps) {
   const { token } = theme.useToken();
   const hasCount = count != null && count > 0;
 
@@ -87,7 +88,7 @@ export function IconWithBadge({ icon, count, badgeType = "primary" }: IconWithBa
     <Badge
       dot
       offset={[-2, 4]}
-      aria-label="Has notifications"
+      aria-label={label ? `${label}: has notifications` : "Has notifications"}
       style={{
         backgroundColor: getBadgeColor(badgeType, token),
         boxShadow: `0 0 0 2px ${token.colorBgContainer}`,

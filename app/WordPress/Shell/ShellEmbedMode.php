@@ -34,7 +34,7 @@ class WP_React_UI_Shell_Embed_Mode {
 		}
 
 		echo '<style id="wp-react-ui-embed-reset">
-html, body { margin: 0 !important; padding: 0 !important; height: 100% !important; min-height: 100% !important; overflow: auto !important; background: transparent !important; }
+html, body { margin: 0 !important; padding: 0 !important; height: 100% !important; min-height: 100% !important; overflow: auto !important; }
 html.wp-toolbar { padding-top: 0 !important; }
 #wpwrap, #wpbody, #wpcontent, #wpbody-content { height: 100% !important; min-height: 100% !important; }
 #adminmenuback, #adminmenuwrap, #adminmenumain, #wpadminbar, #wpfooter { display: none !important; }

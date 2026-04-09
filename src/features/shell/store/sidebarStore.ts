@@ -79,9 +79,7 @@ const initialSnapshot = getSnapshot(false, false);
 
 export const sidebarStore = createStore<SidebarStoreState>((set, get) => {
   const setSnapshot = (isMobile: boolean, mobileOpen: boolean) => {
-    const snapshot = getSnapshot(isMobile, mobileOpen);
-    applyCssVar(snapshot.sidebarWidth);
-    set(snapshot);
+    set(getSnapshot(isMobile, mobileOpen));
   };
 
   return {
@@ -95,7 +93,6 @@ export const sidebarStore = createStore<SidebarStoreState>((set, get) => {
       }
 
       desktopCollapsed = !desktopCollapsed;
-      persistCollapsed(desktopCollapsed);
       setSnapshot(false, state.mobileOpen);
     },
     syncViewport() {
@@ -149,12 +146,26 @@ export function bootstrapSidebarStore() {
   teardownResizeListener?.();
 
   desktopCollapsed = readPersistedCollapsed();
+
+  // Subscribe to CSS var and localStorage side effects before setting state,
+  // so the initial setState triggers them immediately.
+  const unsubCssVar = sidebarStore.subscribe((state) => {
+    applyCssVar(state.sidebarWidth);
+  });
+
+  const unsubPersist = sidebarStore.subscribe((state, prev) => {
+    if (!state.isMobile && state.collapsed !== prev.collapsed) {
+      persistCollapsed(state.collapsed);
+    }
+  });
+
   sidebarStore.setState(getSnapshot(getViewportIsMobile(), false));
   applyLayoutVars();
-  applyCssVar(sidebarStore.getState().sidebarWidth);
   teardownResizeListener = startResizeListener();
 
   return () => {
+    unsubCssVar();
+    unsubPersist();
     teardownResizeListener?.();
     teardownResizeListener = null;
   };

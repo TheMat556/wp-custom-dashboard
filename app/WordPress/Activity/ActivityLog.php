@@ -59,7 +59,7 @@ class WP_React_UI_Activity_Log {
 
 		$entry = array(
 			'user_id'      => $user->ID,
-			'user_name'    => $user->display_name ?: $user->user_login,
+			'user_name'    => '' !== $user->display_name ? $user->display_name : $user->user_login,
 			'action'       => $action,
 			'object_type'  => $object_type,
 			'object_id'    => $object_id,
@@ -96,7 +96,7 @@ class WP_React_UI_Activity_Log {
 		}
 
 		$action = $update ? 'post_updated' : 'post_created';
-		$title  = $post->post_title ?: '(no title)';
+		$title  = '' !== $post->post_title ? $post->post_title : '(no title)';
 		self::record( $action, 'post', $title, $post_id, "Type: {$post->post_type}, Status: {$post->post_status}" );
 	}
 
@@ -108,7 +108,7 @@ class WP_React_UI_Activity_Log {
 		if ( in_array( $post->post_type, array( 'nav_menu_item', 'revision', 'customize_changeset' ), true ) ) {
 			return;
 		}
-		$title = $post->post_title ?: '(no title)';
+		$title = '' !== $post->post_title ? $post->post_title : '(no title)';
 		self::record( 'post_deleted', 'post', $title, $post_id, "Type: {$post->post_type}" );
 	}
 

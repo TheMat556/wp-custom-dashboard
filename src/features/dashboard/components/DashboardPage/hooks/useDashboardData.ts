@@ -1,7 +1,8 @@
 import { useMemo, useState, useEffect } from "react";
 import { useStore } from "zustand";
-import { useShellConfig } from "../../../../../context/ShellConfigContext";
-import { bootstrapDashboardStore, dashboardStore } from "../../../store/dashboardStore";
+import { useShellConfig } from "../../../../shell/context/ShellConfigContext";
+import { dashboardStore } from "../../../store/dashboardStore";
+import { loadDashboard } from "../../../store/dashboardActions";
 import { createT, localeToIntl } from "../../../../../utils/i18n";
 import { createDashboardViewModel } from "../../../dashboardViewModel";
 
@@ -19,9 +20,8 @@ export function useDashboardData() {
   );
 
   useEffect(() => {
-    bootstrapDashboardStore(config);
-    dashboardStore.getState().load();
-  }, [config]);
+    void loadDashboard();
+  }, []);
 
   const closeChecklist = () => {
     localStorage.setItem(CHECKLIST_CLOSED_KEY, "1");

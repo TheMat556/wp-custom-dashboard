@@ -141,11 +141,12 @@ final class DashboardActionService {
 		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery
 		$old_count = (int) $wpdb->get_var(
 			$wpdb->prepare(
-				"SELECT COUNT(*) FROM {$wpdb->posts}
+				// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+				"SELECT COUNT(*) FROM %i
 				 WHERE post_type = 'page' AND post_status = 'draft'
 				   AND post_modified < %s
 				   AND ID NOT IN ({$placeholders})",
-				array_merge( array( gmdate( 'Y-m-d', strtotime( '-30 days' ) ) ), $exclude_ids )
+				array_merge( array( $wpdb->posts, gmdate( 'Y-m-d', strtotime( '-30 days' ) ) ), $exclude_ids )
 			)
 		);
 

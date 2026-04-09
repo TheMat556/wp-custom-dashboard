@@ -3,21 +3,13 @@ import type { RecentPageRecord } from "../../../utils/commandPalette";
 import type { PreferencesService } from "../services/preferencesApi";
 import type { WpReactUiConfig } from "../../../types/wp";
 import { createPreferencesService } from "../services/preferencesApi";
+import type { PersistedShellPreferences } from "../../../types/shellPreferences";
+
+export type { PersistedShellPreferences } from "../../../types/shellPreferences";
 
 const STORAGE_KEY = "wp-react-ui-shell-preferences";
 const MAX_RECENT_PAGES = 8;
 const SYNC_DEBOUNCE_MS = 500;
-
-export interface PersistedShellPreferences {
-  favorites: string[];
-  recentPages: RecentPageRecord[];
-  density: "comfortable" | "compact";
-  themePreset: string;
-  customPresetColor: string;
-  dashboardWidgetOrder: string[];
-  hiddenWidgets: string[];
-  highContrast: boolean;
-}
 
 function canUseDOM(): boolean {
   return typeof window !== "undefined" && typeof localStorage !== "undefined";
@@ -133,32 +125,16 @@ function getPersistedFields(
 }
 
 let syncTimer: ReturnType<typeof setTimeout> | null = null;
+let preferencesService: PreferencesService | null = null;
+let unsubPersist: (() => void) | null = null;
 
 function scheduleSyncToServer() {
   if (syncTimer) clearTimeout(syncTimer);
   syncTimer = setTimeout(() => {
-    const { service } = shellPreferencesStore.getState();
-    if (!service) return;
+    if (!preferencesService) return;
     const fields = getPersistedFields(shellPreferencesStore.getState());
-    service.savePreferences(fields);
+    preferencesService.savePreferences(fields);
   }, SYNC_DEBOUNCE_MS);
-}
-
-function persistAndSync(
-  state: Pick<
-    ShellPreferencesState,
-    | "favorites"
-    | "recentPages"
-    | "density"
-    | "themePreset"
-    | "customPresetColor"
-    | "dashboardWidgetOrder"
-    | "hiddenWidgets"
-    | "highContrast"
-  >
-) {
-  persistState(getPersistedFields(state));
-  scheduleSyncToServer();
 }
 
 function fallbackTitle(pageUrl: string): string {
@@ -173,7 +149,6 @@ function fallbackTitle(pageUrl: string): string {
 export interface ShellPreferencesState extends PersistedShellPreferences {
   paletteOpen: boolean;
   paletteQuery: string;
-  service: PreferencesService | null;
   openPalette: (query?: string) => void;
   closePalette: () => void;
   setPaletteQuery: (query: string) => void;
@@ -198,7 +173,6 @@ export const shellPreferencesStore = createStore<ShellPreferencesState>((set, ge
   dashboardWidgetOrder: [],
   hiddenWidgets: [],
   highContrast: false,
-  service: null,
 
   openPalette(query = "") {
     set({ paletteOpen: true, paletteQuery: query });
@@ -221,7 +195,6 @@ export const shellPreferencesStore = createStore<ShellPreferencesState>((set, ge
       : [normalizedSlug, ...get().favorites];
 
     set({ favorites });
-    persistAndSync({ ...getPersistedFields(get()), favorites });
   },
 
   recordVisit(pageUrl: string, title: string) {
@@ -238,12 +211,10 @@ export const shellPreferencesStore = createStore<ShellPreferencesState>((set, ge
     ].slice(0, MAX_RECENT_PAGES);
 
     set({ recentPages });
-    persistAndSync({ ...getPersistedFields(get()), recentPages });
   },
 
   setDensity(density) {
     set({ density });
-    persistAndSync({ ...getPersistedFields(get()), density });
   },
 
   setThemePreset(key, customColor) {
@@ -252,12 +223,10 @@ export const shellPreferencesStore = createStore<ShellPreferencesState>((set, ge
       updates.customPresetColor = customColor;
     }
     set(updates);
-    persistAndSync({ ...getPersistedFields(get()), ...updates });
   },
 
   setDashboardWidgetOrder(order) {
     set({ dashboardWidgetOrder: order });
-    persistAndSync({ ...getPersistedFields(get()), dashboardWidgetOrder: order });
   },
 
   toggleWidgetVisibility(widgetKey) {
@@ -265,20 +234,17 @@ export const shellPreferencesStore = createStore<ShellPreferencesState>((set, ge
       ? get().hiddenWidgets.filter((k) => k !== widgetKey)
       : [...get().hiddenWidgets, widgetKey];
     set({ hiddenWidgets });
-    persistAndSync({ ...getPersistedFields(get()), hiddenWidgets });
   },
 
   setHighContrast(enabled) {
     set({ highContrast: enabled });
-    persistAndSync({ ...getPersistedFields(get()), highContrast: enabled });
   },
 
   async syncFromServer() {
-    const { service } = get();
-    if (!service) return;
+    if (!preferencesService) return;
 
     try {
-      const serverPrefs = await service.fetchPreferences();
+      const serverPrefs = await preferencesService.fetchPreferences();
       if (!serverPrefs || Object.keys(serverPrefs).length === 0) return;
 
       // Server wins for conflicts — merge server data over local.
@@ -294,7 +260,7 @@ export const shellPreferencesStore = createStore<ShellPreferencesState>((set, ge
       };
 
       set(merged);
-      persistState(merged);
+      // Subscriber will handle localStorage persistence.
     } catch {
       // Silently fail — local state is still valid.
     }
@@ -306,21 +272,35 @@ export function bootstrapShellPreferencesStore(
 ) {
   const persisted = readPersistedState();
 
-  const service = config ? createPreferencesService(config) : null;
+  // Clean up any previously registered subscriber before re-bootstrapping.
+  unsubPersist?.();
+  preferencesService = config ? createPreferencesService(config) : null;
 
   shellPreferencesStore.setState({
     paletteOpen: false,
     paletteQuery: "",
     ...persisted,
-    service,
+  });
+
+  // Subscriber: write to localStorage and schedule server sync whenever a
+  // persisted field changes. Runs synchronously after every state update.
+  unsubPersist = shellPreferencesStore.subscribe((state, prev) => {
+    const next = getPersistedFields(state);
+    const previous = getPersistedFields(prev);
+    if (JSON.stringify(next) !== JSON.stringify(previous)) {
+      persistState(next);
+      scheduleSyncToServer();
+    }
   });
 
   // Kick off server sync in background (non-blocking).
-  if (service) {
+  if (preferencesService) {
     shellPreferencesStore.getState().syncFromServer();
   }
 
   return () => {
+    unsubPersist?.();
+    unsubPersist = null;
     if (syncTimer) {
       clearTimeout(syncTimer);
       syncTimer = null;
@@ -329,10 +309,13 @@ export function bootstrapShellPreferencesStore(
 }
 
 export function resetShellPreferencesStore() {
+  unsubPersist?.();
+  unsubPersist = null;
   if (syncTimer) {
     clearTimeout(syncTimer);
     syncTimer = null;
   }
+  preferencesService = null;
   shellPreferencesStore.setState({
     paletteOpen: false,
     paletteQuery: "",
@@ -344,6 +327,5 @@ export function resetShellPreferencesStore() {
     dashboardWidgetOrder: [],
     hiddenWidgets: [],
     highContrast: false,
-    service: null,
   });
 }

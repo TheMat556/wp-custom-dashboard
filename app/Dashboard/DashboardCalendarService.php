@@ -46,9 +46,10 @@ final class DashboardCalendarService {
 		$bookings = $wpdb->get_results(
 			$wpdb->prepare(
 				"SELECT id, calendar_id, customer_name, start_datetime, end_datetime, status
-				 FROM {$table}
+				 FROM %i
 				 WHERE start_datetime >= %s AND start_datetime <= %s AND status != 'cancelled'
 				 ORDER BY start_datetime ASC LIMIT 50",
+				$table,
 				$start_of_today,
 				$in_7days
 			),

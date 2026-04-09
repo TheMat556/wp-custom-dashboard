@@ -306,7 +306,7 @@ final class DashboardStatusService {
 			);
 
 			foreach ( $short_pages as $page ) {
-				$title    = $page->post_title ?: '(untitled)';
+				$title    = '' !== $page->post_title ? $page->post_title : '(untitled)';
 				$issues[] = array(
 					'label'   => '"' . $title . '" has a very short title',
 					'url'     => 'post.php?post=' . $page->ID . '&action=edit',

@@ -146,10 +146,12 @@ final class DashboardMetricsService {
 		if ( $theme_updates && ! empty( $theme_updates->response ) ) {
 			foreach ( $theme_updates->response as $slug => $data ) {
 				$theme         = wp_get_theme( $slug );
+				$theme_name    = $theme->get( 'Name' );
+				$theme_version = $theme->get( 'Version' );
 				$themes_list[] = array(
 					'slug'           => $slug,
-					'name'           => $theme->get( 'Name' ) ?: $slug,
-					'currentVersion' => $theme->get( 'Version' ) ?: '?',
+					'name'           => '' !== $theme_name ? $theme_name : $slug,
+					'currentVersion' => '' !== $theme_version ? $theme_version : '?',
 					'newVersion'     => $data['new_version'] ?? '?',
 					'url'            => $data['url'] ?? '',
 				);
@@ -234,23 +236,31 @@ final class DashboardMetricsService {
 		}
 
 		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching
-		$columns = $wpdb->get_col( "SHOW COLUMNS FROM `{$table}`" );
+		$columns = $wpdb->get_col(
+			$wpdb->prepare( 'SHOW COLUMNS FROM %i', $table )
+		);
 		$column  = in_array( 'location', $columns, true ) ? 'location' : 'country';
 		$since   = gmdate( 'Y-m-d', strtotime( '-30 days' ) );
 
 		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery
 		$rows = $wpdb->get_results(
 			$wpdb->prepare(
-				"SELECT `{$column}` AS country, COUNT(*) AS visits
-				 FROM `{$table}`
+				'SELECT %i AS country, COUNT(*) AS visits
+				 FROM %i
 				 WHERE last_counter >= %s
-				   AND `{$column}` != ''
-				   AND `{$column}` != 'xx'
-				   AND `{$column}` != '--'
-				 GROUP BY `{$column}`
+				   AND %i != \'\'
+				   AND %i != \'xx\'
+				   AND %i != \'--\'
+				 GROUP BY %i
 				 ORDER BY visits DESC
-				 LIMIT 10",
-				$since
+				 LIMIT 10',
+				$column,
+				$table,
+				$since,
+				$column,
+				$column,
+				$column,
+				$column
 			),
 			ARRAY_A
 		);
@@ -366,10 +376,11 @@ final class DashboardMetricsService {
 	public function get_pages_overview(): array {
 		$map = static function ( \WP_Post $page ): array {
 			$days_old = (int) ceil( ( time() - strtotime( $page->post_modified_gmt ) ) / DAY_IN_SECONDS );
+			$title    = '' !== $page->post_title ? $page->post_title : '(untitled)';
 
 			return array(
 				'id'       => $page->ID,
-				'title'    => $page->post_title ?: '(untitled)',
+				'title'    => $title,
 				'modified' => human_time_diff( strtotime( $page->post_modified_gmt ) ) . ' ago',
 				'daysOld'  => $days_old,
 				'editUrl'  => admin_url( 'post.php?post=' . $page->ID . '&action=edit' ),

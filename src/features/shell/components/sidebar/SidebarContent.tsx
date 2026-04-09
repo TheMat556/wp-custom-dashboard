@@ -1,10 +1,11 @@
-import { Flex, Menu } from "antd";
-import { memo, useCallback, useMemo } from "react";
+import { memo, useCallback } from "react";
+import { useStore } from "zustand";
 import type { MenuItem } from "../../../../types/menu";
-import { cancelPrefetch, startPrefetch } from "../../../../utils/prefetch";
+import { menuCountsStore } from "../../../navigation/store/menuCountsStore";
 import BottomActions from "./BottomActions";
 import { Logo } from "./Logo";
-import { transformMenuItems } from "./menuTransform";
+import { NavTree } from "./NavTree";
+import { useNavModel } from "./useNavModel";
 
 export const SidebarContent = memo(function SidebarContent({
   collapsed,
@@ -33,38 +34,29 @@ export const SidebarContent = memo(function SidebarContent({
   onClose?: () => void;
   adminUrl?: string;
 }) {
-  const transformedItems = useMemo(
-    () => transformMenuItems(menuItems, collapsed, onParentClick),
-    [menuItems, collapsed, onParentClick]
-  );
+  const counts = useStore(menuCountsStore, (state) => state.counts);
+  const previousCounts = useStore(menuCountsStore, (state) => state.previousCounts);
+  const sections = useNavModel(menuItems, activeKey, counts, collapsed, previousCounts);
 
-  // Prefetch: find menu key from hovered DOM element.
-  const handleMouseOver = useCallback(
-    (e: React.MouseEvent) => {
-      if (!adminUrl) return;
-      const menuItem = (e.target as HTMLElement).closest<HTMLElement>("[data-menu-id]");
-      if (!menuItem) return;
-      const rawId = menuItem.dataset.menuId ?? "";
-      // Ant Menu uses data-menu-id with format "rc-menu-uuid-N-slug"
-      const parts = rawId.split("-");
-      const slug = parts[parts.length - 1];
-      if (slug) startPrefetch(slug, adminUrl);
+  const handleToggle = useCallback(
+    (slug: string) => {
+      if (collapsed && onParentClick) {
+        onParentClick(slug);
+        return;
+      }
+      const isOpen = openKeys.includes(slug);
+      onOpenChange(isOpen ? openKeys.filter((k) => k !== slug) : [slug]);
     },
-    [adminUrl]
+    [collapsed, onParentClick, openKeys, onOpenChange],
   );
-
-  const handleMouseLeave = useCallback(() => {
-    cancelPrefetch();
-  }, []);
 
   return (
-    <Flex
-      vertical
-      role="navigation"
-      aria-label="Admin menu"
+    <div
       className="wp-react-ui-sidebar-shell"
       style={{
         height: "100%",
+        display: "flex",
+        flexDirection: "column",
         backgroundColor: "var(--shell-chrome-bg)",
       }}
     >
@@ -75,30 +67,20 @@ export const SidebarContent = memo(function SidebarContent({
         style={{
           flex: 1,
           minHeight: 0,
+          overflow: "auto",
         }}
-        onMouseOver={handleMouseOver}
-        onMouseLeave={handleMouseLeave}
       >
-        <Menu
-          className="wp-react-ui-sidebar-menu"
-          mode="inline"
-          selectedKeys={activeKey ? [activeKey] : []}
-          openKeys={collapsed ? [] : openKeys}
-          onOpenChange={onOpenChange}
-          onClick={({ key }) => onMenuClick(key)}
-          items={transformedItems}
-          inlineCollapsed={collapsed}
-          style={{
-            height: "100%",
-            borderRight: 0,
-            overflow: "auto",
-            padding: collapsed ? "12px 8px" : "16px 10px",
-            background: "transparent",
-          }}
+        <NavTree
+          sections={sections}
+          collapsed={collapsed}
+          openKeys={openKeys}
+          adminUrl={adminUrl}
+          onNavigate={onMenuClick}
+          onToggle={handleToggle}
         />
       </div>
 
       <BottomActions collapsed={collapsed} loading={loading} onRefresh={onRefresh} />
-    </Flex>
+    </div>
   );
 });

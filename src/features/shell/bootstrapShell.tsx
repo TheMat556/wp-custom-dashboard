@@ -7,10 +7,18 @@ import { resetNotificationStore } from "../../store/notificationStore";
 import type { WpReactUiConfig } from "../../types/wp";
 import { getFontFamilyForPreset } from "../../utils/fontPresets";
 import {
+  bootstrapActivityStore,
+  resetActivityStore,
+} from "../activity/store/activityStore";
+import {
   bootstrapBrandingStore,
   brandingStore,
   resetBrandingStore,
 } from "../branding/store/brandingStore";
+import {
+  bootstrapDashboardStore,
+  resetDashboardStore,
+} from "../dashboard/store/dashboardStore";
 import {
   bootstrapMenuCountsStore,
   resetMenuCountsStore,
@@ -131,8 +139,10 @@ function ShellRoot({ host, config }: { host: HTMLElement; config: Readonly<WpRea
 
 export function bootstrapShell(host: HTMLElement, config: Readonly<WpReactUiConfig>) {
   bootstrapMenuStore(config);
-  bootstrapThemeStore(config);
+  const teardownTheme = bootstrapThemeStore(config);
   bootstrapBrandingStore(config);
+  bootstrapActivityStore(config);
+  bootstrapDashboardStore(config);
   const teardownPreferences = bootstrapShellPreferencesStore(config);
   const teardownSession = bootstrapSessionStore(config);
   const teardownMenuCounts = bootstrapMenuCountsStore(config);
@@ -165,6 +175,7 @@ export function bootstrapShell(host: HTMLElement, config: Readonly<WpReactUiConf
 
   return () => {
     teardownRecentPages();
+    teardownTheme();
     teardownNavigation();
     teardownSidebar();
     teardownPreferences();
@@ -178,6 +189,8 @@ export function bootstrapShell(host: HTMLElement, config: Readonly<WpReactUiConf
     resetNavigationStore();
     resetNotificationStore();
     resetBrandingStore();
+    resetActivityStore();
+    resetDashboardStore();
     resetShellPreferencesStore();
     resetSessionStore();
     resetMenuCountsStore();

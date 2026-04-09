@@ -7,108 +7,15 @@
  * The parent shell (React) stays alive across all navigations.
  */
 
-import { Flex, Spin, Typography } from "antd";
-import { lazy, Suspense, useEffect, useMemo, useRef } from "react";
-import { useStore } from "zustand";
-import type { WpReactUiShellRoute } from "../../../../types/wp";
-import { navigationStore } from "../../../navigation/store/navigationStore";
-import { useShellConfig } from "../../context/ShellConfigContext";
-
-const BrandingSettings = lazy(() => import("../../../branding/components/BrandingSettings"));
-const DashboardPage = lazy(() => import("../../../dashboard/components/DashboardPage"));
-
-const { Text } = Typography;
-
-const SHELL_ROUTES: Record<string, React.ComponentType> = {
-  "wp-react-ui-branding": BrandingSettings,
-};
-
-// Cache for dynamically imported plugin components.
-const dynamicComponentCache = new Map<string, React.LazyExoticComponent<React.ComponentType>>();
-
-function getDynamicComponent(
-  route: WpReactUiShellRoute
-): React.LazyExoticComponent<React.ComponentType> {
-  let cached = dynamicComponentCache.get(route.slug);
-  if (!cached) {
-    cached = lazy(() =>
-      import(/* @vite-ignore */ route.entrypoint_url).catch(() => ({
-        default: () => (
-          <Flex align="center" justify="center" style={{ height: "100%", padding: 40 }}>
-            <Text type="danger">Failed to load plugin page: {route.label}</Text>
-          </Flex>
-        ),
-      }))
-    );
-    dynamicComponentCache.set(route.slug, cached);
-  }
-  return cached;
-}
-
-function getShellRoute(
-  pageUrl: string,
-  pluginRoutes: WpReactUiShellRoute[]
-): React.ComponentType | null {
-  try {
-    const url = new URL(pageUrl);
-
-    // Check page param routes first (built-in).
-    const page = url.searchParams.get("page");
-    if (page && page in SHELL_ROUTES) {
-      return SHELL_ROUTES[page];
-    }
-
-    // Check plugin-registered routes.
-    if (page) {
-      const pluginRoute = pluginRoutes.find((r) => r.slug === page);
-      if (pluginRoute) {
-        return getDynamicComponent(pluginRoute);
-      }
-    }
-
-    // Check pathname-based routes (e.g., index.php = dashboard).
-    const pathname = url.pathname;
-    if (
-      pathname.endsWith("/index.php") ||
-      pathname.endsWith("/wp-admin/") ||
-      pathname.endsWith("/wp-admin")
-    ) {
-      return DashboardPage;
-    }
-  } catch {
-    // not a valid URL
-  }
-  return null;
-}
+import { Spin } from "antd";
+import { Suspense } from "react";
+import { useContentFrameController } from "./useContentFrameController";
 
 export default function ContentFrame() {
-  const config = useShellConfig();
-  const iframeRef = useRef<HTMLIFrameElement>(null);
-  const iframeUrl = useStore(navigationStore, (s) => s.iframeUrl);
-  const pageUrl = useStore(navigationStore, (s) => s.pageUrl);
-  const isLoading = useStore(navigationStore, (s) => s.status === "loading");
-  const handleIframeLoad = useStore(navigationStore, (s) => s.handleIframeLoad);
-  const handleIframeMessage = useStore(navigationStore, (s) => s.handleIframeMessage);
+  const ctrl = useContentFrameController();
 
-  const pluginRoutes = useMemo(() => config.shellRoutes ?? [], [config.shellRoutes]);
-
-  // Listen for postMessage from the iframe (title changes, breakout requests).
-  useEffect(() => {
-    const onMessage = (e: MessageEvent) => handleIframeMessage(e);
-    window.addEventListener("message", onMessage);
-    return () => window.removeEventListener("message", onMessage);
-  }, [handleIframeMessage]);
-
-  const ShellPage = getShellRoute(pageUrl, pluginRoutes);
-
-  // Mark the shell-managed page as ready so the loading spinner clears
-  useEffect(() => {
-    if (ShellPage && isLoading) {
-      navigationStore.setState({ status: "ready", pendingNavigationSource: null });
-    }
-  }, [ShellPage, isLoading]);
-
-  if (ShellPage) {
+  if (ctrl.ShellPage) {
+    const ShellPage = ctrl.ShellPage;
     return (
       <div
         id="wp-react-ui-content"
@@ -134,16 +41,13 @@ export default function ContentFrame() {
       tabIndex={-1}
       className="wp-react-ui-shell-content-slot wp-react-ui-shell-content-slot--embed"
     >
-      {isLoading && <div className="wp-react-ui-content-loading-bar" aria-hidden="true" />}
+      {ctrl.isLoading && <div className="wp-react-ui-content-loading-bar" aria-hidden="true" />}
       <iframe
-        ref={iframeRef}
-        src={iframeUrl}
+        ref={ctrl.iframeRef}
+        src={ctrl.iframeUrl}
         title="WordPress Admin Content"
         style={{ width: "100%", height: "100%", border: "none", display: "block" }}
-        onLoad={() => {
-          const win = iframeRef.current?.contentWindow;
-          if (win) handleIframeLoad(win);
-        }}
+        onLoad={ctrl.onIframeLoad}
       />
     </div>
   );

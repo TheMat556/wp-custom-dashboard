@@ -1,7 +1,8 @@
 import { useMemo } from "react";
 import { useStore } from "zustand";
-import { useShellConfig } from "../../../context/ShellConfigContext";
+import { useShellConfig } from "../../shell/context/ShellConfigContext";
 import { menuStore } from "../store/menuStore";
+import { refreshMenu } from "../store/menuActions";
 import type { MenuItem, SubMenuItem } from "../../../types/menu";
 import { createT } from "../../../utils/i18n";
 
@@ -25,7 +26,6 @@ export function useMenu() {
   const config = useShellConfig();
   const rawMenuItems = useStore(menuStore, (state) => state.items);
   const loading = useStore(menuStore, (state) => state.loading);
-  const refresh = useStore(menuStore, (state) => state.refresh);
   const brandAssetsLabel = useMemo(
     () => createT(config.locale ?? "en_US")("Brand Assets"),
     [config.locale]
@@ -38,6 +38,6 @@ export function useMenu() {
   return {
     menuItems,
     loading,
-    refresh,
+    refresh: refreshMenu,
   };
 }
