@@ -19,7 +19,7 @@ export function StatTile({ icon, label, value, sub, color, tooltip, onClick }: S
         </div>
         {tooltip ? (
           <Tooltip title={tooltip} overlayStyle={{ maxWidth: 240 }}>
-            <span className="wp-react-ui-metric-tile__hint" aria-label={tooltip}>
+            <span className="wp-react-ui-metric-tile__hint" aria-hidden="true">
               <QuestionCircleOutlined style={{ fontSize: 13, color: token.colorTextTertiary }} />
             </span>
           </Tooltip>

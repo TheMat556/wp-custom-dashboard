@@ -11,8 +11,8 @@ import {
 } from "@ant-design/icons";
 import { Breadcrumb, Button, Dropdown, Tooltip, Typography, theme } from "antd";
 import { lazy, Suspense, useMemo } from "react";
-import { useNavbarController } from "./useNavbarController";
 import { CommandPaletteTrigger } from "./CommandPalette";
+import { useNavbarController } from "./useNavbarController";
 
 const { Text } = Typography;
 const UserDropdown = lazy(() => import("./UserDropdown"));
@@ -31,7 +31,12 @@ export default function Navbar() {
   const getPopupContainer = () => ctrl.containerRef.current || document.body;
 
   const overflowMenuItems = useMemo(() => {
-    const items: { key: string; label: React.ReactNode; icon: React.ReactNode; onClick: () => void }[] = [];
+    const items: {
+      key: string;
+      label: React.ReactNode;
+      icon: React.ReactNode;
+      onClick: () => void;
+    }[] = [];
     if (!ctrl.showExport) {
       items.push({
         key: "export",
@@ -57,7 +62,15 @@ export default function Navbar() {
       });
     }
     return items;
-  }, [ctrl.showExport, ctrl.showHistory, ctrl.showTheme, ctrl.isDark, ctrl.publicUrl, ctrl.openActivity, ctrl.toggleTheme]);
+  }, [
+    ctrl.showExport,
+    ctrl.showHistory,
+    ctrl.showTheme,
+    ctrl.isDark,
+    ctrl.publicUrl,
+    ctrl.openActivity,
+    ctrl.toggleTheme,
+  ]);
 
   const breadcrumbItems = useMemo(() => {
     const items: { title: React.ReactNode }[] = [
@@ -255,18 +268,10 @@ export default function Navbar() {
           icon={getToggleIcon()}
           onClick={ctrl.toggleSidebar}
           title={
-            ctrl.isMobile
-              ? "Open menu"
-              : ctrl.collapsed
-                ? "Expand sidebar"
-                : "Collapse sidebar"
+            ctrl.isMobile ? "Open menu" : ctrl.collapsed ? "Expand sidebar" : "Collapse sidebar"
           }
           aria-label={
-            ctrl.isMobile
-              ? "Open menu"
-              : ctrl.collapsed
-                ? "Expand sidebar"
-                : "Collapse sidebar"
+            ctrl.isMobile ? "Open menu" : ctrl.collapsed ? "Expand sidebar" : "Collapse sidebar"
           }
           style={{
             width: "var(--shell-navbar-height, 64px)",
@@ -352,6 +357,7 @@ export default function Navbar() {
                     justifyContent: "center",
                     lineHeight: 1,
                   }}
+                  // biome-ignore lint/security/noDangerouslySetInnerHtml: trusted WordPress admin bar HTML from server
                   dangerouslySetInnerHTML={{ __html: ctrl.mirroredAdminBarAction.html }}
                 />
               }
@@ -446,7 +452,11 @@ export default function Navbar() {
         )}
 
         <Suspense fallback={null}>
-          <UserDropdown isDark={ctrl.isDark} getContainer={getPopupContainer} compact={ctrl.isMobile} />
+          <UserDropdown
+            isDark={ctrl.isDark}
+            getContainer={getPopupContainer}
+            compact={ctrl.isMobile}
+          />
         </Suspense>
       </div>
 

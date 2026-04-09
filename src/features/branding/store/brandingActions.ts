@@ -1,5 +1,9 @@
-import { createBrandingService, type BrandingSaveInput, type BrandingService } from "../services/brandingApi";
 import { notificationStore } from "../../../store/notificationStore";
+import {
+  type BrandingSaveInput,
+  type BrandingService,
+  createBrandingService,
+} from "../services/brandingApi";
 import { brandingStore } from "./brandingStore";
 
 let _service: BrandingService | null = null;

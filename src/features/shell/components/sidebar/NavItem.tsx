@@ -96,7 +96,13 @@ export const NavItem = memo(function NavItem({
   );
 
   return (
-    <li className={item.children.length > 0 ? "wp-react-ui-nav-item wp-react-ui-nav-item--group" : "wp-react-ui-nav-item"}>
+    <li
+      className={
+        item.children.length > 0
+          ? "wp-react-ui-nav-item wp-react-ui-nav-item--group"
+          : "wp-react-ui-nav-item"
+      }
+    >
       {collapsed ? (
         <Tooltip placement="right" title={item.label}>
           {button}
@@ -106,9 +112,7 @@ export const NavItem = memo(function NavItem({
       )}
 
       {hasChildren && !collapsed && expanded ? (
-        <div
-          className="wp-react-ui-nav-item__children wp-react-ui-nav-item__children--open"
-        >
+        <div className="wp-react-ui-nav-item__children wp-react-ui-nav-item__children--open">
           <div className="wp-react-ui-nav-item__children-inner">
             <ul id={childListId} className="wp-react-ui-nav-sublist">
               {item.children.map((child) => (

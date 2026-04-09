@@ -1,6 +1,6 @@
+import { createPluginRouteApi } from "../../../shared/services/pluginRouteApi";
 import { notifyApiError } from "../../../store/notificationStore";
 import type { WpReactUiConfig } from "../../../types/wp";
-import { createPluginRouteApi } from "../../../shared/services/pluginRouteApi";
 
 export interface ActivityEntry {
   user_id: number;

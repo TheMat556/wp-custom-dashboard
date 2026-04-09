@@ -1,8 +1,8 @@
 import { createStore } from "zustand/vanilla";
-import type { MenuService } from "../services/menuApi";
 import type { MenuItem } from "../../../types/menu";
 import type { WpReactUiConfig } from "../../../types/wp";
-import { initMenuService, clearMenuService } from "./menuActions";
+import type { MenuService } from "../services/menuApi";
+import { clearMenuService, initMenuService } from "./menuActions";
 
 export interface MenuStoreState {
   items: MenuItem[];

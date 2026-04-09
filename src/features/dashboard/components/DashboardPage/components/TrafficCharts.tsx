@@ -7,8 +7,8 @@ import {
   BarChart,
   CartesianGrid,
   Cell,
-  ResponsiveContainer,
   Tooltip as RechartsTooltip,
+  ResponsiveContainer,
   XAxis,
   YAxis,
 } from "recharts";
@@ -50,11 +50,7 @@ export function TrafficCharts({ trend, countries, t, intlLocale, isMd }: Traffic
       }}
     >
       {/* Page Views */}
-      <Section
-        icon={<LineChartOutlined />}
-        title={t("Page Views")}
-        description={t("Last 30 days")}
-      >
+      <Section icon={<LineChartOutlined />} title={t("Page Views")} description={t("Last 30 days")}>
         {trend.some((d) => d.views > 0) ? (
           <ResponsiveContainer width="100%" height={170}>
             <AreaChart data={trend}>
@@ -128,8 +124,8 @@ export function TrafficCharts({ trend, countries, t, intlLocale, isMd }: Traffic
                 formatter={(v) => [`${v}`, t("Visits")] as [string, string]}
               />
               <Bar dataKey="visits" radius={[0, 4, 4, 0]}>
-                {countries.slice(0, 7).map((_, i) => (
-                  <Cell key={i} fill={chartColors[i % chartColors.length]} />
+                {countries.slice(0, 7).map((entry, i) => (
+                  <Cell key={entry.country} fill={chartColors[i % chartColors.length]} />
                 ))}
               </Bar>
             </BarChart>

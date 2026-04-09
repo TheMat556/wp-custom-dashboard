@@ -1,4 +1,22 @@
-import type { ActionItem, AtAGlanceData, BusinessFunctions, CalendarBooking, CalendarPreview, CoreUpdateItem, CountryStatEntry, LegalCompliance, OnboardingItem, PendingUpdates, SeoBasics, SeoOverview, SiteHealthData, SiteSpeedData, UpdateItem, VisitorTrendData, WeekDay } from "../../services/dashboardApi";
+import type {
+  ActionItem,
+  AtAGlanceData,
+  BusinessFunctions,
+  CalendarBooking,
+  CalendarPreview,
+  CoreUpdateItem,
+  CountryStatEntry,
+  LegalCompliance,
+  OnboardingItem,
+  PendingUpdates,
+  SeoBasics,
+  SeoOverview,
+  SiteHealthData,
+  SiteSpeedData,
+  UpdateItem,
+  VisitorTrendData,
+  WeekDay,
+} from "../../services/dashboardApi";
 
 export type TFunc = (key: string, vars?: Record<string, string | number>) => string;
 
@@ -133,4 +151,22 @@ export interface SiteStatusOverviewProps {
   adminUrl: string;
 }
 
-export type { ActionItem, AtAGlanceData, BusinessFunctions, CalendarBooking, CalendarPreview, CoreUpdateItem, CountryStatEntry, LegalCompliance, OnboardingItem, PendingUpdates, SeoBasics, SeoOverview, SiteHealthData, SiteSpeedData, UpdateItem, VisitorTrendData, WeekDay };
+export type {
+  ActionItem,
+  AtAGlanceData,
+  BusinessFunctions,
+  CalendarBooking,
+  CalendarPreview,
+  CoreUpdateItem,
+  CountryStatEntry,
+  LegalCompliance,
+  OnboardingItem,
+  PendingUpdates,
+  SeoBasics,
+  SeoOverview,
+  SiteHealthData,
+  SiteSpeedData,
+  UpdateItem,
+  VisitorTrendData,
+  WeekDay,
+};

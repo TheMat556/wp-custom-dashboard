@@ -32,9 +32,7 @@ function injectPrefetchLink(url: string): void {
 export function startPrefetch(slug: string, adminUrl: string): void {
   cancelPrefetch();
   hoverTimer = setTimeout(() => {
-    const fullUrl = slug.startsWith("http")
-      ? slug
-      : `${adminUrl.replace(/\/$/, "")}/${slug}`;
+    const fullUrl = slug.startsWith("http") ? slug : `${adminUrl.replace(/\/$/, "")}/${slug}`;
     const embedUrl = toEmbedUrl(fullUrl);
     injectPrefetchLink(embedUrl);
   }, PREFETCH_DELAY_MS);

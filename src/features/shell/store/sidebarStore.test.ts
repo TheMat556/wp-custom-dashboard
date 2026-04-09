@@ -1,10 +1,6 @@
-import { describe, it, expect, beforeEach, afterEach } from "vitest";
-import {
-  sidebarStore,
-  bootstrapSidebarStore,
-  resetSidebarStore,
-} from "./sidebarStore";
+import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { getBootConfig } from "../../../config/bootConfig";
+import { bootstrapSidebarStore, resetSidebarStore, sidebarStore } from "./sidebarStore";
 
 const cfg = getBootConfig();
 const SIDEBAR_FULL = cfg.layout.sidebarWidths.expanded;

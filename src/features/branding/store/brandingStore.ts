@@ -1,6 +1,6 @@
 import { createStore } from "zustand/vanilla";
 import type { BrandingData } from "../services/brandingApi";
-import { initBrandingService, clearBrandingService } from "./brandingActions";
+import { clearBrandingService, initBrandingService } from "./brandingActions";
 
 export interface BrandingStoreState {
   settings: BrandingData | null;

@@ -51,9 +51,7 @@ describe("shellPreferencesStore", () => {
     shellPreferencesStore
       .getState()
       .recordVisit("http://localhost/wp-admin/plugins.php", "Plugins");
-    shellPreferencesStore
-      .getState()
-      .recordVisit("http://localhost/wp-admin/themes.php", "Themes");
+    shellPreferencesStore.getState().recordVisit("http://localhost/wp-admin/themes.php", "Themes");
     shellPreferencesStore
       .getState()
       .recordVisit("http://localhost/wp-admin/plugins.php", "Plugins");

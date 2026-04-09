@@ -1,5 +1,5 @@
-import { describe, it, expect, vi, beforeEach } from "vitest";
 import { renderHook } from "@testing-library/react";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 import { getShellRoute, useContentFrameController } from "./useContentFrameController";
 
 vi.mock("../../context/ShellConfigContext", () => ({
@@ -19,8 +19,12 @@ vi.mock("zustand", async (importOriginal) => {
     useStore: (_store: unknown, selector: (s: unknown) => unknown) =>
       selector({
         iframeUrl: "http://localhost/wp-admin/edit.php?wp_shell_embed=1",
-        get pageUrl() { return mockPageUrl; },
-        get status() { return mockStatus; },
+        get pageUrl() {
+          return mockPageUrl;
+        },
+        get status() {
+          return mockStatus;
+        },
         handleIframeLoad: mockHandleIframeLoad,
         handleIframeMessage: mockHandleIframeMessage,
       }),
@@ -39,7 +43,9 @@ describe("getShellRoute", () => {
   });
 
   it("returns BrandingSettings for ?page=wp-react-ui-branding", () => {
-    expect(getShellRoute("http://localhost/wp-admin/?page=wp-react-ui-branding", [])).not.toBeNull();
+    expect(
+      getShellRoute("http://localhost/wp-admin/?page=wp-react-ui-branding", [])
+    ).not.toBeNull();
   });
 
   it("returns null for an ordinary admin page URL", () => {
@@ -52,7 +58,9 @@ describe("getShellRoute", () => {
 
   it("returns a lazy component for a registered plugin route", () => {
     const route = { slug: "my-plugin", label: "My Plugin", entrypoint_url: "/my-plugin.js" };
-    expect(getShellRoute("http://localhost/wp-admin/?page=my-plugin", [route as any])).not.toBeNull();
+    expect(
+      getShellRoute("http://localhost/wp-admin/?page=my-plugin", [route as any])
+    ).not.toBeNull();
   });
 });
 
@@ -100,7 +108,6 @@ describe("useContentFrameController", () => {
   it("returns an iframeRef object", () => {
     const { result } = renderHook(() => useContentFrameController());
     expect(result.current.iframeRef).toBeDefined();
-    expect(Object.prototype.hasOwnProperty.call(result.current.iframeRef, "current")).toBe(true);
+    expect(Object.hasOwn(result.current.iframeRef, "current")).toBe(true);
   });
 });
-

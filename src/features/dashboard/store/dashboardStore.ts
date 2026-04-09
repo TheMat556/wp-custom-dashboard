@@ -1,7 +1,7 @@
 import { createStore } from "zustand/vanilla";
-import type { DashboardData } from "../services/dashboardApi";
-import { initDashboardService, clearDashboardService } from "./dashboardActions";
 import type { WpReactUiConfig } from "../../../types/wp";
+import type { DashboardData } from "../services/dashboardApi";
+import { clearDashboardService, initDashboardService } from "./dashboardActions";
 
 export interface DashboardState {
   data: DashboardData | null;
@@ -13,9 +13,7 @@ export const dashboardStore = createStore<DashboardState>(() => ({
   loading: false,
 }));
 
-export function bootstrapDashboardStore(
-  config: Pick<WpReactUiConfig, "restUrl" | "nonce">
-) {
+export function bootstrapDashboardStore(config: Pick<WpReactUiConfig, "restUrl" | "nonce">) {
   initDashboardService(config);
   dashboardStore.setState({ data: null, loading: false });
 }

@@ -35,21 +35,13 @@ export function SessionExpiredModal() {
   }, []);
 
   return (
-    <Modal
-      open={expired}
-      closable={false}
-      maskClosable={false}
-      footer={null}
-      centered
-      width={440}
-    >
+    <Modal open={expired} closable={false} maskClosable={false} footer={null} centered width={440}>
       <Flex vertical gap={16} align="center" style={{ padding: "16px 0 8px" }}>
         <Title level={4} style={{ margin: 0 }}>
           Session Expired
         </Title>
         <Text type="secondary" style={{ textAlign: "center" }}>
-          Your WordPress session has expired. Please log in again to continue
-          working.
+          Your WordPress session has expired. Please log in again to continue working.
         </Text>
         <Flex gap={12}>
           <Button type="primary" size="large" onClick={handleLogin}>

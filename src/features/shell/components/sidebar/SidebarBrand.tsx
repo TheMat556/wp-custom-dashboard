@@ -37,7 +37,11 @@ export function SidebarBrand({
 
   return (
     <div
-      className={collapsed ? "wp-react-ui-sidebar-brand wp-react-ui-sidebar-brand--collapsed" : "wp-react-ui-sidebar-brand"}
+      className={
+        collapsed
+          ? "wp-react-ui-sidebar-brand wp-react-ui-sidebar-brand--collapsed"
+          : "wp-react-ui-sidebar-brand"
+      }
     >
       <div
         className={

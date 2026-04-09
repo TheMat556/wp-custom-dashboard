@@ -1,5 +1,5 @@
-import { Component, type ErrorInfo, type ReactNode } from "react";
 import { theme } from "antd";
+import { Component, type ErrorInfo, type ReactNode } from "react";
 
 interface Props {
   name: string;

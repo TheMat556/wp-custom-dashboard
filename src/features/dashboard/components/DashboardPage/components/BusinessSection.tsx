@@ -123,10 +123,7 @@ export function BusinessSection({ biz, adminUrl }: BusinessSectionProps) {
             <Button
               size="small"
               onClick={() =>
-                navigate(
-                  "plugin-install.php?s=wp+mail+smtp&tab=search&type=term",
-                  adminUrl,
-                )
+                navigate("plugin-install.php?s=wp+mail+smtp&tab=search&type=term", adminUrl)
               }
             >
               Install free

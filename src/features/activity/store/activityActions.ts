@@ -1,12 +1,14 @@
-import { createActivityService, type ActivityFilters, type ActivityService } from "../services/activityApi";
 import type { WpReactUiConfig } from "../../../types/wp";
+import {
+  type ActivityFilters,
+  type ActivityService,
+  createActivityService,
+} from "../services/activityApi";
 import { activityStore } from "./activityStore";
 
 let _service: ActivityService | null = null;
 
-export function initActivityService(
-  config: Pick<WpReactUiConfig, "restUrl" | "nonce">,
-) {
+export function initActivityService(config: Pick<WpReactUiConfig, "restUrl" | "nonce">) {
   _service = createActivityService(config);
 }
 

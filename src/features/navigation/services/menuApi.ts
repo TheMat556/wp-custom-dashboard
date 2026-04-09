@@ -1,7 +1,7 @@
+import { createPluginRouteApi } from "../../../shared/services/pluginRouteApi";
 import { notifyApiError } from "../../../store/notificationStore";
 import type { MenuItem } from "../../../types/menu";
 import type { WpReactUiConfig } from "../../../types/wp";
-import { createPluginRouteApi } from "../../../shared/services/pluginRouteApi";
 
 export interface MenuService {
   fetchMenu(): Promise<MenuItem[]>;

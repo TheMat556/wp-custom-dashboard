@@ -1,17 +1,17 @@
 import { useEffect, useMemo } from "react";
 import { useStore } from "zustand";
-import { useShellConfig } from "../context/ShellConfigContext";
-import { useTheme } from "../context/ThemeContext";
-import { useMenu } from "../../navigation/hooks/useMenu";
-import { navigationStore } from "../../navigation/store/navigationStore";
-import { shellPreferencesStore } from "../store/shellPreferencesStore";
+import { buildNativeShellCommandDescriptors } from "../../../utils/commandPalette";
 import {
   hasNativeCommandPalette,
+  type NativeCommand,
   registerNativeCommand,
   unregisterNativeCommand,
-  type NativeCommand,
 } from "../../../utils/nativeCommandPalette";
-import { buildNativeShellCommandDescriptors } from "../../../utils/commandPalette";
+import { useMenu } from "../../navigation/hooks/useMenu";
+import { navigationStore } from "../../navigation/store/navigationStore";
+import { useShellConfig } from "../context/ShellConfigContext";
+import { useTheme } from "../context/ThemeContext";
+import { shellPreferencesStore } from "../store/shellPreferencesStore";
 
 export function NativeCommandPaletteEnhancer() {
   const { adminUrl } = useShellConfig();

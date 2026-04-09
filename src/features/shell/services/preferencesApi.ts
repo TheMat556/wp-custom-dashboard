@@ -1,7 +1,7 @@
-import { notifyApiError } from "../../../store/notificationStore";
-import type { WpReactUiConfig } from "../../../types/wp";
-import type { PersistedShellPreferences } from "../../../types/shellPreferences";
 import { createPluginRouteApi } from "../../../shared/services/pluginRouteApi";
+import { notifyApiError } from "../../../store/notificationStore";
+import type { PersistedShellPreferences } from "../../../types/shellPreferences";
+import type { WpReactUiConfig } from "../../../types/wp";
 
 export interface PreferencesService {
   fetchPreferences(): Promise<Partial<PersistedShellPreferences>>;

@@ -1,12 +1,10 @@
-import { createDashboardService, type DashboardService } from "../services/dashboardApi";
 import type { WpReactUiConfig } from "../../../types/wp";
+import { createDashboardService, type DashboardService } from "../services/dashboardApi";
 import { dashboardStore } from "./dashboardStore";
 
 let _service: DashboardService | null = null;
 
-export function initDashboardService(
-  config: Pick<WpReactUiConfig, "restUrl" | "nonce">,
-) {
+export function initDashboardService(config: Pick<WpReactUiConfig, "restUrl" | "nonce">) {
   _service = createDashboardService(config);
 }
 

@@ -35,9 +35,9 @@ export function UpdatesSection({ updates, t, adminUrl, isMd }: UpdatesSectionPro
           gap: 8,
         }}
       >
-        {updates.coreList?.map((u: CoreUpdateItem, i: number) => (
+        {updates.coreList?.map((u: CoreUpdateItem) => (
           <Flex
-            key={i}
+            key={`${u.currentVersion}-${u.newVersion}`}
             align="center"
             justify="space-between"
             gap={8}
@@ -58,9 +58,9 @@ export function UpdatesSection({ updates, t, adminUrl, isMd }: UpdatesSectionPro
             </Button>
           </Flex>
         ))}
-        {updates.pluginList?.map((p: UpdateItem, i: number) => (
+        {updates.pluginList?.map((p: UpdateItem) => (
           <Flex
-            key={i}
+            key={p.slug}
             align="center"
             justify="space-between"
             gap={8}
@@ -96,9 +96,9 @@ export function UpdatesSection({ updates, t, adminUrl, isMd }: UpdatesSectionPro
             </Button>
           </Flex>
         ))}
-        {updates.themeList?.map((th: UpdateItem, i: number) => (
+        {updates.themeList?.map((th: UpdateItem) => (
           <Flex
-            key={i}
+            key={th.slug}
             align="center"
             justify="space-between"
             gap={8}

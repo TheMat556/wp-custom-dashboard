@@ -86,7 +86,11 @@ function resolveSectionId(item: MenuItem, index: number): NavSectionId {
   return "publishing";
 }
 
-function getItemCount(slug: string, fallbackCount: number | null | undefined, counts: Record<string, number>) {
+function getItemCount(
+  slug: string,
+  fallbackCount: number | null | undefined,
+  counts: Record<string, number>
+) {
   return counts[slug] ?? fallbackCount ?? null;
 }
 
@@ -141,9 +145,7 @@ export function buildNavModel(
       buildChildNavItem(child, activeKey, counts, previousCounts, collapsed)
     );
     const summedChildCount =
-      children.length > 0
-        ? children.reduce((total, child) => total + (child.count ?? 0), 0)
-        : null;
+      children.length > 0 ? children.reduce((total, child) => total + (child.count ?? 0), 0) : null;
     const count = getItemCount(item.slug, item.count ?? summedChildCount, counts);
     const previousCount = previousCounts[item.slug] ?? item.count ?? summedChildCount ?? null;
     const isActive = item.slug === activeKey;

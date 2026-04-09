@@ -1,9 +1,9 @@
 import { createStore } from "zustand/vanilla";
+import type { PersistedShellPreferences } from "../../../types/shellPreferences";
+import type { WpReactUiConfig } from "../../../types/wp";
 import type { RecentPageRecord } from "../../../utils/commandPalette";
 import type { PreferencesService } from "../services/preferencesApi";
-import type { WpReactUiConfig } from "../../../types/wp";
 import { createPreferencesService } from "../services/preferencesApi";
-import type { PersistedShellPreferences } from "../../../types/shellPreferences";
 
 export type { PersistedShellPreferences } from "../../../types/shellPreferences";
 
@@ -68,19 +68,13 @@ function readPersistedState(): PersistedShellPreferences {
           ? parsed.customPresetColor
           : defaults.customPresetColor,
       dashboardWidgetOrder: Array.isArray(parsed.dashboardWidgetOrder)
-        ? parsed.dashboardWidgetOrder.filter(
-            (v): v is string => typeof v === "string"
-          )
+        ? parsed.dashboardWidgetOrder.filter((v): v is string => typeof v === "string")
         : defaults.dashboardWidgetOrder,
       hiddenWidgets: Array.isArray(parsed.hiddenWidgets)
-        ? parsed.hiddenWidgets.filter(
-            (v): v is string => typeof v === "string"
-          )
+        ? parsed.hiddenWidgets.filter((v): v is string => typeof v === "string")
         : defaults.hiddenWidgets,
       highContrast:
-        typeof parsed.highContrast === "boolean"
-          ? parsed.highContrast
-          : defaults.highContrast,
+        typeof parsed.highContrast === "boolean" ? parsed.highContrast : defaults.highContrast,
     };
   } catch {
     return getDefaultPersistedState();

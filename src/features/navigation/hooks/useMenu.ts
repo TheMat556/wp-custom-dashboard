@@ -1,10 +1,10 @@
 import { useMemo } from "react";
 import { useStore } from "zustand";
-import { useShellConfig } from "../../shell/context/ShellConfigContext";
-import { menuStore } from "../store/menuStore";
-import { refreshMenu } from "../store/menuActions";
 import type { MenuItem, SubMenuItem } from "../../../types/menu";
 import { createT } from "../../../utils/i18n";
+import { useShellConfig } from "../../shell/context/ShellConfigContext";
+import { refreshMenu } from "../store/menuActions";
+import { menuStore } from "../store/menuStore";
 
 export type { MenuItem, SubMenuItem } from "../../../types/menu";
 

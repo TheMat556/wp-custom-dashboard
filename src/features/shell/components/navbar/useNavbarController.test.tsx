@@ -6,7 +6,10 @@ import { useNavbarController } from "./useNavbarController";
 // ── Module mocks ──────────────────────────────────────────────────────────────
 
 vi.mock("../../context/ShellConfigContext", () => ({
-  useShellConfig: () => ({ adminUrl: "http://localhost/wp-admin/", publicUrl: "http://localhost/" }),
+  useShellConfig: () => ({
+    adminUrl: "http://localhost/wp-admin/",
+    publicUrl: "http://localhost/",
+  }),
 }));
 
 vi.mock("../../context/ThemeContext", () => ({
@@ -92,7 +95,7 @@ describe("useNavbarController", () => {
         }
         observe = _observe;
         disconnect = _disconnect;
-      },
+      }
     );
   });
 
@@ -124,12 +127,18 @@ describe("useNavbarController", () => {
 
     it("updates showExport/showHistory when the ResizeObserver fires a narrow width", () => {
       let latestCtrl!: NavbarController;
-      render(<NavbarHarness onCtrl={(c) => { latestCtrl = c; }} />);
+      render(
+        <NavbarHarness
+          onCtrl={(c) => {
+            latestCtrl = c;
+          }}
+        />
+      );
 
       act(() => {
         capturedResizeCallback!(
           [{ contentRect: { width: 400 } } as ResizeObserverEntry],
-          null as unknown as ResizeObserver,
+          null as unknown as ResizeObserver
         );
       });
 
@@ -160,25 +169,28 @@ describe("useNavbarController", () => {
       [600, false, false, true, true],
       [580, false, false, true, false],
       [400, false, false, false, false],
-    ])(
-      "containerWidth=%i → showExport=%s showHistory=%s showTheme=%s showSearchFull=%s",
-      (width, expExport, expHistory, expTheme, expSearchFull) => {
-        let latestCtrl!: NavbarController;
-        render(<NavbarHarness onCtrl={(c) => { latestCtrl = c; }} />);
+    ])("containerWidth=%i → showExport=%s showHistory=%s showTheme=%s showSearchFull=%s", (width, expExport, expHistory, expTheme, expSearchFull) => {
+      let latestCtrl!: NavbarController;
+      render(
+        <NavbarHarness
+          onCtrl={(c) => {
+            latestCtrl = c;
+          }}
+        />
+      );
 
-        act(() => {
-          capturedResizeCallback!(
-            [{ contentRect: { width } } as ResizeObserverEntry],
-            null as unknown as ResizeObserver,
-          );
-        });
+      act(() => {
+        capturedResizeCallback!(
+          [{ contentRect: { width } } as ResizeObserverEntry],
+          null as unknown as ResizeObserver
+        );
+      });
 
-        expect(latestCtrl.showExport).toBe(expExport);
-        expect(latestCtrl.showHistory).toBe(expHistory);
-        expect(latestCtrl.showTheme).toBe(expTheme);
-        expect(latestCtrl.showSearchFull).toBe(expSearchFull);
-      },
-    );
+      expect(latestCtrl.showExport).toBe(expExport);
+      expect(latestCtrl.showHistory).toBe(expHistory);
+      expect(latestCtrl.showTheme).toBe(expTheme);
+      expect(latestCtrl.showSearchFull).toBe(expSearchFull);
+    });
   });
 
   // ── adminBar sync / retry loop ───────────────────────────────────────────
@@ -197,7 +209,9 @@ describe("useNavbarController", () => {
       renderHook(() => useNavbarController());
       const callsAfterMount = mockReadAdminBarAction.mock.calls.length;
 
-      act(() => { vi.advanceTimersByTime(250); });
+      act(() => {
+        vi.advanceTimersByTime(250);
+      });
 
       expect(mockReadAdminBarAction.mock.calls.length).toBeGreaterThan(callsAfterMount);
     });
@@ -214,7 +228,9 @@ describe("useNavbarController", () => {
       renderHook(() => useNavbarController());
       const callsAfterMount = mockReadAdminBarAction.mock.calls.length;
 
-      act(() => { vi.advanceTimersByTime(1000); });
+      act(() => {
+        vi.advanceTimersByTime(1000);
+      });
 
       // No additional attempts after a successful sync
       expect(mockReadAdminBarAction.mock.calls.length).toBe(callsAfterMount);
@@ -228,7 +244,9 @@ describe("useNavbarController", () => {
       const callsBeforeUnmount = mockReadAdminBarAction.mock.calls.length;
 
       unmount(); // sets cancelled = true in the effect closure
-      act(() => { vi.advanceTimersByTime(2000); }); // advance past all 8 × 250 ms retry slots
+      act(() => {
+        vi.advanceTimersByTime(2000);
+      }); // advance past all 8 × 250 ms retry slots
 
       // The cancelled flag must prevent all further readAdminBarAction calls
       expect(mockReadAdminBarAction.mock.calls.length).toBe(callsBeforeUnmount);
@@ -240,22 +258,32 @@ describe("useNavbarController", () => {
   describe("activity panel", () => {
     it("openActivity sets activityOpen=true and activityEverOpened=true", () => {
       const { result } = renderHook(() => useNavbarController());
-      act(() => { result.current.openActivity(); });
+      act(() => {
+        result.current.openActivity();
+      });
       expect(result.current.activityOpen).toBe(true);
       expect(result.current.activityEverOpened).toBe(true);
     });
 
     it("closeActivity sets activityOpen=false", () => {
       const { result } = renderHook(() => useNavbarController());
-      act(() => { result.current.openActivity(); });
-      act(() => { result.current.closeActivity(); });
+      act(() => {
+        result.current.openActivity();
+      });
+      act(() => {
+        result.current.closeActivity();
+      });
       expect(result.current.activityOpen).toBe(false);
     });
 
     it("activityEverOpened remains true after closeActivity", () => {
       const { result } = renderHook(() => useNavbarController());
-      act(() => { result.current.openActivity(); });
-      act(() => { result.current.closeActivity(); });
+      act(() => {
+        result.current.openActivity();
+      });
+      act(() => {
+        result.current.closeActivity();
+      });
       expect(result.current.activityEverOpened).toBe(true);
     });
   });

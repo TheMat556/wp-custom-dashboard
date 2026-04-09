@@ -6,19 +6,13 @@ import { CUSTOM_PRESET_KEY, THEME_PRESETS } from "../../config/themePresets";
 import { resetNotificationStore } from "../../store/notificationStore";
 import type { WpReactUiConfig } from "../../types/wp";
 import { getFontFamilyForPreset } from "../../utils/fontPresets";
-import {
-  bootstrapActivityStore,
-  resetActivityStore,
-} from "../activity/store/activityStore";
+import { bootstrapActivityStore, resetActivityStore } from "../activity/store/activityStore";
 import {
   bootstrapBrandingStore,
   brandingStore,
   resetBrandingStore,
 } from "../branding/store/brandingStore";
-import {
-  bootstrapDashboardStore,
-  resetDashboardStore,
-} from "../dashboard/store/dashboardStore";
+import { bootstrapDashboardStore, resetDashboardStore } from "../dashboard/store/dashboardStore";
 import {
   bootstrapMenuCountsStore,
   resetMenuCountsStore,

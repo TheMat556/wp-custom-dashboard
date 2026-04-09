@@ -1,15 +1,15 @@
+import type { WpReactUiConfig } from "../../../../types/wp";
+import type { DashboardViewModel } from "../../dashboardViewModel";
+import { ActionCenter } from "./components/ActionCenter";
+import { FirstStepsChecklist } from "./components/FirstStepsChecklist";
 import { HeroBanner } from "./components/HeroBanner";
 import { OfflineAlert } from "./components/OfflineAlert";
+import { SiteStatusOverview } from "./components/SiteStatusOverview";
 import { SummaryTiles } from "./components/SummaryTiles";
-import { FirstStepsChecklist } from "./components/FirstStepsChecklist";
 import { TrafficCharts } from "./components/TrafficCharts";
 import { UpcomingBookings } from "./components/UpcomingBookings";
-import { ActionCenter } from "./components/ActionCenter";
 import { UpdatesSection } from "./components/UpdatesSection";
-import { SiteStatusOverview } from "./components/SiteStatusOverview";
 import type { TFunc } from "./types";
-import type { DashboardViewModel } from "../../dashboardViewModel";
-import type { WpReactUiConfig } from "../../../../types/wp";
 
 interface DashboardContentProps {
   config: WpReactUiConfig;

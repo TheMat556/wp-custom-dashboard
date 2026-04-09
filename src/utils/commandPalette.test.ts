@@ -1,13 +1,13 @@
 import { describe, expect, it } from "vitest";
+import type { MenuItem } from "../types/menu";
 import {
-  buildNativeShellCommandDescriptors,
   buildMenuPaletteItems,
+  buildNativeShellCommandDescriptors,
   buildRecentPaletteItems,
   dedupePaletteItems,
-  searchPaletteItems,
   type RecentPageRecord,
+  searchPaletteItems,
 } from "./commandPalette";
-import type { MenuItem } from "../types/menu";
 
 const menuItems: MenuItem[] = [
   {
@@ -32,9 +32,7 @@ describe("commandPalette utilities", () => {
 
     expect(items.map((item) => item.label)).toEqual(["Dashboard", "Settings", "Brand Assets"]);
     expect(items[2]?.subtitle).toBe("Settings");
-    expect(items[2]?.url).toBe(
-      "http://localhost/wp-admin/admin.php?page=wp-react-ui-branding"
-    );
+    expect(items[2]?.url).toBe("http://localhost/wp-admin/admin.php?page=wp-react-ui-branding");
   });
 
   it("maps recent pages back to matching menu items when possible", () => {

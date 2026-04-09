@@ -2,11 +2,11 @@ import { Button, Flex, Grid, Spin, Switch, Typography, theme } from "antd";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useStore } from "zustand";
 import { CUSTOM_PRESET_KEY, THEME_PRESETS } from "../../../../config/themePresets";
-import { useShellConfig } from "../../../shell/context/ShellConfigContext";
 import PageCanvas from "../../../../shared/ui/PageCanvas";
-import { shellPreferencesStore } from "../../../shell/store/shellPreferencesStore";
 import { FONT_PRESETS, type FontPresetKey } from "../../../../utils/fontPresets";
 import { createT } from "../../../../utils/i18n";
+import { useShellConfig } from "../../../shell/context/ShellConfigContext";
+import { shellPreferencesStore } from "../../../shell/store/shellPreferencesStore";
 import {
   applyBrandingSettingsToDraft,
   type BrandingDraft,
@@ -15,8 +15,8 @@ import {
   DEFAULT_PRIMARY_COLOR,
   isBrandingDraftDirty,
 } from "../../brandingDraft";
-import { brandingStore } from "../../store/brandingStore";
 import { loadBranding, saveBranding } from "../../store/brandingActions";
+import { brandingStore } from "../../store/brandingStore";
 import { BrandAssetsSection } from "./BrandAssetsSection";
 import { ColorSettingsSection } from "./ColorSettingsSection";
 import { LinkRulesSection } from "./LinkRulesSection";

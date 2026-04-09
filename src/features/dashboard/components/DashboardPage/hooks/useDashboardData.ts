@@ -1,10 +1,10 @@
-import { useMemo, useState, useEffect } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useStore } from "zustand";
-import { useShellConfig } from "../../../../shell/context/ShellConfigContext";
-import { dashboardStore } from "../../../store/dashboardStore";
-import { loadDashboard } from "../../../store/dashboardActions";
 import { createT, localeToIntl } from "../../../../../utils/i18n";
+import { useShellConfig } from "../../../../shell/context/ShellConfigContext";
 import { createDashboardViewModel } from "../../../dashboardViewModel";
+import { loadDashboard } from "../../../store/dashboardActions";
+import { dashboardStore } from "../../../store/dashboardStore";
 
 const CHECKLIST_CLOSED_KEY = "wp-react-ui-checklist-closed";
 
@@ -16,7 +16,7 @@ export function useDashboardData() {
   const t = useMemo(() => createT(config.locale ?? "en_US"), [config.locale]);
 
   const [checklistClosed, setChecklistClosed] = useState(
-    () => localStorage.getItem(CHECKLIST_CLOSED_KEY) === "1",
+    () => localStorage.getItem(CHECKLIST_CLOSED_KEY) === "1"
   );
 
   useEffect(() => {

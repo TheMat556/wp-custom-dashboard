@@ -1,7 +1,7 @@
 import { createStore } from "zustand/vanilla";
 import { getBootConfig } from "../../../config/bootConfig";
-import { createThemeService, type ThemeService } from "../services/themeApi";
 import type { WpReactUiConfig } from "../../../types/wp";
+import { createThemeService, type ThemeService } from "../services/themeApi";
 
 export type Theme = "light" | "dark";
 
@@ -65,9 +65,7 @@ export function bootstrapThemeStore(
   const unsubDom = themeStore.subscribe((state, prev) => {
     if (state.theme !== prev.theme) {
       applyThemeToDOM(state.theme);
-      window.dispatchEvent(
-        new CustomEvent(THEME_CHANGE_EVENT, { detail: { theme: state.theme } })
-      );
+      window.dispatchEvent(new CustomEvent(THEME_CHANGE_EVENT, { detail: { theme: state.theme } }));
     }
   });
 

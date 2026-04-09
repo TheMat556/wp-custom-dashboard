@@ -1,8 +1,8 @@
-import { PLUGIN_ROUTE_PATHS } from "../../../generated/contracts/routes";
 import type { ActivityQuery, BrandingRequest } from "../../../generated/contracts/dto";
+import { PLUGIN_ROUTE_PATHS } from "../../../generated/contracts/routes";
 import type { PersistedShellPreferences } from "../../../types/shellPreferences";
-import { createPluginRestClient } from "../client/pluginRestClient";
 import type { PluginRestConfig } from "../client/pluginRestClient";
+import { createPluginRestClient } from "../client/pluginRestClient";
 
 export type { PluginRestConfig } from "../client/pluginRestClient";
 export type BrandingSavePayload = BrandingRequest;

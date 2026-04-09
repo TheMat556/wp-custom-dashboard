@@ -1,9 +1,9 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import { createPluginRestClient } from "../shared/services/pluginRestClient";
 import { resetNotificationStore } from "../store/notificationStore";
 import { createActivityService } from "./activityApi";
 import { createBrandingService } from "./brandingApi";
 import { createPreferencesService } from "./preferencesApi";
-import { createPluginRestClient } from "../shared/services/pluginRestClient";
 
 const TEST_CONFIG = {
   restUrl: "http://localhost/wp-json/wp-react-ui/v1",
@@ -117,16 +117,13 @@ describe("plugin REST transport", () => {
       openInNewTabPatterns: ["plugins.php"],
     });
 
-    expect(fetchMock).toHaveBeenCalledWith(
-      "http://localhost/wp-json/wp-react-ui/v1/branding",
-      {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "X-WP-Nonce": "test-nonce",
-        },
-        body: JSON.stringify(payload),
-      }
-    );
+    expect(fetchMock).toHaveBeenCalledWith("http://localhost/wp-json/wp-react-ui/v1/branding", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "X-WP-Nonce": "test-nonce",
+      },
+      body: JSON.stringify(payload),
+    });
   });
 });

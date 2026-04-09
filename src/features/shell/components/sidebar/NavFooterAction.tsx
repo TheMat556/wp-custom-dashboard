@@ -31,7 +31,13 @@ export function NavFooterAction({
 
   return (
     <div className="wp-react-ui-nav-footer">
-      {collapsed ? <Tooltip placement="right" title="Refresh menu">{action}</Tooltip> : action}
+      {collapsed ? (
+        <Tooltip placement="right" title="Refresh menu">
+          {action}
+        </Tooltip>
+      ) : (
+        action
+      )}
     </div>
   );
 }

@@ -1,8 +1,8 @@
 import { EditOutlined, LogoutOutlined } from "@ant-design/icons";
 import { Avatar, Dropdown, Flex, type MenuProps, Typography, theme } from "antd";
 import { useMemo } from "react";
-import { useShellConfig } from "../../context/ShellConfigContext";
 import { getAdminBaseUrl, navigate } from "../../../../utils/wp";
+import { useShellConfig } from "../../context/ShellConfigContext";
 
 const { Text } = Typography;
 
@@ -149,7 +149,16 @@ export default function UserDropdown({
             >
               {displayUser.name}
             </Text>
-            <Text style={{ fontSize: 11, color: token.colorTextSecondary, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", display: "block" }}>
+            <Text
+              style={{
+                fontSize: 11,
+                color: token.colorTextSecondary,
+                overflow: "hidden",
+                textOverflow: "ellipsis",
+                whiteSpace: "nowrap",
+                display: "block",
+              }}
+            >
               {displayUser.role}
             </Text>
           </div>

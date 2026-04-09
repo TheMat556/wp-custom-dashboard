@@ -11,9 +11,9 @@ function setAdminLocation(url: string) {
 
 describe("normalizeOpenInNewTabPatterns", () => {
   it("deduplicates and trims patterns", () => {
-    expect(normalizeOpenInNewTabPatterns([" bricks=run ", "BRICKS=RUN", "", "builder=bricks"])).toEqual(
-      ["bricks=run", "builder=bricks"]
-    );
+    expect(
+      normalizeOpenInNewTabPatterns([" bricks=run ", "BRICKS=RUN", "", "builder=bricks"])
+    ).toEqual(["bricks=run", "builder=bricks"]);
   });
 
   it("returns an empty list for invalid input", () => {
@@ -32,9 +32,9 @@ describe("matchesOpenInNewTabPattern", () => {
   });
 
   it("returns false for non-matching URLs", () => {
-    expect(matchesOpenInNewTabPattern("http://localhost/wp-admin/plugins.php", ["builder=bricks"])).toBe(
-      false
-    );
+    expect(
+      matchesOpenInNewTabPattern("http://localhost/wp-admin/plugins.php", ["builder=bricks"])
+    ).toBe(false);
   });
 });
 

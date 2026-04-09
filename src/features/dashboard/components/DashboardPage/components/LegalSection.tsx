@@ -22,7 +22,8 @@ export function LegalSection({ legal, adminUrl }: LegalSectionProps) {
       url: legal.impressum.editUrl ?? "post-new.php?post_type=page",
     },
   ];
-  const allOk = rows.every((r) => r.item.exists && r.item.published) && !legal.trackingWithoutConsent;
+  const allOk =
+    rows.every((r) => r.item.exists && r.item.published) && !legal.trackingWithoutConsent;
 
   return (
     <Section

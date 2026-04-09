@@ -49,7 +49,10 @@ export function ActionCenter({
         </Flex>
       ) : (
         <>
-          <Typography.Text type="secondary" style={{ fontSize: 12, display: "block", marginBottom: 14 }}>
+          <Typography.Text
+            type="secondary"
+            style={{ fontSize: 12, display: "block", marginBottom: 14 }}
+          >
             {criticalActions.length > 0
               ? t("Start with the red items first — everything else can wait.")
               : t("A few things to review. Start with the orange items.")}
@@ -61,9 +64,7 @@ export function ActionCenter({
               showIcon
               message={
                 <Typography.Text style={{ fontSize: 12 }}>
-                  {t(
-                    "Make a backup before applying updates — most hosts offer this in one click.",
-                  )}
+                  {t("Make a backup before applying updates — most hosts offer this in one click.")}
                 </Typography.Text>
               }
               style={{ marginBottom: 14, borderRadius: token.borderRadius }}
@@ -87,7 +88,7 @@ export function ActionCenter({
                 </Typography.Text>
               </Flex>
               {criticalActions.map((item, i) => (
-                <ActionRow key={i} item={item} adminUrl={adminUrl} />
+                <ActionRow key={item.label} item={item} adminUrl={adminUrl} />
               ))}
             </div>
           )}
@@ -109,7 +110,7 @@ export function ActionCenter({
                 </Typography.Text>
               </Flex>
               {warningActions.map((item, i) => (
-                <ActionRow key={i} item={item} adminUrl={adminUrl} />
+                <ActionRow key={item.label} item={item} adminUrl={adminUrl} />
               ))}
             </div>
           )}
@@ -129,13 +130,13 @@ export function ActionCenter({
                           infoActions.length === 1
                             ? "{n} low-priority item"
                             : "{n} low-priority items",
-                          { n: infoActions.length },
+                          { n: infoActions.length }
                         )}
                       </Typography.Text>
                     </Flex>
                   ),
                   children: infoActions.map((item, i) => (
-                    <ActionRow key={i} item={item} adminUrl={adminUrl} />
+                    <ActionRow key={item.label} item={item} adminUrl={adminUrl} />
                   )),
                 },
               ]}

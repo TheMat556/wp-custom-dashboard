@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { buildNavModel } from "./useNavModel";
 import type { MenuItem } from "../../../../types/menu";
+import { buildNavModel } from "./useNavModel";
 
 const menuItems: MenuItem[] = [
   { label: "Dashboard", slug: "index.php", icon: "dashicons-dashboard" },
@@ -18,7 +18,12 @@ describe("buildNavModel", () => {
   it("groups items into stable editorial shell sections", () => {
     const model = buildNavModel(menuItems, "edit.php", {}, false, {});
 
-    expect(model.map((section) => section.id)).toEqual(["overview", "publishing", "operations", "system"]);
+    expect(model.map((section) => section.id)).toEqual([
+      "overview",
+      "publishing",
+      "operations",
+      "system",
+    ]);
     expect(model[0]?.items[0]?.slug).toBe("index.php");
     expect(model[1]?.items[0]?.slug).toBe("edit.php");
     expect(model[2]?.items[0]?.slug).toBe("admin.php?page=bookings");

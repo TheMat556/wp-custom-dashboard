@@ -1,9 +1,6 @@
 import { createStore } from "zustand/vanilla";
-import {
-  type MenuCountsService,
-  createMenuCountsService,
-} from "../services/menuCountsApi";
 import type { WpReactUiConfig } from "../../../types/wp";
+import { createMenuCountsService, type MenuCountsService } from "../services/menuCountsApi";
 
 const POLL_INTERVAL_MS = 60_000; // 60 seconds
 
@@ -55,9 +52,7 @@ function stopPolling() {
   }
 }
 
-export function bootstrapMenuCountsStore(
-  config: Pick<WpReactUiConfig, "restUrl" | "nonce">
-) {
+export function bootstrapMenuCountsStore(config: Pick<WpReactUiConfig, "restUrl" | "nonce">) {
   menuCountsService = createMenuCountsService(config);
   menuCountsStore.setState({ counts: {}, previousCounts: {} });
 

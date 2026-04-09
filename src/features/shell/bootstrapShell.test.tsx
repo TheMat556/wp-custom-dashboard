@@ -4,10 +4,10 @@
  * We test the teardown function returned by bootstrapShell to ensure
  * it properly cleans up stores and unmounts the React root.
  */
-import { describe, it, expect, vi, beforeEach } from "vitest";
-import { themeStore } from "./store/themeStore";
-import { sidebarStore } from "./store/sidebarStore";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 import { menuStore } from "../navigation/store/menuStore";
+import { sidebarStore } from "./store/sidebarStore";
+import { themeStore } from "./store/themeStore";
 
 // Mock createRoot to avoid actual React rendering
 vi.mock("react-dom/client", () => ({

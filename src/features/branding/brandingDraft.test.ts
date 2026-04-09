@@ -1,12 +1,12 @@
 import { describe, expect, it } from "vitest";
-import type { BrandingData } from "./services/brandingApi";
 import {
-  DEFAULT_PRIMARY_COLOR,
   applyBrandingSettingsToDraft,
   buildBrandingSaveInput,
   createEmptyBrandingDraft,
+  DEFAULT_PRIMARY_COLOR,
   isBrandingDraftDirty,
 } from "./brandingDraft";
+import type { BrandingData } from "./services/brandingApi";
 
 describe("brandingDraft", () => {
   it("preserves theme preferences when applying fetched branding settings", () => {

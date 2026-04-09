@@ -1,38 +1,30 @@
+import { HistoryOutlined, SearchOutlined, StarFilled, StarOutlined } from "@ant-design/icons";
+import { Button, Drawer, Empty, Flex, Input, type InputRef, Modal, Typography, theme } from "antd";
 import {
-  HistoryOutlined,
-  SearchOutlined,
-  StarFilled,
-  StarOutlined,
-} from "@ant-design/icons";
-import {
-  Button,
-  Drawer,
-  Empty,
-  Flex,
-  Input,
-  type InputRef,
-  Modal,
-  Typography,
-  theme,
-} from "antd";
-import { startTransition, type FormEvent, useDeferredValue, useEffect, useMemo, useRef } from "react";
+  type FormEvent,
+  startTransition,
+  useDeferredValue,
+  useEffect,
+  useMemo,
+  useRef,
+} from "react";
 import { useStore } from "zustand";
-import { useShellConfig } from "../../context/ShellConfigContext";
-import { useSidebar } from "../../context/SidebarContext";
-import { navigationStore } from "../../../navigation/store/navigationStore";
-import { shellPreferencesStore } from "../../store/shellPreferencesStore";
 import {
   buildMenuPaletteItems,
   buildRecentPaletteItems,
   dedupePaletteItems,
-  searchPaletteItems,
   type PaletteItem,
+  searchPaletteItems,
 } from "../../../../utils/commandPalette";
 import {
   hasNativeCommandPalette,
   openNativeCommandPalette,
 } from "../../../../utils/nativeCommandPalette";
 import { useMenu } from "../../../navigation/hooks/useMenu";
+import { navigationStore } from "../../../navigation/store/navigationStore";
+import { useShellConfig } from "../../context/ShellConfigContext";
+import { useSidebar } from "../../context/SidebarContext";
+import { shellPreferencesStore } from "../../store/shellPreferencesStore";
 
 const { Text, Title } = Typography;
 
@@ -76,6 +68,7 @@ function PaletteSection({
           const isFavorite = !!item.slug && favorites.includes(item.slug);
 
           return (
+            // biome-ignore lint/a11y/useSemanticElements: contains nested Ant Design Button, cannot use <button>
             <div
               key={item.id}
               role="button"
@@ -105,7 +98,8 @@ function PaletteSection({
                   width: 32,
                   height: 32,
                   borderRadius: 10,
-                  background: item.source === "recent" ? token.colorFillSecondary : `${token.colorPrimary}12`,
+                  background:
+                    item.source === "recent" ? token.colorFillSecondary : `${token.colorPrimary}12`,
                   color: item.source === "recent" ? token.colorTextSecondary : token.colorPrimary,
                   display: "inline-flex",
                   alignItems: "center",
@@ -208,8 +202,10 @@ function PaletteBody() {
   );
   const searchResults = useMemo(
     () =>
-      searchPaletteItems(dedupePaletteItems([...recentPaletteItems, ...menuPaletteItems]), deferredQuery)
-        .slice(0, 16),
+      searchPaletteItems(
+        dedupePaletteItems([...recentPaletteItems, ...menuPaletteItems]),
+        deferredQuery
+      ).slice(0, 16),
     [recentPaletteItems, menuPaletteItems, deferredQuery]
   );
 
@@ -239,7 +235,7 @@ function PaletteBody() {
     event.preventDefault();
     const firstItem = hasQuery
       ? searchResults[0]
-      : favoriteItems[0] ?? recentPaletteItems[0] ?? suggestedItems[0];
+      : (favoriteItems[0] ?? recentPaletteItems[0] ?? suggestedItems[0]);
 
     if (firstItem) {
       handleSelect(firstItem);
@@ -305,10 +301,7 @@ function PaletteBody() {
                 onToggleFavorite={toggleFavorite}
               />
             ) : (
-              <Empty
-                image={Empty.PRESENTED_IMAGE_SIMPLE}
-                description="No matching pages found."
-              />
+              <Empty image={Empty.PRESENTED_IMAGE_SIMPLE} description="No matching pages found." />
             )
           ) : (
             <>
@@ -415,6 +408,7 @@ export function CommandPaletteTrigger({ compact: forceCompact = false }: { compa
           }}
         />
       ) : (
+        // biome-ignore lint/a11y/useSemanticElements: wraps Input component, cannot use <button> (nested interactive elements)
         <div
           onClick={handleOpen}
           onKeyDown={(event) => {

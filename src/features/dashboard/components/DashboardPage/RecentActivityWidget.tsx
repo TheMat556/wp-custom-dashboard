@@ -1,7 +1,7 @@
 import { EditOutlined } from "@ant-design/icons";
 import { Button, Card, Flex, List, Tag, Typography, theme } from "antd";
-import { useShellConfig } from "../../../shell/context/ShellConfigContext";
 import { navigate } from "../../../../utils/wp";
+import { useShellConfig } from "../../../shell/context/ShellConfigContext";
 
 interface RecentPostData {
   id: number;

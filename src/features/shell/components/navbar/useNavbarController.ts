@@ -5,8 +5,8 @@ import {
   triggerAdminBarAction,
   triggerAdminBarActionIn,
 } from "../../../../utils/adminBar";
-import { navigate, navigateHome } from "../../../../utils/wp";
 import { useActiveKey } from "../../../../utils/spaNavigate";
+import { navigate, navigateHome } from "../../../../utils/wp";
 import { useMenu } from "../../../navigation/hooks/useMenu";
 import { navigationStore } from "../../../navigation/store/navigationStore";
 import { useShellConfig } from "../../context/ShellConfigContext";

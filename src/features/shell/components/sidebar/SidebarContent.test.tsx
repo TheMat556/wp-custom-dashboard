@@ -1,8 +1,8 @@
 import { render, screen } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
+import type { MenuItem } from "../../../../types/menu";
 import { menuCountsStore } from "../../../navigation/store/menuCountsStore";
 import { SidebarContent } from "./SidebarContent";
-import type { MenuItem } from "../../../../types/menu";
 
 vi.mock("./Logo", () => ({
   Logo: () => <div data-testid="sidebar-logo" />,
@@ -67,21 +67,17 @@ describe("SidebarContent", () => {
     expect(
       screen.queryByRole("button", {
         name: "Permalinks",
-      }),
+      })
     ).not.toBeInTheDocument();
 
     rerender(
-      <SidebarContent
-        {...baseProps}
-        menuItems={menuItems}
-        openKeys={["options-general.php"]}
-      />,
+      <SidebarContent {...baseProps} menuItems={menuItems} openKeys={["options-general.php"]} />
     );
 
     expect(
       screen.getByRole("button", {
         name: "Permalinks",
-      }),
+      })
     ).toBeInTheDocument();
   });
 });

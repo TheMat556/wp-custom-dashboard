@@ -1,6 +1,5 @@
 import { Tooltip, Typography, theme } from "antd";
-import type { CalendarBooking } from "../types";
-import type { WeekCalendarProps } from "../types";
+import type { CalendarBooking, WeekCalendarProps } from "../types";
 
 const { Text } = Typography;
 

@@ -1,12 +1,12 @@
-import { createMenuService, type MenuService } from "../services/menuApi";
 import type { WpReactUiConfig } from "../../../types/wp";
+import { createMenuService, type MenuService } from "../services/menuApi";
 import { menuStore } from "./menuStore";
 
 let _service: MenuService | null = null;
 
 export function initMenuService(
   config: Pick<WpReactUiConfig, "restUrl" | "nonce">,
-  service?: MenuService,
+  service?: MenuService
 ) {
   _service = service ?? createMenuService(config);
 }

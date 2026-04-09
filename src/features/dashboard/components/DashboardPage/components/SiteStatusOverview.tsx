@@ -8,8 +8,8 @@ import { Collapse, Flex, Tag, Typography, theme } from "antd";
 import type { SiteStatusOverviewProps } from "../types";
 import { BusinessSection } from "./BusinessSection";
 import { LegalSection } from "./LegalSection";
-import { SeoBasicsSection } from "./SeoBasicsSection";
 import { Section } from "./Section";
+import { SeoBasicsSection } from "./SeoBasicsSection";
 
 const { Text } = Typography;
 

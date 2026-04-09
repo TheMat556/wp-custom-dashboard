@@ -4,25 +4,12 @@ import {
   ReloadOutlined,
   UserOutlined,
 } from "@ant-design/icons";
-import {
-  Button,
-  Drawer,
-  Empty,
-  Flex,
-  Select,
-  Spin,
-  Tag,
-  Timeline,
-  Typography,
-  theme,
-} from "antd";
+import { Button, Drawer, Empty, Flex, Select, Spin, Tag, Timeline, Typography, theme } from "antd";
 import { useCallback, useEffect, useState } from "react";
 import { useStore } from "zustand";
-import {
-  activityStore,
-} from "../../store/activityStore";
-import { loadActivity, setActivityFilters } from "../../store/activityActions";
 import type { ActivityEntry } from "../../services/activityApi";
+import { loadActivity, setActivityFilters } from "../../store/activityActions";
+import { activityStore } from "../../store/activityStore";
 
 const { Text, Title } = Typography;
 
@@ -92,10 +79,7 @@ function EntryItem({ entry }: { entry: ActivityEntry }) {
   return (
     <Flex vertical gap={2}>
       <Flex gap={8} align="center" wrap>
-        <Tag
-          color={ACTION_COLORS[entry.action] ?? "default"}
-          style={{ margin: 0 }}
-        >
+        <Tag color={ACTION_COLORS[entry.action] ?? "default"} style={{ margin: 0 }}>
           {ACTION_LABELS[entry.action] ?? entry.action}
         </Tag>
         <Text strong style={{ fontSize: 13 }}>
@@ -203,20 +187,13 @@ export default function ActivityLogPanel({
           <Spin />
         </Flex>
       ) : entries.length === 0 ? (
-        <Empty
-          description="No activity recorded yet"
-          image={Empty.PRESENTED_IMAGE_SIMPLE}
-        />
+        <Empty description="No activity recorded yet" image={Empty.PRESENTED_IMAGE_SIMPLE} />
       ) : (
         <>
           <Timeline
             items={entries.map((entry, i) => ({
               key: `${entry.created_at}-${i}`,
-              dot: (
-                <ClockCircleOutlined
-                  style={{ color: token.colorTextTertiary }}
-                />
-              ),
+              dot: <ClockCircleOutlined style={{ color: token.colorTextTertiary }} />,
               children: <EntryItem entry={entry} />,
             }))}
           />

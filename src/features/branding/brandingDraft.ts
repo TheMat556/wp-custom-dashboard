@@ -1,9 +1,5 @@
 import { CUSTOM_PRESET_KEY } from "../../config/themePresets";
-import {
-  DEFAULT_FONT_PRESET,
-  isFontPresetKey,
-  type FontPresetKey,
-} from "../../utils/fontPresets";
+import { DEFAULT_FONT_PRESET, type FontPresetKey, isFontPresetKey } from "../../utils/fontPresets";
 import type { BrandingData, BrandingSaveInput } from "./services/brandingApi";
 
 export const DEFAULT_PRIMARY_COLOR = "#4f46e5";
@@ -59,9 +55,7 @@ export function applyBrandingSettingsToDraft(
     longLogoUrl: settings.longLogoUrl,
     useLongLogo: settings.useLongLogo,
     primaryColor: settings.primaryColor,
-    fontPreset: isFontPresetKey(settings.fontPreset)
-      ? settings.fontPreset
-      : DEFAULT_FONT_PRESET,
+    fontPreset: isFontPresetKey(settings.fontPreset) ? settings.fontPreset : DEFAULT_FONT_PRESET,
     patterns: settings.openInNewTabPatterns.join("\n"),
   };
 }

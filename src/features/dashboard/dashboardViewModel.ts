@@ -68,7 +68,9 @@ export function createDashboardViewModel(
     (() => {
       const yesterdayViews = trend[trend.length - 2]?.views ?? 0;
       const todayViews = trend[trend.length - 1]?.views ?? 0;
-      return yesterdayViews > 0 ? Math.round(((todayViews - yesterdayViews) / yesterdayViews) * 100) : 0;
+      return yesterdayViews > 0
+        ? Math.round(((todayViews - yesterdayViews) / yesterdayViews) * 100)
+        : 0;
     })();
 
   const seoActionIds = new Set(baseActions.map((action) => action.title));
@@ -80,8 +82,7 @@ export function createDashboardViewModel(
       url: issue.editUrl ?? issue.url,
       action: "View page",
       severity: "warning",
-      description:
-        "This page has an SEO issue that may reduce its visibility in search results.",
+      description: "This page has an SEO issue that may reduce its visibility in search results.",
     }));
 
   const actions = [...baseActions, ...seoActions];

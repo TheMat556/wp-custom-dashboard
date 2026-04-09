@@ -47,7 +47,7 @@ export const SidebarContent = memo(function SidebarContent({
       const isOpen = openKeys.includes(slug);
       onOpenChange(isOpen ? openKeys.filter((k) => k !== slug) : [slug]);
     },
-    [collapsed, onParentClick, openKeys, onOpenChange],
+    [collapsed, onParentClick, openKeys, onOpenChange]
   );
 
   return (

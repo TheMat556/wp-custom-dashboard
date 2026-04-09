@@ -132,9 +132,7 @@ export function buildRecentPaletteItems(
     return {
       id: `recent:${page.pageUrl}`,
       label: matchedMenuItem?.label ?? page.title,
-      subtitle: matchedMenuItem
-        ? `Recent / ${matchedMenuItem.subtitle}`
-        : `Recent page`,
+      subtitle: matchedMenuItem ? `Recent / ${matchedMenuItem.subtitle}` : `Recent page`,
       url: page.pageUrl,
       slug: matchedMenuItem?.slug,
       source: "recent",
@@ -177,7 +175,8 @@ export function buildNativeShellCommandDescriptors(options: {
     .filter((item) => item.slug && options.favorites.includes(item.slug))
     .sort(
       (left, right) =>
-        options.favorites.indexOf(left.slug as string) - options.favorites.indexOf(right.slug as string)
+        options.favorites.indexOf(left.slug as string) -
+        options.favorites.indexOf(right.slug as string)
     )
     .slice(0, 6);
   const recentItems = buildRecentPaletteItems(options.recentPages, menuPaletteItems).slice(0, 6);

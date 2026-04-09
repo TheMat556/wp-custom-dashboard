@@ -1,14 +1,13 @@
-import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import type { Theme } from "./themeStore";
 import {
-  themeStore,
+  applyThemeToDOM,
   bootstrapThemeStore,
   resetThemeStore,
-  applyThemeToDOM,
   THEME_CHANGE_EVENT,
   THEME_STORAGE_KEY,
+  themeStore,
 } from "./themeStore";
-
-import type { Theme } from "./themeStore";
 
 const mockConfig = {
   theme: "light" as Theme,
