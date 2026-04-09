@@ -103,6 +103,12 @@ export function normalizeToMenuKey(url: string): string | undefined {
   }
 }
 
+/** Returns true when the URL points to a shell-managed `?page=` route. */
+export function isShellRouteUrl(url: string, shellRouteSlugs: string[] = []): boolean {
+  const menuKey = normalizeToMenuKey(url);
+  return !!menuKey && shellRouteSlugs.includes(menuKey);
+}
+
 /**
  * Returns true for pages that must break out of the iframe and load as the
  * top-level document (e.g. Gutenberg, full-site editor).

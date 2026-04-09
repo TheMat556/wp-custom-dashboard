@@ -69,9 +69,9 @@ export function LegalSection({ legal, adminUrl }: LegalSectionProps) {
                 }}
               />
               <div>
-                <Text style={{ fontSize: 13 }}>{row.label}</Text>
+                <Text style={{ fontSize: 14 }}>{row.label}</Text>
                 {!ok && (
-                  <Text type="secondary" style={{ fontSize: 11, display: "block" }}>
+                  <Text type="secondary" style={{ fontSize: 12, display: "block" }}>
                     {warn
                       ? "This legal page exists but is not published — visitors cannot access it."
                       : "This required page is missing."}
@@ -82,7 +82,7 @@ export function LegalSection({ legal, adminUrl }: LegalSectionProps) {
             <Flex align="center" gap={8} style={{ flexShrink: 0 }}>
               <Tag
                 color={ok ? "success" : warn ? "error" : "warning"}
-                style={{ margin: 0, fontSize: 11 }}
+                style={{ margin: 0, fontSize: 12 }}
               >
                 {statusLabel}
               </Tag>
@@ -112,15 +112,15 @@ export function LegalSection({ legal, adminUrl }: LegalSectionProps) {
             }}
           />
           <div>
-            <Text style={{ fontSize: 13 }}>Cookie Consent</Text>
+            <Text style={{ fontSize: 14 }}>Cookie Consent</Text>
             {!legal.cookiePlugin && (
-              <Text type="secondary" style={{ fontSize: 11, display: "block" }}>
+              <Text type="secondary" style={{ fontSize: 12, display: "block" }}>
                 No cookie notice plugin detected.
               </Text>
             )}
           </div>
         </Flex>
-        <Tag color={legal.cookiePlugin ? "success" : "warning"} style={{ margin: 0, fontSize: 11 }}>
+        <Tag color={legal.cookiePlugin ? "success" : "warning"} style={{ margin: 0, fontSize: 12 }}>
           {legal.cookiePlugin ?? "Not configured"}
         </Tag>
       </Flex>

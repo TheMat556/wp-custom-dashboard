@@ -82,7 +82,7 @@ export function UpcomingBookings({
                 <div style={{ flex: 1, minWidth: 0 }}>
                   <Text
                     style={{
-                      fontSize: 13,
+                      fontSize: 14,
                       fontWeight: 500,
                       display: "block",
                       overflow: "hidden",
@@ -92,12 +92,12 @@ export function UpcomingBookings({
                   >
                     {booking.customerName || "—"}
                   </Text>
-                  <Text type="secondary" style={{ fontSize: 11 }}>
+                  <Text type="secondary" style={{ fontSize: 12 }}>
                     {formatBookingTime(booking.startDate, intlLocale, t)}
                   </Text>
                 </div>
                 {booking.isToday && (
-                  <Tag color="blue" style={{ margin: 0, fontSize: 10 }}>
+                  <Tag color="blue" style={{ margin: 0, fontSize: 11 }}>
                     {t("Today")}
                   </Tag>
                 )}

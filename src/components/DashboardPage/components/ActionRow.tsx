@@ -38,12 +38,12 @@ export function ActionRow({ item, adminUrl }: ActionRowProps) {
       }}
     >
       <Flex align="flex-start" gap={10}>
-        <SevIcon style={{ color: severityColor, fontSize: 13, marginTop: 2, flexShrink: 0 }} />
+        <SevIcon style={{ color: severityColor, fontSize: 14, marginTop: 2, flexShrink: 0 }} />
         <div style={{ flex: 1, minWidth: 0 }}>
           <Flex align="center" justify="space-between" gap={8} wrap="wrap">
             <Text
               style={{
-                fontSize: 13,
+                fontSize: 14,
                 fontWeight: 500,
                 cursor: hasDetail ? "pointer" : "default",
                 flex: 1,
@@ -52,14 +52,14 @@ export function ActionRow({ item, adminUrl }: ActionRowProps) {
             >
               {item.title}
               {hasDetail && (
-                <Text type="secondary" style={{ marginLeft: 6, fontSize: 11 }}>
+                <Text type="secondary" style={{ marginLeft: 6, fontSize: 12 }}>
                   {open ? "▲" : "▼"}
                 </Text>
               )}
             </Text>
             <Tag
               color={tagColor}
-              style={{ margin: 0, fontSize: 11, cursor: "pointer", flexShrink: 0 }}
+              style={{ margin: 0, fontSize: 12, cursor: "pointer", flexShrink: 0 }}
               onClick={() => navigate(item.url, adminUrl)}
             >
               {item.action}

@@ -38,7 +38,7 @@ export function SiteHealthWidget({ data }: { data: SiteHealthData }) {
           <Text strong style={{ fontSize: 16 }}>
             {STATUS_LABELS[data.status] ?? data.status}
           </Text>
-          <Text type="secondary" style={{ fontSize: 13 }}>
+          <Text type="secondary" style={{ fontSize: 14 }}>
             {data.score >= 80
               ? "Your site is in great shape."
               : data.score >= 50

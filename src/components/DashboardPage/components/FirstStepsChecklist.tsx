@@ -81,12 +81,12 @@ export function FirstStepsChecklist({
                 justifyContent: "center",
               }}
             >
-              {item.done && <CheckOutlined style={{ fontSize: 10, color: "#fff" }} />}
+              {item.done && <CheckOutlined style={{ fontSize: 11, color: "#fff" }} />}
             </div>
             <Text
               style={{
                 flex: 1,
-                fontSize: 13,
+                fontSize: 14,
                 color: item.done ? token.colorTextTertiary : token.colorText,
                 textDecoration: item.done ? "line-through" : undefined,
               }}
@@ -94,7 +94,7 @@ export function FirstStepsChecklist({
               {item.label}
             </Text>
             {!item.done && (
-              <Text type="secondary" style={{ fontSize: 11, flexShrink: 0 }}>
+              <Text type="secondary" style={{ fontSize: 12, flexShrink: 0 }}>
                 {t("Open →")}
               </Text>
             )}

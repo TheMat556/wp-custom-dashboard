@@ -55,6 +55,25 @@ class WP_React_UI_Shell_Localization {
 	}
 
 	/**
+	 * Returns the list of shell-managed page slugs.
+	 *
+	 * @return array<int, string>
+	 */
+	public static function get_shell_route_slugs(): array {
+		$routes = self::get_shell_routes();
+		$slugs  = array_map(
+			static function ( array $route ): string {
+				return sanitize_key( $route['slug'] ?? '' );
+			},
+			$routes
+		);
+
+		$slugs[] = WP_React_UI_Branding_Settings::get_page_slug();
+
+		return array_values( array_filter( array_unique( $slugs ) ) );
+	}
+
+	/**
 	 * Collects plugin-registered shell routes via the wp_react_ui_shell_routes filter.
 	 *
 	 * Third-party plugins register routes like:

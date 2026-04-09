@@ -48,16 +48,16 @@ export function SeoBasicsSection({ seoBasics, adminUrl }: SeoBasicsSectionProps)
         >
           <Flex align="center" gap={8}>
             {check.ok ? (
-              <CheckCircleOutlined style={{ color: token.colorSuccess, fontSize: 13 }} />
+              <CheckCircleOutlined style={{ color: token.colorSuccess, fontSize: 14 }} />
             ) : (
               <ExclamationCircleOutlined
                 style={{
                   color: check.critical ? token.colorError : token.colorWarning,
-                  fontSize: 13,
+                  fontSize: 14,
                 }}
               />
             )}
-            <Text style={{ fontSize: 13 }}>{check.label}</Text>
+            <Text style={{ fontSize: 14 }}>{check.label}</Text>
           </Flex>
           {!check.ok && check.url && (
             <Button

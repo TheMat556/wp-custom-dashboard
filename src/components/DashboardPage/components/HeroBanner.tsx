@@ -56,7 +56,7 @@ export function HeroBanner({
           </Flex>
           {total30Views > 0 ? (
             <Flex align="center" gap={8} style={{ marginTop: 2 }}>
-              <Text type="secondary" style={{ fontSize: 13 }}>
+              <Text type="secondary" style={{ fontSize: 14 }}>
                 {t("{n} page views in the last 30 days", {
                   n: total30Views.toLocaleString(intlLocale),
                 })}
@@ -64,23 +64,23 @@ export function HeroBanner({
               {viewTrend !== 0 && (
                 <Tag
                   color={viewTrend > 0 ? "success" : "error"}
-                  style={{ margin: 0, fontSize: 11, borderRadius: 999 }}
+                  style={{ margin: 0, fontSize: 12, borderRadius: 999 }}
                 >
                   {viewTrend > 0 ? "↑" : "↓"} {Math.abs(viewTrend)}%
                 </Tag>
               )}
             </Flex>
           ) : (
-            <Text type="secondary" style={{ fontSize: 13, marginTop: 2 }}>
+            <Text type="secondary" style={{ fontSize: 14, marginTop: 2 }}>
               {t("Visitor tracking is active — data will appear as people visit your site.")}
             </Text>
           )}
           {stats && (
             <Flex gap={12} style={{ marginTop: 6 }}>
-              <Text type="secondary" style={{ fontSize: 11 }}>
+              <Text type="secondary" style={{ fontSize: 12 }}>
                 WordPress {stats.wpVersion}
               </Text>
-              <Text type="secondary" style={{ fontSize: 11 }}>
+              <Text type="secondary" style={{ fontSize: 12 }}>
                 PHP {stats.phpVersion}
               </Text>
             </Flex>

@@ -49,13 +49,13 @@ export function StatTile({ icon, label, value, sub, color, tooltip, onClick }: S
           <Flex align="center" gap={4}>
             <Text
               type="secondary"
-              style={{ fontSize: 10, textTransform: "uppercase", letterSpacing: "0.06em" }}
+              style={{ fontSize: 11, textTransform: "uppercase", letterSpacing: "0.06em" }}
             >
               {label}
             </Text>
             {tooltip && (
               <Tooltip title={tooltip} overlayStyle={{ maxWidth: 240 }}>
-                <QuestionCircleOutlined style={{ fontSize: 10, color: token.colorTextTertiary }} />
+                <QuestionCircleOutlined style={{ fontSize: 11, color: token.colorTextTertiary }} />
               </Tooltip>
             )}
           </Flex>

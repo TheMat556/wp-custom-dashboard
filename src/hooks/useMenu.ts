@@ -1,15 +1,17 @@
 import { useMemo } from "react";
 import { useStore } from "zustand";
+import { useShellConfig } from "../context/ShellConfigContext";
 import { menuStore } from "../store/menuStore";
 import type { MenuItem, SubMenuItem } from "../types/menu";
+import { createT } from "../utils/i18n";
 
 export type { MenuItem, SubMenuItem } from "../types/menu";
 
-function renameBrandAssetsEntry(item: MenuItem): MenuItem {
-  const label = item.slug === "wp-react-ui-branding" ? "Brand Assets" : item.label;
+function renameBrandAssetsEntry(item: MenuItem, brandAssetsLabel: string): MenuItem {
+  const label = item.slug === "wp-react-ui-branding" ? brandAssetsLabel : item.label;
   const children = item.children?.map((child: SubMenuItem) => ({
     ...child,
-    label: child.slug === "wp-react-ui-branding" ? "Brand Assets" : child.label,
+    label: child.slug === "wp-react-ui-branding" ? brandAssetsLabel : child.label,
   }));
 
   return {
@@ -20,10 +22,18 @@ function renameBrandAssetsEntry(item: MenuItem): MenuItem {
 }
 
 export function useMenu() {
+  const config = useShellConfig();
   const rawMenuItems = useStore(menuStore, (state) => state.items);
   const loading = useStore(menuStore, (state) => state.loading);
   const refresh = useStore(menuStore, (state) => state.refresh);
-  const menuItems = useMemo(() => rawMenuItems.map(renameBrandAssetsEntry), [rawMenuItems]);
+  const brandAssetsLabel = useMemo(
+    () => createT(config.locale ?? "en_US")("Brand Assets"),
+    [config.locale]
+  );
+  const menuItems = useMemo(
+    () => rawMenuItems.map((item) => renameBrandAssetsEntry(item, brandAssetsLabel)),
+    [rawMenuItems, brandAssetsLabel]
+  );
 
   return {
     menuItems,

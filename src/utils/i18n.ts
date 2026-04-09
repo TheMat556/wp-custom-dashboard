@@ -32,7 +32,8 @@ const de: Record<string, string> = {
 
   // Offline alert
   "Your website is not reachable right now": "Ihre Website ist gerade nicht erreichbar",
-  "We could not connect to your homepage.": "Wir konnten keine Verbindung zu Ihrer Startseite herstellen.",
+  "We could not connect to your homepage.":
+    "Wir konnten keine Verbindung zu Ihrer Startseite herstellen.",
   "Your visitors may see an error page.": "Ihre Besucher sehen möglicherweise eine Fehlerseite.",
   "Problem started:": "Problem seit:",
   "Recommended next step:": "Empfohlene Maßnahme:",
@@ -51,26 +52,26 @@ const de: Record<string, string> = {
   "Site Health": "Website-Gesundheit",
 
   // Summary tiles
-  "Website": "Website",
-  "Offline": "Offline",
-  "Online": "Online",
-  "Check": "Prüfen",
+  Website: "Website",
+  Offline: "Offline",
+  Online: "Online",
+  Check: "Prüfen",
   "Not reachable": "Nicht erreichbar",
   "Click for details": "Details anzeigen",
   "Visitors 30d": "Besucher 30T",
   "vs yesterday": "ggü. gestern",
   "Stable traffic": "Stabiler Traffic",
   "Tracking active": "Tracking aktiv",
-  "Updates": "Updates",
+  Updates: "Updates",
   "Checked {t}": "Geprüft {t}",
   "All up to date": "Alles aktuell",
-  "Speed": "Ladezeit",
-  "Fast": "Schnell",
-  "Acceptable": "Akzeptabel",
-  "Slow": "Langsam",
-  "Error": "Fehler",
-  "Unreachable": "Nicht erreichbar",
-  "SEO": "SEO",
+  Speed: "Ladezeit",
+  Fast: "Schnell",
+  Acceptable: "Akzeptabel",
+  Slow: "Langsam",
+  Error: "Fehler",
+  Unreachable: "Nicht erreichbar",
+  SEO: "SEO",
   "No issues": "Keine Probleme",
   "{n} issue": "{n} Problem",
   "{n} issues": "{n} Probleme",
@@ -100,7 +101,7 @@ const de: Record<string, string> = {
   "No data yet. Tracking is active — views appear as people visit your site.":
     "Noch keine Daten. Tracking ist aktiv — Aufrufe erscheinen, sobald Besucher Ihre Website besuchen.",
   "Visitors by Country": "Besucher nach Land",
-  "Visits": "Besuche",
+  Visits: "Besuche",
   "Install WP Statistics (free) to track visitor countries.":
     "WP Statistics (kostenlos) installieren, um Besucherländer zu verfolgen.",
 
@@ -110,8 +111,8 @@ const de: Record<string, string> = {
   "View all": "Alle anzeigen",
   "No bookings in the next 7 days": "Keine Termine in den nächsten 7 Tagen",
   "No bookings": "Keine Termine",
-  "Today": "Heute",
-  "Tomorrow": "Morgen",
+  Today: "Heute",
+  Tomorrow: "Morgen",
   "Week Overview": "Wochenübersicht",
   "{n} today": "{n} heute",
 
@@ -131,8 +132,8 @@ const de: Record<string, string> = {
   "Review Soon": "Bald prüfen",
   "{n} low-priority item": "{n} unwichtiger Punkt",
   "{n} low-priority items": "{n} unwichtige Punkte",
-  "View": "Ansehen",
-  "Fix": "Beheben",
+  View: "Ansehen",
+  Fix: "Beheben",
   "Update now": "Jetzt updaten",
   "Review now": "Jetzt prüfen",
   "Impact:": "Auswirkung:",
@@ -144,7 +145,7 @@ const de: Record<string, string> = {
   "Create a backup before updating. Most hosting control panels offer one-click backups.":
     "Erstellen Sie vor dem Update ein Backup. Die meisten Hosting-Panels bieten Ein-Klick-Backups an.",
   "WordPress Core": "WordPress Core",
-  "Update": "Aktualisieren",
+  Update: "Aktualisieren",
   "Tested WP {v}": "Getestet für WP {v}",
 
   // Site Status Overview
@@ -152,14 +153,14 @@ const de: Record<string, string> = {
   "Legal, business and SEO checks": "Rechtliche, geschäftliche und SEO-Prüfungen",
   "All good": "Alles in Ordnung",
   "Action needed": "Handlung erforderlich",
-  "Active": "Aktiv",
+  Active: "Aktiv",
 
   // Legal
   "Legal & Compliance": "Recht & Compliance",
   "Privacy Policy": "Datenschutzerklärung",
-  "Impressum": "Impressum",
+  Impressum: "Impressum",
   "View / Edit": "Ansehen / Bearbeiten",
-  "Published": "Veröffentlicht",
+  Published: "Veröffentlicht",
   "Draft — not public": "Entwurf — nicht öffentlich",
   "Not found": "Nicht gefunden",
   "Cookie consent plugin active.": "Cookie-Einwilligungs-Plugin aktiv.",
@@ -182,11 +183,11 @@ const de: Record<string, string> = {
   "Search Visibility": "Suchmaschinen-Sichtbarkeit",
   "Homepage Title": "Startseiten-Titel",
   "Homepage Meta Description": "Startseiten-Meta-Beschreibung",
-  "Sitemap": "Sitemap",
+  Sitemap: "Sitemap",
   "Blocked — site set to discourage search engines":
     "Blockiert — Website für Suchmaschinen gesperrt",
-  "OK": "OK",
-  "Missing": "Fehlt",
+  OK: "OK",
+  Missing: "Fehlt",
   "Too short": "Zu kurz",
   "Not found — submit one via Google Search Console":
     "Nicht gefunden — über Google Search Console einreichen",
@@ -194,7 +195,57 @@ const de: Record<string, string> = {
     "Kein SEO-Plugin installiert. Yoast SEO (kostenlos) für vollständiges Tracking installieren.",
   "Install Yoast SEO": "Yoast SEO installieren",
   "Pages with short title:": "Seiten mit kurzem Titel:",
-  "edit": "bearbeiten",
+  edit: "bearbeiten",
+
+  // Brand Assets
+  "Brand Assets": "Markenassets",
+  "Centralized management for identity logos, color accents, and global navigation fragments used across the shell.":
+    "Zentrale Verwaltung für Logos, Farbakzente und globale Navigationsfragmente innerhalb der Shell.",
+  "Logo-only sidebar": "Seitenleiste nur mit Logo",
+  On: "An",
+  Off: "Aus",
+  "Save Brand Assets": "Markenassets speichern",
+  "Brand Assets In The Sidebar": "Markenassets in der Seitenleiste",
+  "Upload the logo variants used in the shell sidebar.":
+    "Laden Sie die Logo-Varianten hoch, die in der Shell-Seitenleiste verwendet werden.",
+  "Light Theme Logo": "Logo für helles Theme",
+  "Dark Theme Logo": "Logo für dunkles Theme",
+  "{label} preview": "{label} Vorschau",
+  "No image selected": "Kein Bild ausgewählt",
+  "Select image": "Bild auswählen",
+  "Use image": "Bild verwenden",
+  Replace: "Ersetzen",
+  Upload: "Hochladen",
+  Delete: "Löschen",
+  "Brand Colors": "Markenfarben",
+  "Shell color theme and accent palette.": "Farbthema und Akzentpalette der Shell.",
+  "Theme Preset": "Themenvorgabe",
+  Default: "Standard",
+  Ocean: "Ozean",
+  Forest: "Wald",
+  Sunset: "Sonnenuntergang",
+  Monochrome: "Monochrom",
+  Custom: "Benutzerdefiniert",
+  "Global distribution preview": "Globale Verteilungsvorschau",
+  "Reset to default": "Auf Standard zurücksetzen",
+  "Link Rules": "Link-Regeln",
+  "Patterns that should open in a new tab.":
+    "Muster, die in einem neuen Tab geöffnet werden sollen.",
+  "Global URL Fragments": "Globale URL-Fragmente",
+  "One fragment per line": "Ein Fragment pro Zeile",
+  "Matching links bypass the iframe and open directly in a new tab.":
+    "Passende Links umgehen das Iframe und öffnen sich direkt in einem neuen Tab.",
+  Typography: "Typografie",
+  "Choose the font system used across the shell interface.":
+    "Wählen Sie das Schriftsystem für die gesamte Shell-Oberfläche.",
+  "Font preset": "Schriftvorgabe",
+  Appearance: "Darstellung",
+  "Display preferences": "Anzeigeeinstellungen",
+  "High Contrast": "Hoher Kontrast",
+  "Increase text and border contrast for better readability.":
+    "Erhöht den Kontrast von Texten und Rahmen für bessere Lesbarkeit.",
+  "Changes are applied live after saving.":
+    "Änderungen werden nach dem Speichern direkt angewendet.",
 
   // Relative time
   "just now": "gerade eben",

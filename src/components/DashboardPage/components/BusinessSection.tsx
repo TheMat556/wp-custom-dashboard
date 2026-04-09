@@ -29,9 +29,9 @@ export function BusinessSection({ biz, adminUrl }: BusinessSectionProps) {
             }}
           />
           <div>
-            <Text style={{ fontSize: 13 }}>Booking System</Text>
+            <Text style={{ fontSize: 14 }}>Booking System</Text>
             {biz.bookings.note && (
-              <Text type="secondary" style={{ fontSize: 11, display: "block" }}>
+              <Text type="secondary" style={{ fontSize: 12, display: "block" }}>
                 {biz.bookings.note}
               </Text>
             )}
@@ -39,13 +39,13 @@ export function BusinessSection({ biz, adminUrl }: BusinessSectionProps) {
         </Flex>
         <Flex align="center" gap={8} style={{ flexShrink: 0 }}>
           {biz.bookings.available && biz.bookings.totalUpcoming != null && (
-            <Tag color="blue" style={{ margin: 0, fontSize: 11 }}>
+            <Tag color="blue" style={{ margin: 0, fontSize: 12 }}>
               {biz.bookings.totalUpcoming} upcoming
             </Tag>
           )}
           <Tag
             color={biz.bookings.available ? "success" : "default"}
-            style={{ margin: 0, fontSize: 11 }}
+            style={{ margin: 0, fontSize: 12 }}
           >
             {biz.bookings.available ? "Active" : "Not installed"}
           </Tag>
@@ -67,9 +67,9 @@ export function BusinessSection({ biz, adminUrl }: BusinessSectionProps) {
             }}
           />
           <div>
-            <Text style={{ fontSize: 13 }}>Contact Forms</Text>
+            <Text style={{ fontSize: 14 }}>Contact Forms</Text>
             {biz.contactForms.note && (
-              <Text type="secondary" style={{ fontSize: 11, display: "block" }}>
+              <Text type="secondary" style={{ fontSize: 12, display: "block" }}>
                 {biz.contactForms.note}
               </Text>
             )}
@@ -77,7 +77,7 @@ export function BusinessSection({ biz, adminUrl }: BusinessSectionProps) {
         </Flex>
         <Tag
           color={biz.contactForms.available ? "success" : "warning"}
-          style={{ margin: 0, fontSize: 11 }}
+          style={{ margin: 0, fontSize: 12 }}
         >
           {biz.contactForms.available ? (biz.contactForms.plugin ?? "Active") : "Not installed"}
         </Tag>
@@ -93,9 +93,9 @@ export function BusinessSection({ biz, adminUrl }: BusinessSectionProps) {
             }}
           />
           <div>
-            <Text style={{ fontSize: 13 }}>Email Delivery</Text>
+            <Text style={{ fontSize: 14 }}>Email Delivery</Text>
             {biz.emailDelivery.note && (
-              <Text type="secondary" style={{ fontSize: 11, display: "block", maxWidth: 280 }}>
+              <Text type="secondary" style={{ fontSize: 12, display: "block", maxWidth: 280 }}>
                 {biz.emailDelivery.note}
               </Text>
             )}
@@ -103,7 +103,7 @@ export function BusinessSection({ biz, adminUrl }: BusinessSectionProps) {
         </Flex>
         <Tag
           color={biz.emailDelivery.smtpPlugin ? "success" : "warning"}
-          style={{ margin: 0, fontSize: 11, flexShrink: 0 }}
+          style={{ margin: 0, fontSize: 12, flexShrink: 0 }}
         >
           {biz.emailDelivery.smtpPlugin ? "Configured" : "Default (unreliable)"}
         </Tag>

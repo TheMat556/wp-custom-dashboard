@@ -73,6 +73,8 @@ html.wp-toolbar { padding-top: 0 !important; }
 			'wpReactUiEmbed',
 			array(
 				'openInNewTabPatterns' => WP_React_UI_Branding_Settings::get_navigation_preferences()['openInNewTabPatterns'],
+				'shellRouteSlugs'      => WP_React_UI_Shell_Localization::get_shell_route_slugs(),
+				'selfPluginBasename'   => plugin_basename( dirname( __DIR__ ) . '/wp-custom-dashboard.php' ),
 			)
 		);
 

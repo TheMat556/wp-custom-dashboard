@@ -52,6 +52,15 @@ class WP_React_UI_Branding_Settings {
 	private static string $page_hook = '';
 
 	/**
+	 * Returns the branding admin page slug.
+	 *
+	 * @return string
+	 */
+	public static function get_page_slug(): string {
+		return self::PAGE_SLUG;
+	}
+
+	/**
 	 * Registers all hooks.
 	 *
 	 * @return void

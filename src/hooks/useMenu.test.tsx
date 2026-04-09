@@ -31,12 +31,18 @@ describe("useMenu", () => {
     vi.stubGlobal("fetch", fetchMock);
 
     const { useMenu } = await import("./useMenu");
+    const { ShellConfigProvider } = await import("../context/ShellConfigContext");
     const { bootstrapMenuStore, resetMenuStore } = await import("../store/menuStore");
+    const { normalizeWpReactUiConfig } = await import("../types/wp");
     resetMenuStore();
     bootstrapMenuStore({
       menu: window.wpReactUi?.menu ?? [],
       restUrl: "http://localhost/wp-json/wp-react-ui/v1",
       nonce: "test-nonce",
+    });
+    const config = normalizeWpReactUiConfig({
+      menu: window.wpReactUi?.menu ?? [],
+      locale: "en_US",
     });
 
     function NavbarConsumer() {
@@ -56,10 +62,12 @@ describe("useMenu", () => {
     }
 
     render(
-      <>
-        <NavbarConsumer />
-        <SidebarConsumer />
-      </>
+      <ShellConfigProvider config={config}>
+        <>
+          <NavbarConsumer />
+          <SidebarConsumer />
+        </>
+      </ShellConfigProvider>
     );
 
     expect(screen.getByTestId("navbar-menu")).toHaveTextContent("Dashboard,Plugins");
@@ -73,5 +81,41 @@ describe("useMenu", () => {
     expect(screen.getByTestId("navbar-menu")).toHaveTextContent("Dashboard,Users");
     expect(screen.getByTestId("sidebar-menu")).toHaveTextContent("Dashboard,Users");
     expect(window.wpReactUi?.menu?.[1]?.slug).toBe("plugins.php");
+  });
+
+  it("localizes the Brand Assets menu label from the active shell locale", async () => {
+    window.wpReactUi = {
+      ...window.wpReactUi,
+      locale: "de_DE",
+      menu: [{ label: "Branding", slug: "wp-react-ui-branding" }],
+    };
+
+    const { useMenu } = await import("./useMenu");
+    const { ShellConfigProvider } = await import("../context/ShellConfigContext");
+    const { bootstrapMenuStore, resetMenuStore } = await import("../store/menuStore");
+    const { normalizeWpReactUiConfig } = await import("../types/wp");
+    resetMenuStore();
+    bootstrapMenuStore({
+      menu: window.wpReactUi?.menu ?? [],
+      restUrl: "http://localhost/wp-json/wp-react-ui/v1",
+      nonce: "test-nonce",
+    });
+    const config = normalizeWpReactUiConfig({
+      menu: window.wpReactUi?.menu ?? [],
+      locale: "de_DE",
+    });
+
+    function Consumer() {
+      const { menuItems } = useMenu();
+      return <span data-testid="menu">{menuItems.map((item) => item.label).join(",")}</span>;
+    }
+
+    render(
+      <ShellConfigProvider config={config}>
+        <Consumer />
+      </ShellConfigProvider>
+    );
+
+    expect(screen.getByTestId("menu")).toHaveTextContent("Markenassets");
   });
 });

@@ -49,8 +49,8 @@ export function UpdatesSection({ updates, t, adminUrl, isMd }: UpdatesSectionPro
             }}
           >
             <div>
-              <Text style={{ fontSize: 13, fontWeight: 500 }}>{t("WordPress Core")}</Text>
-              <Text type="secondary" style={{ fontSize: 11, display: "block" }}>
+              <Text style={{ fontSize: 14, fontWeight: 500 }}>{t("WordPress Core")}</Text>
+              <Text type="secondary" style={{ fontSize: 12, display: "block" }}>
                 {u.currentVersion} → {u.newVersion}
               </Text>
             </div>
@@ -79,7 +79,7 @@ export function UpdatesSection({ updates, t, adminUrl, isMd }: UpdatesSectionPro
             <div style={{ minWidth: 0 }}>
               <Text
                 style={{
-                  fontSize: 13,
+                  fontSize: 14,
                   fontWeight: 500,
                   display: "block",
                   overflow: "hidden",
@@ -89,7 +89,7 @@ export function UpdatesSection({ updates, t, adminUrl, isMd }: UpdatesSectionPro
               >
                 {p.name}
               </Text>
-              <Text type="secondary" style={{ fontSize: 11 }}>
+              <Text type="secondary" style={{ fontSize: 12 }}>
                 {p.currentVersion} → {p.newVersion}
                 {p.testedUpTo ? ` · ${t("Tested WP {v}", { v: p.testedUpTo })}` : ""}
               </Text>
@@ -117,8 +117,8 @@ export function UpdatesSection({ updates, t, adminUrl, isMd }: UpdatesSectionPro
             }}
           >
             <div>
-              <Text style={{ fontSize: 13, fontWeight: 500 }}>{th.name} (Theme)</Text>
-              <Text type="secondary" style={{ fontSize: 11, display: "block" }}>
+              <Text style={{ fontSize: 14, fontWeight: 500 }}>{th.name} (Theme)</Text>
+              <Text type="secondary" style={{ fontSize: 12, display: "block" }}>
                 {th.currentVersion} → {th.newVersion}
               </Text>
             </div>

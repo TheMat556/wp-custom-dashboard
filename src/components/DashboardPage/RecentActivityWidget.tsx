@@ -64,11 +64,11 @@ export function RecentActivityWidget({ posts }: { posts: RecentPostData[] }) {
             ]}
           >
             <Flex vertical gap={2} style={{ minWidth: 0, flex: 1 }}>
-              <Text strong ellipsis style={{ fontSize: 13 }}>
+              <Text strong ellipsis style={{ fontSize: 14 }}>
                 {post.title}
               </Text>
               <Flex gap={8} align="center">
-                <Tag color={STATUS_COLORS[post.status] ?? "default"} style={{ margin: 0, fontSize: 11 }}>
+                <Tag color={STATUS_COLORS[post.status] ?? "default"} style={{ margin: 0, fontSize: 12 }}>
                   {post.status}
                 </Tag>
                 <Text type="secondary" style={{ fontSize: 12 }}>

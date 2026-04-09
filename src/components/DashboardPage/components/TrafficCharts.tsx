@@ -67,12 +67,12 @@ export function TrafficCharts({ trend, countries, t, intlLocale, isMd }: Traffic
               <CartesianGrid strokeDasharray="3 3" stroke={token.colorBorderSecondary} />
               <XAxis
                 dataKey="date"
-                tick={{ fontSize: 10, fill: token.colorTextSecondary }}
+                tick={{ fontSize: 11, fill: token.colorTextSecondary }}
                 interval={4}
               />
               <YAxis
                 allowDecimals={false}
-                tick={{ fontSize: 10, fill: token.colorTextSecondary }}
+                tick={{ fontSize: 11, fill: token.colorTextSecondary }}
                 width={30}
               />
               <RechartsTooltip contentStyle={tooltipStyle} />
@@ -114,14 +114,14 @@ export function TrafficCharts({ trend, countries, t, intlLocale, isMd }: Traffic
             >
               <XAxis
                 type="number"
-                tick={{ fontSize: 10, fill: token.colorTextSecondary }}
+                tick={{ fontSize: 11, fill: token.colorTextSecondary }}
                 allowDecimals={false}
               />
               <YAxis
                 type="category"
                 dataKey="label"
                 width={116}
-                tick={{ fontSize: 11, fill: token.colorTextSecondary }}
+                tick={{ fontSize: 12, fill: token.colorTextSecondary }}
               />
               <RechartsTooltip
                 contentStyle={tooltipStyle}

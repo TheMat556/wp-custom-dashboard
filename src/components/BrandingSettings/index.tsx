@@ -8,24 +8,33 @@ import {
   FontSizeOutlined,
   UploadOutlined,
 } from "@ant-design/icons";
-import { Button, ColorPicker, Flex, Grid, Input, Select, Spin, Switch, Typography, theme } from "antd";
+import {
+  Button,
+  ColorPicker,
+  Flex,
+  Grid,
+  Input,
+  Select,
+  Spin,
+  Switch,
+  Typography,
+  theme,
+} from "antd";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useStore } from "zustand";
 import type { BrandingData } from "../../services/brandingApi";
+import { CUSTOM_PRESET_KEY, THEME_PRESETS } from "../../config/themePresets";
+import { useShellConfig } from "../../context/ShellConfigContext";
 import { brandingStore } from "../../store/brandingStore";
 import { shellPreferencesStore } from "../../store/shellPreferencesStore";
 import { DEFAULT_FONT_PRESET, FONT_PRESETS, type FontPresetKey } from "../../utils/fontPresets";
+import { createT } from "../../utils/i18n";
 import { openMediaPicker } from "../../utils/wpMedia";
-import { ThemePresetPicker } from "../ThemePresetPicker";
 
 const { Title, Text, Paragraph } = Typography;
 const { TextArea } = Input;
 const { useBreakpoint } = Grid;
 const DEFAULT_PRIMARY_COLOR = "#4f46e5";
-const FONT_PRESET_OPTIONS = Object.entries(FONT_PRESETS).map(([value, preset]) => ({
-  value,
-  label: preset.label,
-}));
 
 function LogoField({
   label,
@@ -45,16 +54,18 @@ function LogoField({
   previewBackground?: string;
 }) {
   const { token } = theme.useToken();
+  const config = useShellConfig();
+  const t = useMemo(() => createT(config.locale ?? "en_US"), [config.locale]);
 
   const handleSelect = useCallback(async () => {
     const result = await openMediaPicker({
-      title: `Select ${label.toLowerCase()}`,
-      buttonText: `Use as ${label.toLowerCase()}`,
+      title: t("Select image"),
+      buttonText: t("Use image"),
     });
     if (result) {
       onSelect(result.id, result.url);
     }
-  }, [label, onSelect]);
+  }, [onSelect, t]);
 
   return (
     <div
@@ -69,7 +80,7 @@ function LogoField({
       <Flex justify="space-between" align="baseline" gap={12} style={{ marginBottom: 20 }}>
         <Text
           style={{
-            fontSize: 11,
+            fontSize: 12,
             fontWeight: 800,
             letterSpacing: "0.12em",
             textTransform: "uppercase",
@@ -78,7 +89,7 @@ function LogoField({
         >
           {label}
         </Text>
-        <Text style={{ fontSize: 11, color: token.colorTextQuaternary }}>{description}</Text>
+        <Text style={{ fontSize: 12, color: token.colorTextQuaternary }}>{description}</Text>
       </Flex>
 
       <div
@@ -98,7 +109,7 @@ function LogoField({
         {logoUrl ? (
           <img
             src={logoUrl}
-            alt={`${label} preview`}
+            alt={t("{label} preview", { label })}
             style={{
               display: "block",
               width: "auto",
@@ -111,8 +122,8 @@ function LogoField({
         ) : (
           <Flex vertical align="center" gap={10}>
             <PictureOutlined style={{ fontSize: 28, color: token.colorTextQuaternary }} />
-            <Text type="secondary" style={{ fontSize: 13 }}>
-              No image selected
+            <Text type="secondary" style={{ fontSize: 14 }}>
+              {t("No image selected")}
             </Text>
           </Flex>
         )}
@@ -120,11 +131,11 @@ function LogoField({
 
       <Flex gap={10} wrap>
         <Button type="default" onClick={handleSelect} icon={<UploadOutlined />}>
-          {logoId ? "Replace" : "Upload"}
+          {logoId ? t("Replace") : t("Upload")}
         </Button>
         {logoId > 0 && (
           <Button danger onClick={onRemove} icon={<DeleteOutlined />}>
-            Delete
+            {t("Delete")}
           </Button>
         )}
       </Flex>
@@ -149,6 +160,8 @@ function SurfaceCard({
     <section
       style={{
         height: "100%",
+        display: "flex",
+        flexDirection: "column",
         borderRadius: token.borderRadiusLG,
         border: `1px solid ${token.colorBorderSecondary}`,
         background: token.colorBgContainer,
@@ -178,27 +191,53 @@ function SurfaceCard({
             {title}
           </Title>
           {description && (
-            <Text type="secondary" style={{ fontSize: 13 }}>
+            <Text type="secondary" style={{ fontSize: 14 }}>
               {description}
             </Text>
           )}
         </div>
       </Flex>
 
-      {children}
+      <div style={{ flex: 1, minHeight: 0 }}>{children}</div>
     </section>
   );
 }
 
 export default function BrandingSettings() {
+  const config = useShellConfig();
   const settings = useStore(brandingStore, (state) => state.settings);
   const loading = useStore(brandingStore, (state) => state.loading);
   const saving = useStore(brandingStore, (state) => state.saving);
   const load = useStore(brandingStore, (state) => state.load);
   const save = useStore(brandingStore, (state) => state.save);
   const highContrast = useStore(shellPreferencesStore, (s) => s.highContrast);
+  const [draftThemePreset, setDraftThemePreset] = useState<string>(
+    () => shellPreferencesStore.getState().themePreset ?? "default"
+  );
+  const [draftCustomColor, setDraftCustomColor] = useState<string>(
+    () => shellPreferencesStore.getState().customPresetColor ?? DEFAULT_PRIMARY_COLOR
+  );
   const { token } = theme.useToken();
   const screens = useBreakpoint();
+  const t = useMemo(() => createT(config.locale ?? "en_US"), [config.locale]);
+  const themePresetOptions = useMemo(
+    () => [
+      ...Object.entries(THEME_PRESETS).map(([key, preset]) => ({
+        value: key,
+        label: t(preset.label),
+      })),
+      { value: CUSTOM_PRESET_KEY, label: t("Custom") },
+    ],
+    [t]
+  );
+  const fontPresetOptions = useMemo(
+    () =>
+      Object.entries(FONT_PRESETS).map(([value, preset]) => ({
+        value,
+        label: t(preset.label),
+      })),
+    [t]
+  );
 
   const toggleHighContrast = () => {
     const next = !highContrast;
@@ -232,7 +271,9 @@ export default function BrandingSettings() {
     setLongLogoId(next.longLogoId);
     setUseLongLogo(next.useLongLogo);
     setPrimaryColor(next.primaryColor);
-    setFontPreset((next.fontPreset in FONT_PRESETS ? next.fontPreset : DEFAULT_FONT_PRESET) as FontPresetKey);
+    setFontPreset(
+      (next.fontPreset in FONT_PRESETS ? next.fontPreset : DEFAULT_FONT_PRESET) as FontPresetKey
+    );
     setPatterns(next.openInNewTabPatterns.join("\n"));
   }, []);
 
@@ -243,6 +284,9 @@ export default function BrandingSettings() {
 
   const isDirty = useMemo(() => {
     if (!settings) return false;
+    const savedPreset = shellPreferencesStore.getState().themePreset ?? "default";
+    const savedCustomColor =
+      shellPreferencesStore.getState().customPresetColor ?? DEFAULT_PRIMARY_COLOR;
     return (
       lightLogoId !== settings.lightLogoId ||
       darkLogoId !== settings.darkLogoId ||
@@ -250,9 +294,22 @@ export default function BrandingSettings() {
       useLongLogo !== settings.useLongLogo ||
       primaryColor !== settings.primaryColor ||
       fontPreset !== settings.fontPreset ||
-      patterns !== settings.openInNewTabPatterns.join("\n")
+      patterns !== settings.openInNewTabPatterns.join("\n") ||
+      draftThemePreset !== savedPreset ||
+      (draftThemePreset === CUSTOM_PRESET_KEY && draftCustomColor !== savedCustomColor)
     );
-  }, [settings, lightLogoId, darkLogoId, longLogoId, useLongLogo, primaryColor, fontPreset, patterns]);
+  }, [
+    settings,
+    lightLogoId,
+    darkLogoId,
+    longLogoId,
+    useLongLogo,
+    primaryColor,
+    fontPreset,
+    patterns,
+    draftThemePreset,
+    draftCustomColor,
+  ]);
 
   const handleSave = useCallback(async () => {
     const payload: Pick<
@@ -278,7 +335,19 @@ export default function BrandingSettings() {
     };
 
     await save(payload);
-  }, [lightLogoId, darkLogoId, longLogoId, useLongLogo, primaryColor, fontPreset, patterns, save]);
+    shellPreferencesStore.getState().setThemePreset(draftThemePreset, draftCustomColor);
+  }, [
+    lightLogoId,
+    darkLogoId,
+    longLogoId,
+    useLongLogo,
+    primaryColor,
+    fontPreset,
+    patterns,
+    draftThemePreset,
+    draftCustomColor,
+    save,
+  ]);
 
   if (loading && !settings) {
     return (
@@ -316,12 +385,16 @@ export default function BrandingSettings() {
           style={{ marginBottom: 32 }}
         >
           <div style={{ minWidth: 0 }}>
-            <Title level={2} style={{ marginTop: 0, marginBottom: 6, fontSize: screens.md ? 30 : 24 }}>
-              Brand Assets
+            <Title
+              level={2}
+              style={{ marginTop: 0, marginBottom: 6, fontSize: screens.md ? 30 : 24 }}
+            >
+              {t("Brand Assets")}
             </Title>
             <Paragraph type="secondary" style={{ marginBottom: 0, maxWidth: 760, fontSize: 14 }}>
-              Centralized management for identity logos, color accents, and global navigation
-              fragments used across the shell.
+              {t(
+                "Centralized management for identity logos, color accents, and global navigation fragments used across the shell."
+              )}
             </Paragraph>
           </div>
 
@@ -337,24 +410,29 @@ export default function BrandingSettings() {
               }}
             >
               <Text style={{ fontSize: 12, fontWeight: 700, color: token.colorTextSecondary }}>
-                Logo-only sidebar
+                {t("Logo-only sidebar")}
               </Text>
               <Switch
                 checked={useLongLogo}
                 onChange={setUseLongLogo}
-                checkedChildren="On"
-                unCheckedChildren="Off"
+                checkedChildren={t("On")}
+                unCheckedChildren={t("Off")}
               />
             </div>
-            <Button type="primary" loading={saving} onClick={() => void handleSave()} disabled={!isDirty}>
-              Save Brand Assets
+            <Button
+              type="primary"
+              loading={saving}
+              onClick={() => void handleSave()}
+              disabled={!isDirty}
+            >
+              {t("Save Brand Assets")}
             </Button>
           </Flex>
         </Flex>
 
         <SurfaceCard
-          title="Brand Assets In The Sidebar"
-          description="Upload the logo variants used in the shell sidebar."
+          title={t("Brand Assets In The Sidebar")}
+          description={t("Upload the logo variants used in the shell sidebar.")}
           icon={<PictureOutlined />}
         >
           <div
@@ -365,8 +443,8 @@ export default function BrandingSettings() {
             }}
           >
             <LogoField
-              label="Light Theme Logo"
-              description="400 x 120px suggested"
+              label={t("Light Theme Logo")}
+              description=""
               logoId={lightLogoId}
               logoUrl={lightLogoUrl}
               previewBackground="#ffffff"
@@ -381,8 +459,8 @@ export default function BrandingSettings() {
             />
 
             <LogoField
-              label="Dark Theme Logo"
-              description="SVG preferred"
+              label={t("Dark Theme Logo")}
+              description=""
               logoId={darkLogoId}
               logoUrl={darkLogoUrl}
               previewBackground="#1f2430"
@@ -408,138 +486,132 @@ export default function BrandingSettings() {
           }}
         >
           <SurfaceCard
-            title="Brand Colors"
-            description="Primary shell accent and palette preview."
+            title={t("Brand Colors")}
+            description={t("Shell color theme and accent palette.")}
             icon={<BgColorsOutlined />}
           >
-            <div
-              style={{
-                display: "grid",
-                gridTemplateColumns: screens.sm ? "repeat(2, minmax(0, 1fr))" : "1fr",
-                gap: 18,
-                marginBottom: 20,
-              }}
-            >
-              <div style={{ minWidth: 0 }}>
+            <div style={{ display: "flex", flexDirection: "column", gap: 20, minHeight: "100%" }}>
+              {/* Theme Preset dropdown */}
+              <div>
                 <Text
                   style={{
                     display: "block",
                     marginBottom: 8,
-                    fontSize: 11,
+                    fontSize: 12,
                     fontWeight: 800,
                     letterSpacing: "0.12em",
                     textTransform: "uppercase",
                     color: token.colorTextTertiary,
                   }}
                 >
-                  Primary Accent
+                  {t("Theme Preset")}
                 </Text>
-                <div
-                  style={{
-                    display: "flex",
-                    alignItems: "center",
-                    gap: 12,
-                    padding: 12,
-                    borderRadius: token.borderRadiusLG,
-                    background: token.colorFillAlter,
+                <Select
+                  value={draftThemePreset}
+                  style={{ width: "100%" }}
+                  size="large"
+                  onChange={(key: string) => setDraftThemePreset(key)}
+                  optionRender={(option) => {
+                    const key = option.value as string;
+                    const color =
+                      key === CUSTOM_PRESET_KEY
+                        ? draftCustomColor
+                        : THEME_PRESETS[key]?.primaryColor || DEFAULT_PRIMARY_COLOR;
+                    return (
+                      <Flex align="center" gap={10}>
+                        <span
+                          style={{
+                            width: 14,
+                            height: 14,
+                            borderRadius: "50%",
+                            background: color,
+                            flexShrink: 0,
+                            display: "inline-block",
+                            border: `1px solid ${token.colorBorderSecondary}`,
+                          }}
+                        />
+                        <span>{option.label}</span>
+                      </Flex>
+                    );
                   }}
-                >
-                  <div
-                    style={{
-                      width: 24,
-                      height: 24,
-                      borderRadius: 8,
-                      background: primaryColor,
-                      flexShrink: 0,
-                    }}
-                  />
-                  <ColorPicker
-                    value={primaryColor}
-                    format="hex"
-                    size="large"
-                    disabledAlpha
-                    showText
-                    onChange={(color) => setPrimaryColor(color.toHexString())}
-                  />
-                </div>
+                  options={themePresetOptions}
+                />
+                {draftThemePreset === CUSTOM_PRESET_KEY && (
+                  <div style={{ marginTop: 12 }}>
+                    <ColorPicker
+                      value={draftCustomColor}
+                      format="hex"
+                      size="large"
+                      showText
+                      disabledAlpha
+                      onChange={(c) => setDraftCustomColor(c.toHexString())}
+                    />
+                  </div>
+                )}
               </div>
 
-              <div style={{ minWidth: 0 }}>
-                <Text
-                  style={{
-                    display: "block",
-                    marginBottom: 8,
-                    fontSize: 11,
-                    fontWeight: 800,
-                    letterSpacing: "0.12em",
-                    textTransform: "uppercase",
-                    color: token.colorTextTertiary,
-                  }}
-                >
-                  Default
-                </Text>
-                <div
-                  style={{
-                    display: "flex",
-                    alignItems: "center",
-                    gap: 12,
-                    padding: 12,
-                    borderRadius: token.borderRadiusLG,
-                    background: token.colorFillAlter,
-                  }}
-                >
-                  <div
-                    style={{
-                      width: 24,
-                      height: 24,
-                      borderRadius: 8,
-                      background: DEFAULT_PRIMARY_COLOR,
-                      flexShrink: 0,
-                    }}
-                  />
-                  <Text
-                    style={{
-                      fontFamily:
-                        'ui-monospace, SFMono-Regular, SF Mono, Menlo, Consolas, "Liberation Mono", monospace',
-                    }}
-                  >
-                    {DEFAULT_PRIMARY_COLOR}
-                  </Text>
-                </div>
-              </div>
-            </div>
-
-            <div style={{ marginTop: "auto" }}>
               <div
                 style={{
-                  height: 10,
-                  width: "100%",
-                  borderRadius: 999,
-                  overflow: "hidden",
-                  display: "flex",
-                  background: token.colorFillAlter,
-                  marginBottom: 8,
+                  paddingTop: 4,
+                  borderTop: `1px solid ${token.colorBorderSecondary}`,
                 }}
               >
-                <div style={{ width: "48%", background: primaryColor }} />
-                <div style={{ width: "24%", background: `${primaryColor}80` }} />
-                <div style={{ width: "18%", background: token.colorTextSecondary }} />
-                <div style={{ width: "10%", background: token.colorBorderSecondary }} />
+                <Flex justify="space-between" align="center" gap={16}>
+                  <div>
+                    <Text strong style={{ display: "block", fontSize: 14 }}>
+                      {t("High Contrast")}
+                    </Text>
+                    <Text type="secondary" style={{ fontSize: 14 }}>
+                      {t("Increase text and border contrast for better readability.")}
+                    </Text>
+                  </div>
+                  <Switch
+                    checked={highContrast}
+                    onChange={toggleHighContrast}
+                    checkedChildren={<EyeOutlined />}
+                  />
+                </Flex>
               </div>
-              <Flex justify="space-between" align="center" gap={12} wrap>
-                <Text type="secondary" style={{ fontSize: 11 }}>
-                  Global distribution preview
-                </Text>
-                <Button icon={<ReloadOutlined />} onClick={() => setPrimaryColor(DEFAULT_PRIMARY_COLOR)}>
-                  Reset to default
-                </Button>
-              </Flex>
+
+              {/* Color bar + reset — always at bottom */}
+              <div style={{ marginTop: "auto" }}>
+                <div
+                  style={{
+                    height: 8,
+                    borderRadius: 999,
+                    overflow: "hidden",
+                    display: "flex",
+                    marginBottom: 12,
+                  }}
+                >
+                  <div style={{ flex: "0 0 48%", background: token.colorPrimary }} />
+                  <div style={{ flex: "0 0 24%", background: `${token.colorPrimary}80` }} />
+                  <div style={{ flex: "0 0 18%", background: token.colorTextSecondary }} />
+                  <div style={{ flex: "0 0 10%", background: token.colorBorderSecondary }} />
+                </div>
+                <Flex justify="space-between" align="center" gap={8}>
+                  <Text type="secondary" style={{ fontSize: 12 }}>
+                    {t("Global distribution preview")}
+                  </Text>
+                  <Button
+                    icon={<ReloadOutlined />}
+                    size="middle"
+                    style={{ minHeight: 38, paddingInline: 14 }}
+                    onClick={() => {
+                      setDraftThemePreset("default");
+                      setDraftCustomColor(DEFAULT_PRIMARY_COLOR);
+                    }}
+                  >
+                    {t("Reset to default")}
+                  </Button>
+                </Flex>
+              </div>
             </div>
           </SurfaceCard>
 
           <SurfaceCard
-            title="Link Rules"
-            description="Patterns that should open in a new tab."
+            title={t("Link Rules")}
+            description={t("Patterns that should open in a new tab.")}
             icon={<LinkOutlined />}
           >
             <Text
@@ -548,16 +620,16 @@ export default function BrandingSettings() {
                 justifyContent: "space-between",
                 gap: 12,
                 marginBottom: 10,
-                fontSize: 11,
+                fontSize: 12,
                 fontWeight: 800,
                 letterSpacing: "0.12em",
                 textTransform: "uppercase",
                 color: token.colorTextTertiary,
               }}
             >
-              <span>Global URL Fragments</span>
+              <span>{t("Global URL Fragments")}</span>
               <span style={{ textTransform: "none", letterSpacing: 0, fontWeight: 500 }}>
-                One fragment per line
+                {t("One fragment per line")}
               </span>
             </Text>
 
@@ -576,8 +648,8 @@ export default function BrandingSettings() {
             />
 
             <Flex justify="space-between" align="center" gap={12} wrap style={{ marginTop: 16 }}>
-              <Text type="secondary" style={{ fontSize: 11 }}>
-                Matching links bypass the iframe and open directly in a new tab.
+              <Text type="secondary" style={{ fontSize: 12 }}>
+                {t("Matching links bypass the iframe and open directly in a new tab.")}
               </Text>
             </Flex>
           </SurfaceCard>
@@ -585,133 +657,106 @@ export default function BrandingSettings() {
 
         <div style={{ marginTop: 24 }}>
           <SurfaceCard
-            title="Typography"
-            description="Choose the font system used across the shell interface."
+            title={t("Typography")}
+            description={t("Choose the font system used across the shell interface.")}
             icon={<FontSizeOutlined />}
           >
-          <div
-            style={{
-              display: "grid",
-              gridTemplateColumns: screens.md ? "320px minmax(0, 1fr)" : "1fr",
-              gap: 24,
-              alignItems: "start",
-            }}
-          >
-            <div style={{ minWidth: 0 }}>
-              <Text
-                style={{
-                  display: "block",
-                  marginBottom: 8,
-                  fontSize: 11,
-                  fontWeight: 800,
-                  letterSpacing: "0.12em",
-                  textTransform: "uppercase",
-                  color: token.colorTextTertiary,
-                }}
-              >
-                Font preset
-              </Text>
-              <Select
-                value={fontPreset}
-                options={FONT_PRESET_OPTIONS}
-                onChange={(value) => setFontPreset(value as FontPresetKey)}
-                style={{ width: "100%" }}
-                size="large"
-              />
-            </div>
-
             <div
               style={{
                 display: "grid",
-                gridTemplateColumns: screens.lg ? "repeat(4, minmax(0, 1fr))" : screens.sm ? "repeat(2, minmax(0, 1fr))" : "1fr",
-                gap: 16,
+                gridTemplateColumns: screens.md ? "320px minmax(0, 1fr)" : "1fr",
+                gap: 24,
+                alignItems: "start",
               }}
             >
-              {Object.entries(FONT_PRESETS).map(([key, preset]) => {
-                const active = key === fontPreset;
-
-                return (
-                  <div
-                    key={key}
-                    style={{
-                      padding: 18,
-                      borderRadius: token.borderRadiusLG,
-                      border: `1px solid ${active ? token.colorPrimary : token.colorBorderSecondary}`,
-                      background: active ? `${token.colorPrimary}10` : token.colorBgContainer,
-                    }}
-                  >
-                    <Text
-                      style={{
-                        display: "block",
-                        marginBottom: 6,
-                        fontSize: 11,
-                        fontWeight: 800,
-                        letterSpacing: "0.12em",
-                        textTransform: "uppercase",
-                        color: active ? token.colorPrimary : token.colorTextTertiary,
-                      }}
-                    >
-                      {preset.label}
-                    </Text>
-                    <div
-                      style={{
-                        fontFamily: preset.family,
-                        fontSize: 28,
-                        lineHeight: 1,
-                        marginBottom: 10,
-                        color: token.colorTextHeading,
-                      }}
-                    >
-                      Aa
-                    </div>
-                    <Text style={{ display: "block", fontFamily: preset.family, fontWeight: 600 }}>
-                      Brand Assets
-                    </Text>
-                    <Text type="secondary" style={{ display: "block", fontFamily: preset.family, fontSize: 12 }}>
-                      The quick brown fox
-                    </Text>
-                  </div>
-                );
-              })}
-            </div>
-          </div>
-        </SurfaceCard>
-        </div>
-
-        <div style={{ marginTop: 24 }}>
-          <SurfaceCard
-            title="Appearance"
-            description="Theme presets and display preferences"
-            icon={<BgColorsOutlined />}
-          >
-          <div style={{ marginBottom: 24 }}>
-            <Text strong style={{ display: "block", marginBottom: 4, fontSize: 14 }}>
-              Theme Presets
-            </Text>
-            <Text type="secondary" style={{ display: "block", marginBottom: 12, fontSize: 13 }}>
-              Choose a color scheme preset for the admin shell.
-            </Text>
-            <ThemePresetPicker />
-          </div>
-
-          <div>
-            <Flex justify="space-between" align="center">
-              <div>
-                <Text strong style={{ display: "block", fontSize: 14 }}>
-                  High Contrast
+              <div style={{ minWidth: 0 }}>
+                <Text
+                  style={{
+                    display: "block",
+                    marginBottom: 8,
+                    fontSize: 12,
+                    fontWeight: 800,
+                    letterSpacing: "0.12em",
+                    textTransform: "uppercase",
+                    color: token.colorTextTertiary,
+                  }}
+                >
+                  {t("Font preset")}
                 </Text>
-                <Text type="secondary" style={{ fontSize: 13 }}>
-                  Increase text and border contrast for better readability.
-                </Text>
+                <Select
+                  value={fontPreset}
+                  options={fontPresetOptions}
+                  onChange={(value) => setFontPreset(value as FontPresetKey)}
+                  style={{ width: "100%" }}
+                  size="large"
+                />
               </div>
-              <Switch
-                checked={highContrast}
-                onChange={toggleHighContrast}
-                checkedChildren={<EyeOutlined />}
-              />
-            </Flex>
-          </div>
-        </SurfaceCard>
+
+              <div
+                style={{
+                  display: "grid",
+                  gridTemplateColumns: screens.lg
+                    ? "repeat(4, minmax(0, 1fr))"
+                    : screens.sm
+                      ? "repeat(2, minmax(0, 1fr))"
+                      : "1fr",
+                  gap: 16,
+                }}
+              >
+                {Object.entries(FONT_PRESETS).map(([key, preset]) => {
+                  const active = key === fontPreset;
+
+                  return (
+                    <div
+                      key={key}
+                      style={{
+                        padding: 18,
+                        borderRadius: token.borderRadiusLG,
+                        border: `1px solid ${active ? token.colorPrimary : token.colorBorderSecondary}`,
+                        background: active ? `${token.colorPrimary}10` : token.colorBgContainer,
+                      }}
+                    >
+                      <Text
+                        style={{
+                          display: "block",
+                          marginBottom: 6,
+                          fontSize: 12,
+                          fontWeight: 800,
+                          letterSpacing: "0.12em",
+                          textTransform: "uppercase",
+                          color: active ? token.colorPrimary : token.colorTextTertiary,
+                        }}
+                      >
+                        {t(preset.label)}
+                      </Text>
+                      <div
+                        style={{
+                          fontFamily: preset.family,
+                          fontSize: 28,
+                          lineHeight: 1,
+                          marginBottom: 10,
+                          color: token.colorTextHeading,
+                        }}
+                      >
+                        Aa
+                      </div>
+                      <Text
+                        style={{ display: "block", fontFamily: preset.family, fontWeight: 600 }}
+                      >
+                        {t("Brand Assets")}
+                      </Text>
+                      <Text
+                        type="secondary"
+                        style={{ display: "block", fontFamily: preset.family, fontSize: 12 }}
+                      >
+                        The quick brown fox
+                      </Text>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          </SurfaceCard>
         </div>
 
         <Flex
@@ -726,7 +771,7 @@ export default function BrandingSettings() {
           }}
         >
           <Text type="secondary" style={{ fontSize: 12 }}>
-            Changes are applied live after saving.
+            {t("Changes are applied live after saving.")}
           </Text>
 
           <Flex gap={12} wrap />

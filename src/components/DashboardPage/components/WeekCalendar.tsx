@@ -34,7 +34,7 @@ export function WeekCalendar({ weekDays, intlLocale }: WeekCalendarProps) {
             <div style={{ textAlign: "center", marginBottom: 6 }}>
               <div
                 style={{
-                  fontSize: 10,
+                  fontSize: 11,
                   color: day.isToday ? token.colorPrimary : token.colorTextSecondary,
                   textTransform: "uppercase",
                   fontWeight: 600,
@@ -54,7 +54,7 @@ export function WeekCalendar({ weekDays, intlLocale }: WeekCalendarProps) {
                   alignItems: "center",
                   justifyContent: "center",
                   margin: "2px auto 0",
-                  fontSize: 13,
+                  fontSize: 14,
                   fontWeight: day.isToday ? 700 : 400,
                 }}
               >
@@ -63,7 +63,7 @@ export function WeekCalendar({ weekDays, intlLocale }: WeekCalendarProps) {
             </div>
             {day.bookings.length === 0 ? (
               <div style={{ textAlign: "center", paddingTop: 4 }}>
-                <Text type="secondary" style={{ fontSize: 10 }}>
+                <Text type="secondary" style={{ fontSize: 11 }}>
                   —
                 </Text>
               </div>
@@ -86,7 +86,7 @@ export function WeekCalendar({ weekDays, intlLocale }: WeekCalendarProps) {
                       >
                         <div
                           style={{
-                            fontSize: 10,
+                            fontSize: 11,
                             color: token.colorPrimary,
                             overflow: "hidden",
                             textOverflow: "ellipsis",
@@ -97,7 +97,7 @@ export function WeekCalendar({ weekDays, intlLocale }: WeekCalendarProps) {
                         </div>
                         <div
                           style={{
-                            fontSize: 10,
+                            fontSize: 11,
                             color: token.colorText,
                             overflow: "hidden",
                             textOverflow: "ellipsis",

@@ -29,16 +29,16 @@ export function SiteStatusOverview({
             key: "legal",
             label: (
               <Flex align="center" gap={8}>
-                <FileProtectOutlined style={{ color: token.colorPrimary, fontSize: 13 }} />
-                <Text style={{ fontSize: 13 }}>{t("Legal & Compliance")}</Text>
+                <FileProtectOutlined style={{ color: token.colorPrimary, fontSize: 14 }} />
+                <Text style={{ fontSize: 14 }}>{t("Legal & Compliance")}</Text>
                 {!legalData.privacyPolicy.published ||
                 !legalData.impressum.published ||
                 legalData.trackingWithoutConsent ? (
-                  <Tag color="error" style={{ margin: 0, fontSize: 11 }}>
+                  <Tag color="error" style={{ margin: 0, fontSize: 12 }}>
                     {t("Action needed")}
                   </Tag>
                 ) : (
-                  <Tag color="success" style={{ margin: 0, fontSize: 11 }}>
+                  <Tag color="success" style={{ margin: 0, fontSize: 12 }}>
                     {t("All good")}
                   </Tag>
                 )}
@@ -54,14 +54,14 @@ export function SiteStatusOverview({
             key: "business",
             label: (
               <Flex align="center" gap={8}>
-                <BankOutlined style={{ color: token.colorPrimary, fontSize: 13 }} />
-                <Text style={{ fontSize: 13 }}>{t("Business Functions")}</Text>
+                <BankOutlined style={{ color: token.colorPrimary, fontSize: 14 }} />
+                <Text style={{ fontSize: 14 }}>{t("Business Functions")}</Text>
                 {!bizData.contactForms.available || !bizData.emailDelivery.smtpPlugin ? (
-                  <Tag color="warning" style={{ margin: 0, fontSize: 11 }}>
+                  <Tag color="warning" style={{ margin: 0, fontSize: 12 }}>
                     Review
                   </Tag>
                 ) : (
-                  <Tag color="success" style={{ margin: 0, fontSize: 11 }}>
+                  <Tag color="success" style={{ margin: 0, fontSize: 12 }}>
                     {t("Active")}
                   </Tag>
                 )}
@@ -77,11 +77,11 @@ export function SiteStatusOverview({
             key: "seo",
             label: (
               <Flex align="center" gap={8}>
-                <SearchOutlined style={{ color: token.colorPrimary, fontSize: 13 }} />
-                <Text style={{ fontSize: 13 }}>{t("SEO Basics")}</Text>
+                <SearchOutlined style={{ color: token.colorPrimary, fontSize: 14 }} />
+                <Text style={{ fontSize: 14 }}>{t("SEO Basics")}</Text>
                 <Tag
                   color={seoBasics.score >= 75 ? "success" : "warning"}
-                  style={{ margin: 0, fontSize: 11 }}
+                  style={{ margin: 0, fontSize: 12 }}
                 >
                   {seoBasics.score}%
                 </Tag>

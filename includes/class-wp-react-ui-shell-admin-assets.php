@@ -36,7 +36,6 @@ class WP_React_UI_Shell_Admin_Assets {
 	public static function handle_admin_init(): void {
 		global $pagenow;
 		if ( wp_react_ui_should_boot_shell( $pagenow ) ) {
-			remove_action( 'in_admin_header', 'wp_admin_bar_render', 0 );
 			remove_action( 'wp_head', '_admin_bar_bump_cb' );
 		}
 

@@ -53,6 +53,9 @@ function ShellCssVarSync() {
       "--wp-react-ui-scrollbar-track": token.colorFillSecondary,
       "--wp-react-ui-scrollbar-thumb": token.colorTextQuaternary,
       "--wp-react-ui-scrollbar-thumb-hover": token.colorTextTertiary,
+      // Keep sidebar gradient in sync with the active theme preset primary color
+      "--wp-react-ui-shell-accent-soft": token.colorPrimaryBg,
+      "--wp-react-ui-shell-border-strong": token.colorPrimaryBorder,
     };
 
     for (const [name, value] of Object.entries(cssVars)) {

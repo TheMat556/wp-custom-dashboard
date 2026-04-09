@@ -73,7 +73,7 @@ export function SummaryTiles({
           ) : (
             <Typography.Text
               style={{
-                fontSize: 11,
+                fontSize: 12,
                 color: isSiteDown ? token.colorError : token.colorTextTertiary,
               }}
             >
@@ -110,19 +110,19 @@ export function SummaryTiles({
             viewTrend !== 0 ? (
               <Typography.Text
                 style={{
-                  fontSize: 11,
+                  fontSize: 12,
                   color: viewTrend > 0 ? token.colorSuccess : token.colorError,
                 }}
               >
                 {viewTrend > 0 ? "↑" : "↓"} {Math.abs(viewTrend)}% {t("vs yesterday")}
               </Typography.Text>
             ) : (
-              <Typography.Text type="secondary" style={{ fontSize: 11 }}>
+              <Typography.Text type="secondary" style={{ fontSize: 12 }}>
                 {t("Stable traffic")}
               </Typography.Text>
             )
           ) : (
-            <Typography.Text type="secondary" style={{ fontSize: 11 }}>
+            <Typography.Text type="secondary" style={{ fontSize: 12 }}>
               {t("Tracking active")}
             </Typography.Text>
           )
@@ -140,27 +140,27 @@ export function SummaryTiles({
           hasUpdates ? (
             <Flex gap={3} wrap="wrap">
               {(updates?.plugins ?? 0) > 0 && (
-                <Tag color="blue" style={{ margin: 0, fontSize: 10 }}>
+                <Tag color="blue" style={{ margin: 0, fontSize: 11 }}>
                   {updates!.plugins} plugins
                 </Tag>
               )}
               {(updates?.themes ?? 0) > 0 && (
-                <Tag color="purple" style={{ margin: 0, fontSize: 10 }}>
+                <Tag color="purple" style={{ margin: 0, fontSize: 11 }}>
                   {updates!.themes} themes
                 </Tag>
               )}
               {(updates?.core ?? 0) > 0 && (
-                <Tag color="red" style={{ margin: 0, fontSize: 10 }}>
+                <Tag color="red" style={{ margin: 0, fontSize: 11 }}>
                   core
                 </Tag>
               )}
             </Flex>
           ) : updates?.lastChecked ? (
-            <Typography.Text type="secondary" style={{ fontSize: 11 }}>
+            <Typography.Text type="secondary" style={{ fontSize: 12 }}>
               {relativeTime(updates.lastChecked, intlLocale)}
             </Typography.Text>
           ) : (
-            <Typography.Text type="secondary" style={{ fontSize: 11 }}>
+            <Typography.Text type="secondary" style={{ fontSize: 12 }}>
               {t("All up to date")}
             </Typography.Text>
           )
@@ -183,7 +183,7 @@ export function SummaryTiles({
           !isSiteDown && speed?.status ? (
             <Typography.Text
               style={{
-                fontSize: 11,
+                fontSize: 12,
                 color:
                   speed.status === "good"
                     ? token.colorSuccess
@@ -199,7 +199,7 @@ export function SummaryTiles({
                   : t("Slow")}
             </Typography.Text>
           ) : (
-            <Typography.Text style={{ fontSize: 11, color: token.colorError }}>
+            <Typography.Text style={{ fontSize: 12, color: token.colorError }}>
               {t("Unreachable")}
             </Typography.Text>
           )
@@ -224,25 +224,25 @@ export function SummaryTiles({
         sub={
           seo?.plugin ? (
             seo.issues.length === 0 ? (
-              <Typography.Text style={{ fontSize: 11, color: token.colorSuccess }}>
+              <Typography.Text style={{ fontSize: 12, color: token.colorSuccess }}>
                 {t("No issues")}
               </Typography.Text>
             ) : (
-              <Typography.Text style={{ fontSize: 11, color: token.colorWarning }}>
+              <Typography.Text style={{ fontSize: 12, color: token.colorWarning }}>
                 {t("{n} issues", { n: seo.issues.length })}
               </Typography.Text>
             )
           ) : seoBasics ? (
             <Typography.Text
               style={{
-                fontSize: 11,
+                fontSize: 12,
                 color: seoBasics.score >= 75 ? token.colorSuccess : token.colorWarning,
               }}
             >
               {t("Basic check")}
             </Typography.Text>
           ) : (
-            <Typography.Text type="secondary" style={{ fontSize: 11 }}>
+            <Typography.Text type="secondary" style={{ fontSize: 12 }}>
               {t("No plugin")}
             </Typography.Text>
           )

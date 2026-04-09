@@ -61,7 +61,7 @@ export function OfflineAlert({ speed, t, intlLocale, adminUrl }: OfflineAlertPro
                   {
                     key: "tech",
                     label: (
-                      <Text type="secondary" style={{ fontSize: 11 }}>
+                      <Text type="secondary" style={{ fontSize: 12 }}>
                         {t("Technical details (for developers)")}
                       </Text>
                     ),
@@ -69,7 +69,7 @@ export function OfflineAlert({ speed, t, intlLocale, adminUrl }: OfflineAlertPro
                       <div
                         style={{
                           fontFamily: "monospace",
-                          fontSize: 11,
+                          fontSize: 12,
                           background: token.colorBgLayout,
                           borderRadius: token.borderRadius,
                           padding: "8px 12px",

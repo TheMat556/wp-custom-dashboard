@@ -1,7 +1,7 @@
 import { Flex, Typography, theme } from "antd";
 import type { SectionProps } from "../types";
 
-const { Text } = Typography;
+const { Title, Text } = Typography;
 
 export function Section({ icon, title, description, children, extra }: SectionProps) {
   const { token } = theme.useToken();
@@ -11,20 +11,20 @@ export function Section({ icon, title, description, children, extra }: SectionPr
         borderRadius: token.borderRadiusLG,
         border: `1px solid ${token.colorBorderSecondary}`,
         background: token.colorBgContainer,
-        padding: 28,
+        padding: 32,
         boxSizing: "border-box",
       }}
     >
-      <Flex align="center" justify="space-between" gap={12} style={{ marginBottom: 20 }}>
-        <Flex align="center" gap={10}>
+      <Flex align="center" justify="space-between" gap={12} style={{ marginBottom: 24 }}>
+        <Flex align="center" gap={12}>
           <span
             style={{
-              width: 34,
-              height: 34,
-              borderRadius: 10,
-              background: `${token.colorPrimary}12`,
+              width: 36,
+              height: 36,
+              borderRadius: 12,
+              background: `${token.colorPrimary}18`,
               color: token.colorPrimary,
-              fontSize: 18,
+              fontSize: 20,
               display: "inline-flex",
               alignItems: "center",
               justifyContent: "center",
@@ -34,7 +34,9 @@ export function Section({ icon, title, description, children, extra }: SectionPr
             {icon}
           </span>
           <div style={{ minWidth: 0 }}>
-            <Text style={{ fontSize: 15, fontWeight: 600, display: "block" }}>{title}</Text>
+            <Title level={4} style={{ margin: 0 }}>
+              {title}
+            </Title>
             {description && (
               <Text type="secondary" style={{ fontSize: 12 }}>
                 {description}

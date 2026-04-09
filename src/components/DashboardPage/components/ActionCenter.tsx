@@ -34,7 +34,7 @@ export function ActionCenter({
       }
       extra={
         criticalActions.length > 0 ? (
-          <Typography.Text style={{ color: token.colorError, fontWeight: 600, fontSize: 13 }}>
+          <Typography.Text style={{ color: token.colorError, fontWeight: 600, fontSize: 14 }}>
             {criticalActions.length} urgent
           </Typography.Text>
         ) : undefined
@@ -43,7 +43,7 @@ export function ActionCenter({
       {actions.length === 0 ? (
         <Flex vertical align="center" gap={8} style={{ padding: "20px 0" }}>
           <CheckCircleOutlined style={{ fontSize: 32, color: token.colorSuccess }} />
-          <Typography.Text type="secondary" style={{ fontSize: 13 }}>
+          <Typography.Text type="secondary" style={{ fontSize: 14 }}>
             {t("Everything looks great! No action required.")}
           </Typography.Text>
         </Flex>
@@ -73,10 +73,10 @@ export function ActionCenter({
           {criticalActions.length > 0 && (
             <div style={{ marginBottom: 4 }}>
               <Flex align="center" gap={6} style={{ marginBottom: 8 }}>
-                <AlertOutlined style={{ color: token.colorError, fontSize: 11 }} />
+                <AlertOutlined style={{ color: token.colorError, fontSize: 12 }} />
                 <Typography.Text
                   style={{
-                    fontSize: 10,
+                    fontSize: 11,
                     fontWeight: 700,
                     textTransform: "uppercase",
                     color: token.colorError,
@@ -95,10 +95,10 @@ export function ActionCenter({
           {warningActions.length > 0 && (
             <div style={{ marginTop: criticalActions.length ? 12 : 0 }}>
               <Flex align="center" gap={6} style={{ marginBottom: 8 }}>
-                <WarningOutlined style={{ color: token.colorWarning, fontSize: 11 }} />
+                <WarningOutlined style={{ color: token.colorWarning, fontSize: 12 }} />
                 <Typography.Text
                   style={{
-                    fontSize: 10,
+                    fontSize: 11,
                     fontWeight: 700,
                     textTransform: "uppercase",
                     color: token.colorWarning,
@@ -123,8 +123,8 @@ export function ActionCenter({
                   key: "info",
                   label: (
                     <Flex align="center" gap={6}>
-                      <InfoCircleOutlined style={{ color: token.colorInfo, fontSize: 11 }} />
-                      <Typography.Text type="secondary" style={{ fontSize: 11 }}>
+                      <InfoCircleOutlined style={{ color: token.colorInfo, fontSize: 12 }} />
+                      <Typography.Text type="secondary" style={{ fontSize: 12 }}>
                         {t(
                           infoActions.length === 1
                             ? "{n} low-priority item"

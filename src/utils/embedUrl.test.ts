@@ -9,6 +9,7 @@ import {
   fromEmbedUrl,
   isAdminUrl,
   isBreakoutUrl,
+  isShellRouteUrl,
   normalizeToMenuKey,
   toEmbedUrl,
 } from "./embedUrl";
@@ -173,5 +174,21 @@ describe("isBreakoutUrl", () => {
   it("resolves breakout URLs correctly on subdirectory installs", () => {
     setAdminLocation("http://localhost/subsite/wp-admin/admin.php");
     expect(isBreakoutUrl("post.php?post=1&action=edit")).toBe(true);
+  });
+});
+
+describe("isShellRouteUrl", () => {
+  it("flags plugin shell routes by their page slug", () => {
+    expect(
+      isShellRouteUrl("http://localhost/wp-admin/admin.php?page=my-plugin&wp_shell_embed=1", [
+        "my-plugin",
+      ])
+    ).toBe(true);
+  });
+
+  it("does not flag unrelated admin pages", () => {
+    expect(
+      isShellRouteUrl("http://localhost/wp-admin/plugins.php?wp_shell_embed=1", ["my-plugin"])
+    ).toBe(false);
   });
 });
