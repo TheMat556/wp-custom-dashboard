@@ -1,0 +1,28 @@
+{
+  "$id": "dto/activity.response",
+  "title": "ActivityResponse",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["entries", "total", "page", "perPage"],
+  "properties": {
+    "entries": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": true
+      }
+    },
+    "total": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "page": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "perPage": {
+      "type": "integer",
+      "minimum": 1
+    }
+  }
+}

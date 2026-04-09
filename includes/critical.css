@@ -1,7 +1,11 @@
 
 /* ── Inter font everywhere ── */
+:root {
+    --wp-react-ui-font-family: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+}
+
 html, body, input, button, select, textarea {
-    font-family: "Inter", -apple-system, BlinkMacSystemFont, sans-serif !important;
+    font-family: var(--wp-react-ui-font-family) !important;
 }
 
 /* ── Hide native WordPress chrome ── */
@@ -21,7 +25,7 @@ html, body {
     padding: 0 !important;
     height: 100% !important;
     overflow: hidden !important;
-    font-family: "Inter", -apple-system, BlinkMacSystemFont, sans-serif !important;
+    font-family: var(--wp-react-ui-font-family) !important;
 }
 
 /* ── CSS variable driven by JS on collapse/expand ── */
@@ -34,8 +38,8 @@ html, body {
 @media (max-width: 767px) {
     :root { --sidebar-width: 0px; }
 
-    #react-sidebar-root:not(.mounted)::before,
-    #react-sidebar-root:not(.mounted)::after {
+    #react-shell-root:not(.mounted)::before,
+    #react-shell-root:not(.mounted)::after {
         display: none !important;
     }
 }
@@ -113,57 +117,39 @@ body[data-theme="dark"] #wpwrap:not(.has-react-shell)::after {
     background-size: 200% 100%;
 }
 
-/* ── Sidebar ── */
-#react-sidebar-root {
-    grid-area: sidebar !important;
+/* ── Unified shell root ── */
+#react-shell-root {
+    grid-column: 1 / 3 !important;
+    grid-row: 1 / 3 !important;
     display: flex !important;
-    flex-direction: column !important;
-    height: 100% !important;
     width: 100% !important;
     min-width: 0 !important;
+    height: 100vh !important;
+    min-height: 100vh !important;
+    position: sticky !important;
+    top: 0 !important;
+    align-self: start !important;
+    background: transparent !important;
+    z-index: 100 !important;
+    pointer-events: none !important;
+}
+
+#react-shell-root:not(.mounted) {
+    position: sticky !important;
     overflow: hidden !important;
 }
 
-#react-sidebar-root:not(.mounted) {
-    position: relative !important;
-    background: #ffffff !important;
-    border-right: 1px solid #e2e8f0 !important;
-}
-
-#react-sidebar-root[data-theme="dark"]:not(.mounted) {
-    background: #141414 !important;
-    border-right-color: #303030 !important;
-}
-
-/* ── Navbar ── */
-#react-navbar-root {
-    grid-area: navbar !important;
-    display: flex !important;
-    flex-direction: column !important;
-    width: 100% !important;
-    min-height: 64px !important;
-    min-width: 0 !important;
-    background: transparent !important;
-    z-index: 100 !important;
-}
-
-/* ── Content ── */
+/* ── Content area (iframe shell) ──────────────────────────────────────────────
+   Content is served by the iframe inside #react-shell-root.
+   The native WordPress #wpcontent / #wpfooter remain in the DOM (PHP renders
+   them) but are hidden — users never interact with them directly.
+   ─────────────────────────────────────────────────────────────────────────── */
 #wpcontent,
 #wpfooter {
     grid-area: content !important;
     margin-left: 0 !important;
-    min-width: 0 !important;
-    overflow-y: auto !important;
-    opacity: 0 !important;
+    visibility: hidden !important;
     pointer-events: none !important;
-    transition: opacity 0.08s ease !important;
-}
-
-/* ── Reveal content once React is ready ── */
-#wpwrap.react-ready #wpcontent,
-#wpwrap.react-ready #wpfooter {
-    opacity: 1 !important;
-    pointer-events: auto !important;
 }
 
 /* ── Skeleton shimmer ── */
@@ -172,40 +158,30 @@ body[data-theme="dark"] #wpwrap:not(.has-react-shell)::after {
     50%       { opacity: 1;   }
 }
 
-#react-navbar-root:not(.mounted)::before {
+#react-shell-root:not(.mounted)::before {
     content: "";
-    display: block;
+    position: absolute;
+    top: 0;
+    left: var(--sidebar-width, 240px);
+    right: 0;
     height: 64px;
     background: linear-gradient(90deg, #f1f5f9 25%, #e2e8f0 50%, #f1f5f9 75%);
     background-size: 200% 100%;
     animation: wp-react-skeleton 1.5s ease-in-out infinite;
+    pointer-events: none;
 }
 
-#react-sidebar-root:not(.mounted)::before {
+#react-shell-root:not(.mounted)::after {
     content: "";
     position: absolute;
-    top: 16px;
-    left: 16px;
-    right: 16px;
-    height: 80px;
-    border-radius: 18px;
+    top: 0;
+    left: 0;
+    width: var(--sidebar-width, 240px);
+    bottom: 0;
     background:
-        linear-gradient(90deg, #f1f5f9 25%, #e2e8f0 50%, #f1f5f9 75%) 16px 16px / 48px 48px no-repeat,
-        linear-gradient(90deg, #f1f5f9 25%, #e2e8f0 50%, #f1f5f9 75%) 80px 20px / 92px 16px no-repeat,
-        linear-gradient(90deg, #f1f5f9 25%, #e2e8f0 50%, #f1f5f9 75%) 80px 46px / 128px 12px no-repeat,
-        #f8fafc;
-    box-shadow: inset 0 0 0 1px rgba(226, 232, 240, 0.9);
-    animation: wp-react-skeleton 1.5s ease-in-out infinite;
-}
-
-#react-sidebar-root:not(.mounted)::after {
-    content: "";
-    position: absolute;
-    top: 120px;
-    left: 16px;
-    right: 16px;
-    bottom: 24px;
-    background:
+        linear-gradient(90deg, #f1f5f9 25%, #e2e8f0 50%, #f1f5f9 75%) 32px 32px / 48px 48px no-repeat,
+        linear-gradient(90deg, #f1f5f9 25%, #e2e8f0 50%, #f1f5f9 75%) 96px 36px / 92px 16px no-repeat,
+        linear-gradient(90deg, #f1f5f9 25%, #e2e8f0 50%, #f1f5f9 75%) 96px 62px / 128px 12px no-repeat,
         linear-gradient(90deg, #f1f5f9 25%, #e2e8f0 50%, #f1f5f9 75%) 0 0 / 18px 18px no-repeat,
         linear-gradient(90deg, #f1f5f9 25%, #e2e8f0 50%, #f1f5f9 75%) 32px 2px / calc(100% - 76px) 14px no-repeat,
         linear-gradient(90deg, #f1f5f9 25%, #e2e8f0 50%, #f1f5f9 75%) 0 44px / 18px 18px no-repeat,
@@ -214,25 +190,49 @@ body[data-theme="dark"] #wpwrap:not(.has-react-shell)::after {
         linear-gradient(90deg, #f1f5f9 25%, #e2e8f0 50%, #f1f5f9 75%) 32px 90px / calc(100% - 64px) 14px no-repeat,
         linear-gradient(90deg, #f1f5f9 25%, #e2e8f0 50%, #f1f5f9 75%) 0 148px / calc(100% - 48px) 12px no-repeat,
         linear-gradient(90deg, #f1f5f9 25%, #e2e8f0 50%, #f1f5f9 75%) 0 188px / calc(100% - 72px) 12px no-repeat,
-        linear-gradient(90deg, #f1f5f9 25%, #e2e8f0 50%, #f1f5f9 75%) 0 228px / calc(100% - 56px) 12px no-repeat;
+        linear-gradient(90deg, #f1f5f9 25%, #e2e8f0 50%, #f1f5f9 75%) 0 228px / calc(100% - 56px) 12px no-repeat,
+        #ffffff;
+    border-right: 1px solid #e2e8f0 !important;
     animation: wp-react-skeleton 1.5s ease-in-out infinite;
     pointer-events: none;
 }
 
-#react-navbar-root.mounted::before,
-#react-sidebar-root.mounted::before,
-#react-sidebar-root.mounted::after {
+#react-shell-root[data-theme="dark"]:not(.mounted)::before {
+    background: linear-gradient(90deg, #1f1f1f 25%, #303030 50%, #1f1f1f 75%);
+    background-size: 200% 100%;
+}
+
+#react-shell-root[data-theme="dark"]:not(.mounted)::after {
+    background:
+        linear-gradient(90deg, #1f1f1f 25%, #303030 50%, #1f1f1f 75%) 32px 32px / 48px 48px no-repeat,
+        linear-gradient(90deg, #1f1f1f 25%, #303030 50%, #1f1f1f 75%) 96px 36px / 92px 16px no-repeat,
+        linear-gradient(90deg, #1f1f1f 25%, #303030 50%, #1f1f1f 75%) 96px 62px / 128px 12px no-repeat,
+        linear-gradient(90deg, #1f1f1f 25%, #303030 50%, #1f1f1f 75%) 0 0 / 18px 18px no-repeat,
+        linear-gradient(90deg, #1f1f1f 25%, #303030 50%, #1f1f1f 75%) 32px 2px / calc(100% - 76px) 14px no-repeat,
+        linear-gradient(90deg, #1f1f1f 25%, #303030 50%, #1f1f1f 75%) 0 44px / 18px 18px no-repeat,
+        linear-gradient(90deg, #1f1f1f 25%, #303030 50%, #1f1f1f 75%) 32px 46px / calc(100% - 92px) 14px no-repeat,
+        linear-gradient(90deg, #1f1f1f 25%, #303030 50%, #1f1f1f 75%) 0 88px / 18px 18px no-repeat,
+        linear-gradient(90deg, #1f1f1f 25%, #303030 50%, #1f1f1f 75%) 32px 90px / calc(100% - 64px) 14px no-repeat,
+        linear-gradient(90deg, #1f1f1f 25%, #303030 50%, #1f1f1f 75%) 0 148px / calc(100% - 48px) 12px no-repeat,
+        linear-gradient(90deg, #1f1f1f 25%, #303030 50%, #1f1f1f 75%) 0 188px / calc(100% - 72px) 12px no-repeat,
+        linear-gradient(90deg, #1f1f1f 25%, #303030 50%, #1f1f1f 75%) 0 228px / calc(100% - 56px) 12px no-repeat,
+        #141414;
+    border-right-color: #303030 !important;
+}
+
+#react-shell-root.mounted::before,
+#react-shell-root.mounted::after {
     display: none !important;
 }
 
 /* ─────────────────────────────────────────────────────────────────────────────
    Cross-document View Transitions  (Chrome 126+, progressive enhancement)
    The `pagereveal` event (registered in the early-state inline script) creates
-   #react-sidebar-root and #react-navbar-root before the browser's first paint,
+   #react-shell-root before the browser's first paint,
    so the view-transition snapshot always captures real named elements — no
-   pseudo-element fallbacks needed, no navbar regression.
+   pseudo-element fallbacks needed, no shell regression.
 
-   Effect: the old page's sidebar/navbar screenshot holds in place while the
+   Effect: the old page's shell screenshot holds in place while the
    new page's content fades in on top, making the shell appear stationary.
    ───────────────────────────────────────────────────────────────────────────── */
 
@@ -242,8 +242,7 @@ body[data-theme="dark"] #wpwrap:not(.has-react-shell)::after {
 
 @supports (view-transition-name: none) {
     /* Named captures on real elements only. */
-    #react-sidebar-root { view-transition-name: wp-sidebar; }
-    #react-navbar-root  { view-transition-name: wp-navbar;  }
+    #react-shell-root { view-transition-name: wp-shell; }
 
     /*
      * View-transition layers are purely visual. Never let them intercept
@@ -253,14 +252,10 @@ body[data-theme="dark"] #wpwrap:not(.has-react-shell)::after {
     ::view-transition-image-pair(root),
     ::view-transition-old(root),
     ::view-transition-new(root),
-    ::view-transition-group(wp-sidebar),
-    ::view-transition-image-pair(wp-sidebar),
-    ::view-transition-old(wp-sidebar),
-    ::view-transition-new(wp-sidebar),
-    ::view-transition-group(wp-navbar),
-    ::view-transition-image-pair(wp-navbar),
-    ::view-transition-old(wp-navbar),
-    ::view-transition-new(wp-navbar) {
+    ::view-transition-group(wp-shell),
+    ::view-transition-image-pair(wp-shell),
+    ::view-transition-old(wp-shell),
+    ::view-transition-new(wp-shell) {
         pointer-events: none;
     }
 
@@ -268,17 +263,15 @@ body[data-theme="dark"] #wpwrap:not(.has-react-shell)::after {
      * OLD screenshot: hold visible (opacity 1) for the full duration so it acts
      *     as a stable backdrop while new content appears over it.
      * NEW content: fade in from transparent — if React has already mounted by
-     *     the time the animation runs (likely on cached pages) the real sidebar
+     *     the time the animation runs (likely on cached pages) the real shell
      *     fades straight in; otherwise the skeleton fades in and React replaces
      *     it quickly enough to be imperceptible.
      */
-    ::view-transition-old(wp-sidebar),
-    ::view-transition-old(wp-navbar) {
+    ::view-transition-old(wp-shell) {
         animation: 180ms linear both wp-vt-hold;
         mix-blend-mode: normal;
     }
-    ::view-transition-new(wp-sidebar),
-    ::view-transition-new(wp-navbar) {
+    ::view-transition-new(wp-shell) {
         animation: 180ms ease-in both wp-vt-in;
         mix-blend-mode: normal;
     }

@@ -1,0 +1,13 @@
+{
+  "$id": "dto/theme.request",
+  "title": "ThemeRequest",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["theme"],
+  "properties": {
+    "theme": {
+      "type": "string",
+      "enum": ["light", "dark"]
+    }
+  }
+}

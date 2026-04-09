@@ -1,49 +1,32 @@
 /**
  * Shared WordPress admin helpers.
- * Used across Navbar, Sidebar, and breadcrumbs.
  */
 
-import "../types/wp";
-import { isSpaEligibleUrl, spaNavigate } from "./spaNavigate";
+import { navigationStore } from "../features/navigation/store/navigationStore";
 
-export function getWpConfig() {
-  return window.wpReactUi ?? {};
+export function getAdminBaseUrl(adminUrl: string): string {
+  return adminUrl.replace(/\/+$/, "");
 }
 
-export function getAdminBaseUrl(): string {
-  const adminUrl = getWpConfig().adminUrl ?? "/wp-admin/";
-  return adminUrl.replace(/\/$/, "");
-}
-
-export function getActiveKey(): string | undefined {
-  if (typeof window === "undefined") return undefined;
-  const page = new URLSearchParams(window.location.search).get("page");
-  if (page) return page;
-  return window.location.pathname.split("/").filter(Boolean).pop();
-}
-
-export function buildAdminUrl(slug: string): string {
-  const base = getAdminBaseUrl();
+export function buildAdminUrl(slug: string, adminUrl: string): string {
+  const base = getAdminBaseUrl(adminUrl);
   const normalizedSlug = slug.replace(/^\/+/, "");
-  return normalizedSlug.includes("?") || normalizedSlug.includes(".php")
-    ? `${base}/${normalizedSlug}`
-    : `${base}/admin.php?page=${normalizedSlug}`;
-}
 
-export function navigate(slug: string): void {
-  const target = buildAdminUrl(slug);
-  if (!isSpaEligibleUrl(target)) {
-    window.location.assign(target);
-    return;
+  if (normalizedSlug.includes("?")) {
+    return `${base}/${normalizedSlug}`;
   }
 
-  spaNavigate(target);
+  if (normalizedSlug.endsWith(".php") && !normalizedSlug.includes("/")) {
+    return `${base}/${normalizedSlug}`;
+  }
+
+  return `${base}/admin.php?page=${normalizedSlug}`;
 }
 
-export function navigateHome(): void {
-  window.location.assign(`${getAdminBaseUrl()}/index.php`);
+export function navigate(slug: string, adminUrl: string): void {
+  navigationStore.getState().navigate(buildAdminUrl(slug, adminUrl));
 }
 
-export function getWpUser() {
-  return window.wpReactUi?.user ?? { name: "Admin", role: "administrator" };
+export function navigateHome(adminUrl: string): void {
+  navigate("index.php", adminUrl);
 }

@@ -1,0 +1,12 @@
+{
+  "$id": "dto/preferences.response",
+  "title": "PreferencesResponse",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["preferences"],
+  "properties": {
+    "preferences": {
+      "$ref": "dto/preferences.request"
+    }
+  }
+}

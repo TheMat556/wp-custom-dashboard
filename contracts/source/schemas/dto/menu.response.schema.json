@@ -1,0 +1,15 @@
+{
+  "$id": "dto/menu.response",
+  "title": "MenuResponse",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["menu"],
+  "properties": {
+    "menu": {
+      "type": "array",
+      "items": {
+        "$ref": "dto/menu-item"
+      }
+    }
+  }
+}

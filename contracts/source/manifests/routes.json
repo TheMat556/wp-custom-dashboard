@@ -1,0 +1,56 @@
+{
+  "namespace": "wp-react-ui/v1",
+  "routes": {
+    "/menu": {
+      "name": "menu",
+      "methods": ["GET"],
+      "permission": "read",
+      "responseSchema": "dto/menu.response"
+    },
+    "/theme": {
+      "name": "theme",
+      "methods": ["GET", "POST"],
+      "permission": "authenticated",
+      "requestSchema": "dto/theme.request",
+      "responseSchema": "dto/theme.response"
+    },
+    "/branding": {
+      "name": "branding",
+      "methods": ["GET", "POST"],
+      "permission": "manage_options",
+      "featureFlag": "brandingSettings",
+      "requestSchema": "dto/branding.request",
+      "responseSchema": "dto/branding.response"
+    },
+    "/preferences": {
+      "name": "preferences",
+      "methods": ["GET", "POST"],
+      "permission": "authenticated",
+      "featureFlag": "preferencesSync",
+      "requestSchema": "dto/preferences.request",
+      "responseSchema": "dto/preferences.response"
+    },
+    "/menu-counts": {
+      "name": "menuCounts",
+      "methods": ["GET"],
+      "permission": "read",
+      "featureFlag": "menuCounts",
+      "responseSchema": "dto/menu-counts.response"
+    },
+    "/dashboard": {
+      "name": "dashboard",
+      "methods": ["GET"],
+      "permission": "read",
+      "featureFlag": "dashboard",
+      "responseSchema": "dto/dashboard.response"
+    },
+    "/activity": {
+      "name": "activity",
+      "methods": ["GET"],
+      "permission": "manage_options",
+      "featureFlag": "activityLog",
+      "requestSchema": "dto/activity.query",
+      "responseSchema": "dto/activity.response"
+    }
+  }
+}

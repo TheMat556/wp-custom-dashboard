@@ -1,0 +1,30 @@
+{
+  "$id": "dto/menu-item",
+  "title": "MenuItem",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["label", "slug"],
+  "properties": {
+    "label": {
+      "type": "string"
+    },
+    "slug": {
+      "type": "string"
+    },
+    "icon": {
+      "type": "string"
+    },
+    "count": {
+      "type": ["number", "null"]
+    },
+    "cap": {
+      "type": "string"
+    },
+    "children": {
+      "type": "array",
+      "items": {
+        "$ref": "dto/submenu-item"
+      }
+    }
+  }
+}

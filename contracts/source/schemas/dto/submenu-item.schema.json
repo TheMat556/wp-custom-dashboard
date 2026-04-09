@@ -1,0 +1,21 @@
+{
+  "$id": "dto/submenu-item",
+  "title": "SubMenuItem",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["label", "slug"],
+  "properties": {
+    "label": {
+      "type": "string"
+    },
+    "slug": {
+      "type": "string"
+    },
+    "count": {
+      "type": ["number", "null"]
+    },
+    "cap": {
+      "type": "string"
+    }
+  }
+}

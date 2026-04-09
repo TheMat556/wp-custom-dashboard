@@ -1,0 +1,56 @@
+{
+  "$id": "dto/branding.response",
+  "title": "BrandingResponse",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "lightLogoId",
+    "lightLogoUrl",
+    "darkLogoId",
+    "darkLogoUrl",
+    "longLogoId",
+    "longLogoUrl",
+    "useLongLogo",
+    "primaryColor",
+    "fontPreset",
+    "openInNewTabPatterns"
+  ],
+  "properties": {
+    "lightLogoId": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "lightLogoUrl": {
+      "type": ["string", "null"]
+    },
+    "darkLogoId": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "darkLogoUrl": {
+      "type": ["string", "null"]
+    },
+    "longLogoId": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "longLogoUrl": {
+      "type": ["string", "null"]
+    },
+    "useLongLogo": {
+      "type": "boolean"
+    },
+    "primaryColor": {
+      "type": "string"
+    },
+    "fontPreset": {
+      "type": "string"
+    },
+    "openInNewTabPatterns": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    }
+  }
+}
