@@ -51,26 +51,30 @@ If the shell bundle cannot be resolved, the plugin falls back to native WordPres
 ```text
 wp-custom-dashboard/
 ├── wp-custom-dashboard.php
+├── app/
+│   ├── Branding/
+│   ├── Dashboard/
+│   ├── Rest/
+│   └── WordPress/
+│       ├── Assets/
+│       ├── Menu/
+│       ├── Rest/
+│       └── Shell/
 ├── includes/
-│   ├── class-wp-react-ui-asset-loader.php
-│   ├── class-wp-react-ui-branding-settings.php
-│   ├── class-wp-react-ui-menu-cache.php
-│   ├── class-wp-react-ui-menu-repository.php
-│   ├── class-wp-react-ui-rest-api.php
-│   ├── class-wp-react-ui-shell-admin-assets.php
-│   ├── class-wp-react-ui-shell-bootstrap.php
-│   ├── class-wp-react-ui-shell-early-boot.php
-│   ├── class-wp-react-ui-shell-embed-mode.php
-│   ├── class-wp-react-ui-shell-localization.php
+│   ├── class-wp-react-ui-*.php    -> compatibility loaders kept for WordPress-facing runtime stability
 │   └── critical.css
 ├── src/
 │   ├── main.tsx
 │   ├── bootstrapShell.tsx
-│   ├── components/
+│   ├── app/                      -> compatibility shims
+│   ├── components/               -> compatibility shims
+│   ├── features/
+│   │   ├── branding/
+│   │   ├── dashboard/
+│   │   ├── navigation/
+│   │   ├── session/
+│   │   └── shell/
 │   ├── config/
-│   ├── context/
-│   ├── hooks/
-│   ├── services/
 │   ├── store/
 │   ├── utils/
 │   └── types/
@@ -85,6 +89,8 @@ bun run verify
 bun run build
 bun run test
 bun run lint
+npm run package:plugin
+npm run verify:artifact
 composer run lint
 ```
 
@@ -93,9 +99,11 @@ composer run lint
 Before deploying:
 
 1. Run `bun run verify`.
-2. Deploy the updated plugin PHP files and the built `dist/` directory together.
-3. Hard-refresh wp-admin after deploy so the new hashed assets are requested.
-4. Smoke-test the main flows:
+2. Run `npm run package:plugin` to stage and zip the deployable plugin artifact.
+3. Run `npm run verify:artifact` to verify runtime files, manifest entries, and zip contents.
+4. Deploy the packaged plugin artifact, or deploy the staged runtime files from `artifacts/wp-custom-dashboard/`.
+5. Hard-refresh wp-admin after deploy so the new hashed assets are requested.
+6. Smoke-test the main flows:
    - dashboard load
    - breadcrumb navigation
    - browser back/forward

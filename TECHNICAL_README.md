@@ -19,8 +19,9 @@ Lightweight entrypoint only:
 - Loads PHP classes.
 - Exposes page-configuration helpers.
 - Initializes branding settings and shell bootstrap.
+- Keeps requiring `includes/*` compatibility loaders so WordPress-facing entrypoints stay stable.
 
-### [includes/class-wp-react-ui-shell-bootstrap.php](/var/www/html/wordpress/wp-content/plugins/wp-custom-dashboard/includes/class-wp-react-ui-shell-bootstrap.php)
+### [app/WordPress/Shell/ShellBootstrap.php](/var/www/html/wordpress/wp-content/plugins/wp-custom-dashboard/app/WordPress/Shell/ShellBootstrap.php)
 
 Thin orchestrator only:
 
@@ -29,7 +30,7 @@ Thin orchestrator only:
 - Initializes admin asset lifecycle.
 - Registers REST routes.
 
-### [includes/class-wp-react-ui-shell-embed-mode.php](/var/www/html/wordpress/wp-content/plugins/wp-custom-dashboard/includes/class-wp-react-ui-shell-embed-mode.php)
+### [app/WordPress/Shell/ShellEmbedMode.php](/var/www/html/wordpress/wp-content/plugins/wp-custom-dashboard/app/WordPress/Shell/ShellEmbedMode.php)
 
 Owns iframe-rendered admin screens:
 
@@ -38,7 +39,7 @@ Owns iframe-rendered admin screens:
 - Enqueue of the embed bridge asset.
 - Redirect rewriting to preserve `wp_shell_embed=1`.
 
-### [includes/class-wp-react-ui-shell-early-boot.php](/var/www/html/wordpress/wp-content/plugins/wp-custom-dashboard/includes/class-wp-react-ui-shell-early-boot.php)
+### [app/WordPress/Shell/ShellEarlyBoot.php](/var/www/html/wordpress/wp-content/plugins/wp-custom-dashboard/app/WordPress/Shell/ShellEarlyBoot.php)
 
 Owns pre-paint shell setup:
 
@@ -48,7 +49,7 @@ Owns pre-paint shell setup:
 - Asset preload tags.
 - Theme-aware branding preload.
 
-### [includes/class-wp-react-ui-shell-admin-assets.php](/var/www/html/wordpress/wp-content/plugins/wp-custom-dashboard/includes/class-wp-react-ui-shell-admin-assets.php)
+### [app/WordPress/Shell/ShellAdminAssets.php](/var/www/html/wordpress/wp-content/plugins/wp-custom-dashboard/app/WordPress/Shell/ShellAdminAssets.php)
 
 Owns runtime admin integration:
 
@@ -57,11 +58,11 @@ Owns runtime admin integration:
 - Script/style enqueue and localization payload.
 - Admin notice when shell assets are unavailable.
 
-### [includes/class-wp-react-ui-shell-localization.php](/var/www/html/wordpress/wp-content/plugins/wp-custom-dashboard/includes/class-wp-react-ui-shell-localization.php)
+### [app/WordPress/Shell/ShellLocalization.php](/var/www/html/wordpress/wp-content/plugins/wp-custom-dashboard/app/WordPress/Shell/ShellLocalization.php)
 
 Builds the immutable frontend boot payload localized as `window.wpReactUi`.
 
-### [includes/class-wp-react-ui-asset-loader.php](/var/www/html/wordpress/wp-content/plugins/wp-custom-dashboard/includes/class-wp-react-ui-asset-loader.php)
+### [app/WordPress/Assets/AssetLoader.php](/var/www/html/wordpress/wp-content/plugins/wp-custom-dashboard/app/WordPress/Assets/AssetLoader.php)
 
 Owns built asset resolution:
 
@@ -71,21 +72,21 @@ Owns built asset resolution:
 - Resolves entry URLs and preload assets.
 - Clears manifest/dev caches.
 
-### [includes/class-wp-react-ui-menu-repository.php](/var/www/html/wordpress/wp-content/plugins/wp-custom-dashboard/includes/class-wp-react-ui-menu-repository.php)
+### [app/WordPress/Menu/MenuRepository.php](/var/www/html/wordpress/wp-content/plugins/wp-custom-dashboard/app/WordPress/Menu/MenuRepository.php)
 
 Builds the canonical shell menu payload from `$menu` / `$submenu`.
 
-### [includes/class-wp-react-ui-menu-cache.php](/var/www/html/wordpress/wp-content/plugins/wp-custom-dashboard/includes/class-wp-react-ui-menu-cache.php)
+### [app/WordPress/Menu/MenuCache.php](/var/www/html/wordpress/wp-content/plugins/wp-custom-dashboard/app/WordPress/Menu/MenuCache.php)
 
 Caches menu payloads per user with a versioned namespace.
 
 If the shell entry asset cannot be resolved, the plugin falls back to native WordPress admin rather than attempting to boot the shell.
 
-### [includes/class-wp-react-ui-branding-settings.php](/var/www/html/wordpress/wp-content/plugins/wp-custom-dashboard/includes/class-wp-react-ui-branding-settings.php)
+### [app/WordPress/Branding/BrandingSettings.php](/var/www/html/wordpress/wp-content/plugins/wp-custom-dashboard/app/WordPress/Branding/BrandingSettings.php)
 
 Owns Settings API integration for light/dark logos and exposes branding payload for the frontend.
 
-### [includes/class-wp-react-ui-rest-api.php](/var/www/html/wordpress/wp-content/plugins/wp-custom-dashboard/includes/class-wp-react-ui-rest-api.php)
+### [app/WordPress/Rest/RestApi.php](/var/www/html/wordpress/wp-content/plugins/wp-custom-dashboard/app/WordPress/Rest/RestApi.php)
 
 Exposes:
 
@@ -105,13 +106,15 @@ Explicit application bootstrap:
 - Tears down any prior shell instance before remount.
 - Calls `bootstrapShell(host, config)`.
 
-### [src/bootstrapShell.tsx](/var/www/html/wordpress/wp-content/plugins/wp-custom-dashboard/src/bootstrapShell.tsx)
+### [src/features/shell/bootstrapShell.tsx](/var/www/html/wordpress/wp-content/plugins/wp-custom-dashboard/src/features/shell/bootstrapShell.tsx)
 
 Owns frontend composition:
 
 - Bootstraps menu, theme, sidebar, and navigation stores.
 - Mounts the single React root.
 - Returns teardown for remount safety.
+
+Legacy compatibility shims remain at [src/bootstrapShell.tsx](/var/www/html/wordpress/wp-content/plugins/wp-custom-dashboard/src/bootstrapShell.tsx), [src/app/App.tsx](/var/www/html/wordpress/wp-content/plugins/wp-custom-dashboard/src/app/App.tsx), and under [src/components](/var/www/html/wordpress/wp-content/plugins/wp-custom-dashboard/src/components) so existing import paths and Vite entry inputs remain stable during the migration.
 
 ### Store startup
 
@@ -130,8 +133,8 @@ The stores no longer rely on import-time side effects.
 ### Hooks and UI
 
 - [src/context/ThemeContext.tsx](/var/www/html/wordpress/wp-content/plugins/wp-custom-dashboard/src/context/ThemeContext.tsx) and [src/context/SidebarContext.tsx](/var/www/html/wordpress/wp-content/plugins/wp-custom-dashboard/src/context/SidebarContext.tsx) are store-backed hooks, not fake providers.
-- [src/components/ContentFrame/index.tsx](/var/www/html/wordpress/wp-content/plugins/wp-custom-dashboard/src/components/ContentFrame/index.tsx) renders the iframe and loading overlay.
-- [src/components/navbar/index.tsx](/var/www/html/wordpress/wp-content/plugins/wp-custom-dashboard/src/components/navbar/index.tsx) and [src/components/sidebar/index.tsx](/var/www/html/wordpress/wp-content/plugins/wp-custom-dashboard/src/components/sidebar/index.tsx) render shell chrome inside that one root.
+- [src/features/shell/components/ContentFrame/index.tsx](/var/www/html/wordpress/wp-content/plugins/wp-custom-dashboard/src/features/shell/components/ContentFrame/index.tsx) renders the iframe and loading overlay.
+- [src/features/shell/components/navbar/index.tsx](/var/www/html/wordpress/wp-content/plugins/wp-custom-dashboard/src/features/shell/components/navbar/index.tsx) and [src/features/shell/components/sidebar/index.tsx](/var/www/html/wordpress/wp-content/plugins/wp-custom-dashboard/src/features/shell/components/sidebar/index.tsx) render shell chrome inside that one root.
 - [src/hooks/useMenu.ts](/var/www/html/wordpress/wp-content/plugins/wp-custom-dashboard/src/hooks/useMenu.ts) reads the canonical PHP menu payload and refreshes it over REST when requested.
 
 ## Operational tradeoffs

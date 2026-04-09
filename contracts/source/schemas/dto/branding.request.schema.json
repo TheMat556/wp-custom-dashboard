@@ -1,0 +1,44 @@
+{
+  "$id": "dto/branding.request",
+  "title": "BrandingRequest",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "lightLogoId",
+    "darkLogoId",
+    "longLogoId",
+    "useLongLogo",
+    "primaryColor",
+    "fontPreset",
+    "openInNewTabPatterns"
+  ],
+  "properties": {
+    "lightLogoId": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "darkLogoId": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "longLogoId": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "useLongLogo": {
+      "type": "boolean"
+    },
+    "primaryColor": {
+      "type": "string"
+    },
+    "fontPreset": {
+      "type": "string"
+    },
+    "openInNewTabPatterns": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    }
+  }
+}

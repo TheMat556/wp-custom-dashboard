@@ -1,0 +1,164 @@
+{
+  "$id": "boot/wp-react-ui",
+  "title": "WpReactUiConfig",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "menu",
+    "siteName",
+    "branding",
+    "theme",
+    "adminUrl",
+    "publicUrl",
+    "navigation",
+    "nonce",
+    "restUrl",
+    "logoutUrl",
+    "assetsUrl",
+    "locale",
+    "user",
+    "shellRoutes"
+  ],
+  "properties": {
+    "menu": {
+      "type": "array",
+      "items": {
+        "$ref": "dto/menu-item"
+      }
+    },
+    "siteName": {
+      "type": "string"
+    },
+    "branding": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["siteName", "logos", "useLongLogo", "primaryColor", "fontPreset"],
+      "properties": {
+        "siteName": {
+          "type": "string"
+        },
+        "logos": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["lightUrl", "darkUrl", "longUrl", "defaultUrl"],
+          "properties": {
+            "lightUrl": {
+              "type": ["string", "null"]
+            },
+            "darkUrl": {
+              "type": ["string", "null"]
+            },
+            "longUrl": {
+              "type": ["string", "null"]
+            },
+            "defaultUrl": {
+              "type": "string"
+            }
+          }
+        },
+        "useLongLogo": {
+          "type": "boolean"
+        },
+        "primaryColor": {
+          "type": "string"
+        },
+        "fontPreset": {
+          "type": "string"
+        }
+      }
+    },
+    "theme": {
+      "type": "string",
+      "enum": ["light", "dark"]
+    },
+    "adminUrl": {
+      "type": "string"
+    },
+    "publicUrl": {
+      "type": "string"
+    },
+    "navigation": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "fullReloadPageParams",
+        "shellDisabledPagenow",
+        "breakoutPagenow",
+        "openInNewTabPatterns"
+      ],
+      "properties": {
+        "fullReloadPageParams": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "shellDisabledPagenow": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "breakoutPagenow": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "openInNewTabPatterns": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "nonce": {
+      "type": "string"
+    },
+    "restUrl": {
+      "type": "string"
+    },
+    "logoutUrl": {
+      "type": "string"
+    },
+    "assetsUrl": {
+      "type": "string"
+    },
+    "locale": {
+      "type": "string"
+    },
+    "user": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["name", "role"],
+      "properties": {
+        "name": {
+          "type": "string"
+        },
+        "role": {
+          "type": "string"
+        }
+      }
+    },
+    "shellRoutes": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["slug", "label", "entrypoint_url"],
+        "properties": {
+          "slug": {
+            "type": "string"
+          },
+          "label": {
+            "type": "string"
+          },
+          "entrypoint_url": {
+            "type": "string"
+          }
+        }
+      }
+    }
+  }
+}

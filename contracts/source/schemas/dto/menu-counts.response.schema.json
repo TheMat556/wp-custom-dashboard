@@ -1,0 +1,15 @@
+{
+  "$id": "dto/menu-counts.response",
+  "title": "MenuCountsResponse",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["counts"],
+  "properties": {
+    "counts": {
+      "type": "object",
+      "additionalProperties": {
+        "type": "integer"
+      }
+    }
+  }
+}

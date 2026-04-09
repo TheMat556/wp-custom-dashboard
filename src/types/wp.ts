@@ -1,62 +1,20 @@
-import type { MenuItem } from "./menu";
+import type {
+  WpReactUiBranding,
+  WpReactUiConfig,
+  WpReactUiNavigationConfig,
+  WpReactUiUser,
+  WpReactUiWindowConfig,
+} from "../generated/contracts/boot";
 
-export interface WpReactUiBrandingLogos {
-  lightUrl: string | null;
-  darkUrl: string | null;
-  longUrl: string | null;
-  defaultUrl: string;
-}
-
-export interface WpReactUiBranding {
-  siteName: string;
-  logos: WpReactUiBrandingLogos;
-  useLongLogo: boolean;
-  primaryColor: string;
-  fontPreset: string;
-}
-
-export interface WpReactUiNavigationConfig {
-  fullReloadPageParams: string[];
-  shellDisabledPagenow: string[];
-  breakoutPagenow: string[];
-  openInNewTabPatterns: string[];
-}
-
-export interface WpReactUiUser {
-  name: string;
-  role: string;
-}
-
-export interface WpReactUiShellRoute {
-  slug: string;
-  label: string;
-  entrypoint_url: string;
-}
-
-export interface WpReactUiConfig {
-  adminUrl: string;
-  menu: MenuItem[];
-  restUrl: string;
-  nonce: string;
-  siteName: string;
-  branding: WpReactUiBranding;
-  theme: string;
-  assetsUrl: string;
-  publicUrl: string;
-  navigation: WpReactUiNavigationConfig;
-  logoutUrl: string;
-  user: WpReactUiUser;
-  shellRoutes: WpReactUiShellRoute[];
-  locale: string;
-}
-
-export type WpReactUiWindowConfig = Partial<WpReactUiConfig> & {
-  branding?: Partial<WpReactUiBranding> & {
-    logos?: Partial<WpReactUiBrandingLogos>;
-  };
-  navigation?: Partial<WpReactUiNavigationConfig>;
-  user?: Partial<WpReactUiUser>;
-};
+export type {
+  WpReactUiBranding,
+  WpReactUiBrandingLogos,
+  WpReactUiConfig,
+  WpReactUiNavigationConfig,
+  WpReactUiShellRoute,
+  WpReactUiUser,
+  WpReactUiWindowConfig,
+} from "../generated/contracts/boot";
 
 function getSiteName(raw: WpReactUiWindowConfig | undefined) {
   return raw?.branding?.siteName ?? raw?.siteName ?? "Site";

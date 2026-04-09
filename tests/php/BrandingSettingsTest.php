@@ -236,4 +236,50 @@ class BrandingSettingsTest extends TestCase {
 
 		$this->assertSame( array( 'builder=bricks', 'elementor' ), $prefs['openInNewTabPatterns'] );
 	}
+
+	public function test_extracted_payload_service_matches_facade_rest_payload(): void {
+		$repository    = new \WpReactUi\Branding\BrandingSettingsRepository();
+		$media_library = new \WpReactUi\Branding\BrandingMediaLibraryAdapter();
+		$sanitizer     = new \WpReactUi\Branding\BrandingSanitizer( $media_library );
+		$service       = new \WpReactUi\Branding\BrandingPayloadService(
+			$repository,
+			$media_library,
+			$sanitizer
+		);
+
+		$this->assertSame(
+			WP_React_UI_Branding_Settings::get_rest_data(),
+			$service->get_rest_data()
+		);
+	}
+
+	public function test_extracted_settings_manager_keeps_unchanged_save_behavior(): void {
+		global $wp_test_state;
+
+		$wp_test_state['update_option_result']              = false;
+		$wp_test_state['options']['wp_react_ui_branding'] = array(
+			'light_logo_id'          => 0,
+			'dark_logo_id'           => 0,
+			'long_logo_id'           => 0,
+			'use_long_logo'          => false,
+			'primary_color'          => '#123456',
+			'font_preset'            => 'serif',
+			'open_in_new_tab_patterns' => array( 'builder=bricks' ),
+		);
+
+		$manager = new \WpReactUi\Branding\BrandingSettingsManager(
+			new \WpReactUi\Branding\BrandingSettingsRepository(),
+			new \WpReactUi\Branding\BrandingSanitizer( new \WpReactUi\Branding\BrandingMediaLibraryAdapter() )
+		);
+
+		$result = $manager->save_from_rest(
+			array(
+				'primary_color'          => '#123456',
+				'font_preset'            => 'serif',
+				'open_in_new_tab_patterns' => array( 'builder=bricks' ),
+			)
+		);
+
+		$this->assertTrue( $result );
+	}
 }

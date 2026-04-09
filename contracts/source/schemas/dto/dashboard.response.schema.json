@@ -1,0 +1,96 @@
+{
+  "$id": "dto/dashboard.response",
+  "title": "DashboardResponse",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "atAGlance",
+    "siteHealth",
+    "pendingUpdates",
+    "visitorTrend",
+    "countryStats",
+    "siteSpeed",
+    "pagesOverview",
+    "actionItems",
+    "seoOverview",
+    "seoBasics",
+    "legalCompliance",
+    "businessFunctions",
+    "onboardingChecklist",
+    "siteReadinessScore",
+    "calendarPreview"
+  ],
+  "properties": {
+    "atAGlance": {
+      "type": "object",
+      "additionalProperties": true
+    },
+    "siteHealth": {
+      "type": "object",
+      "additionalProperties": true
+    },
+    "pendingUpdates": {
+      "type": "object",
+      "additionalProperties": true
+    },
+    "visitorTrend": {
+      "type": "object",
+      "additionalProperties": true
+    },
+    "countryStats": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": true
+      }
+    },
+    "siteSpeed": {
+      "type": "object",
+      "additionalProperties": true
+    },
+    "pagesOverview": {
+      "type": "object",
+      "additionalProperties": true
+    },
+    "actionItems": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": true
+      }
+    },
+    "seoOverview": {
+      "type": "object",
+      "additionalProperties": true
+    },
+    "seoBasics": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": true
+      }
+    },
+    "legalCompliance": {
+      "type": "object",
+      "additionalProperties": true
+    },
+    "businessFunctions": {
+      "type": "object",
+      "additionalProperties": true
+    },
+    "onboardingChecklist": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": true
+      }
+    },
+    "siteReadinessScore": {
+      "type": "integer"
+    },
+    "calendarPreview": {
+      "type": "object",
+      "additionalProperties": true
+    }
+  }
+}

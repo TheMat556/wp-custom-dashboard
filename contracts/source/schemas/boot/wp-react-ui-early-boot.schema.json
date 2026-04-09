@@ -1,0 +1,54 @@
+{
+  "$id": "boot/wp-react-ui-early-boot",
+  "title": "WpReactUiBootConfig",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["layout", "theme"],
+  "properties": {
+    "layout": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["mobileBreakpoint", "collapsedStorageKey", "sidebarWidths"],
+      "properties": {
+        "mobileBreakpoint": {
+          "type": "number",
+          "default": 768
+        },
+        "collapsedStorageKey": {
+          "type": "string",
+          "default": "wp-react-sidebar-collapsed"
+        },
+        "sidebarWidths": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["expanded", "collapsed", "mobile"],
+          "properties": {
+            "expanded": {
+              "type": "number",
+              "default": 240
+            },
+            "collapsed": {
+              "type": "number",
+              "default": 64
+            },
+            "mobile": {
+              "type": "number",
+              "default": 0
+            }
+          }
+        }
+      }
+    },
+    "theme": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["storageKey"],
+      "properties": {
+        "storageKey": {
+          "type": "string",
+          "default": "wp-react-ui-theme"
+        }
+      }
+    }
+  }
+}

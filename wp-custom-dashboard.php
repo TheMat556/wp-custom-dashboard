@@ -10,6 +10,14 @@
 
 defined( 'ABSPATH' ) || exit;
 
+$wp_react_ui_autoload = __DIR__ . '/vendor/autoload.php';
+if ( file_exists( $wp_react_ui_autoload ) ) {
+	require_once $wp_react_ui_autoload;
+}
+
+require_once __DIR__ . '/app/Bootstrap/PluginBootstrap.php';
+require_once __DIR__ . '/app/Plugin.php';
+
 require_once __DIR__ . '/includes/class-wp-react-ui-asset-loader.php';
 require_once __DIR__ . '/includes/class-wp-react-ui-branding-settings.php';
 require_once __DIR__ . '/includes/class-wp-react-ui-menu-cache.php';
@@ -23,10 +31,7 @@ require_once __DIR__ . '/includes/class-wp-react-ui-shell-embed-mode.php';
 require_once __DIR__ . '/includes/class-wp-react-ui-shell-bootstrap.php';
 require_once __DIR__ . '/includes/class-wp-react-ui-activity-log.php';
 
-WP_React_UI_Branding_Settings::init();
-WP_React_UI_Shell_Bootstrap::init();
-WP_React_UI_Activity_Log::init();
-WP_React_UI_Dashboard_Data::init();
+\WpReactUi\Plugin::boot();
 
 /**
  * Returns the admin screens that need special handling.

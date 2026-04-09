@@ -6,6 +6,9 @@
   "scripts": {
     "dev": "vite",
     "build": "tsc -b && vite build",
+    "contracts:generate": "node scripts/generate-contracts.mjs",
+    "contracts:verify": "node scripts/verify-generated-contracts.mjs",
+    "package:plugin": "npm run build && php scripts/package-plugin.php",
     "preview": "vite preview",
     "lint": "biome check ./src",
     "lint:fix": "biome check --write ./src",
@@ -14,6 +17,8 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "test:coverage": "vitest run --coverage",
+    "test:contracts:php": "./vendor/bin/phpunit tests/php/BootPayloadContractTest.php tests/php/RestRouteContractTest.php tests/php/RestRoutePermissionCompatibilityTest.php tests/php/PluginEntryCompatibilityTest.php tests/php/ArtifactContractTest.php",
+    "verify:artifact": "php scripts/verify-plugin-artifact.php",
     "verify": "bun run lint && bun run test && bun run build && composer run lint",
     "php:lint": "composer run lint"
   },

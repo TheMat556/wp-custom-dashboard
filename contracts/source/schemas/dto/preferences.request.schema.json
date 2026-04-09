@@ -1,0 +1,61 @@
+{
+  "$id": "dto/preferences.request",
+  "title": "PreferencesRequest",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "favorites": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "recentPages": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["pageUrl", "title", "visitedAt"],
+        "properties": {
+          "pageUrl": {
+            "type": "string"
+          },
+          "title": {
+            "type": "string"
+          },
+          "visitedAt": {
+            "type": "number"
+          }
+        }
+      }
+    },
+    "density": {
+      "type": "string",
+      "enum": ["comfortable", "compact"]
+    },
+    "themePreset": {
+      "type": "string"
+    },
+    "customPresetColor": {
+      "type": "string"
+    },
+    "dashboardWidgetOrder": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "hiddenWidgets": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "highContrast": {
+      "type": "boolean"
+    },
+    "sidebarCollapsed": {
+      "type": "boolean"
+    }
+  }
+}

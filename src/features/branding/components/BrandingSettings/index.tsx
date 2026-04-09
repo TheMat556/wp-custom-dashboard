@@ -1,0 +1,275 @@
+import { Button, Flex, Grid, Spin, Switch, Typography, theme } from "antd";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import { useStore } from "zustand";
+import { CUSTOM_PRESET_KEY, THEME_PRESETS } from "../../../../config/themePresets";
+import { useShellConfig } from "../../../../context/ShellConfigContext";
+import { brandingStore } from "../../store/brandingStore";
+import { shellPreferencesStore } from "../../../../store/shellPreferencesStore";
+import { FONT_PRESETS, type FontPresetKey } from "../../../../utils/fontPresets";
+import { createT } from "../../../../utils/i18n";
+import {
+  applyBrandingSettingsToDraft,
+  buildBrandingSaveInput,
+  createEmptyBrandingDraft,
+  DEFAULT_PRIMARY_COLOR,
+  isBrandingDraftDirty,
+  type BrandingDraft,
+} from "../../brandingDraft";
+import { BrandAssetsSection } from "./BrandAssetsSection";
+import { ColorSettingsSection } from "./ColorSettingsSection";
+import { LinkRulesSection } from "./LinkRulesSection";
+import { TypographySection } from "./TypographySection";
+
+const { Title, Text, Paragraph } = Typography;
+const { useBreakpoint } = Grid;
+
+function getThemePreferenceSnapshot() {
+  return {
+    themePreset: shellPreferencesStore.getState().themePreset ?? "default",
+    customPresetColor:
+      shellPreferencesStore.getState().customPresetColor ?? DEFAULT_PRIMARY_COLOR,
+  };
+}
+
+export default function BrandingSettings() {
+  const config = useShellConfig();
+  const settings = useStore(brandingStore, (state) => state.settings);
+  const loading = useStore(brandingStore, (state) => state.loading);
+  const saving = useStore(brandingStore, (state) => state.saving);
+  const load = useStore(brandingStore, (state) => state.load);
+  const save = useStore(brandingStore, (state) => state.save);
+  const highContrast = useStore(shellPreferencesStore, (state) => state.highContrast);
+  const [draft, setDraft] = useState(() =>
+    createEmptyBrandingDraft(getThemePreferenceSnapshot())
+  );
+  const { token } = theme.useToken();
+  const screens = useBreakpoint();
+  const t = useMemo(() => createT(config.locale ?? "en_US"), [config.locale]);
+  const themePresetOptions = useMemo(
+    () => [
+      ...Object.entries(THEME_PRESETS).map(([key, preset]) => ({
+        value: key,
+        label: t(preset.label),
+      })),
+      { value: CUSTOM_PRESET_KEY, label: t("Custom") },
+    ],
+    [t]
+  );
+  const fontPresetOptions = useMemo(
+    () =>
+      Object.entries(FONT_PRESETS).map(([value, preset]) => ({
+        value,
+        label: t(preset.label),
+      })),
+    [t]
+  );
+
+  useEffect(() => {
+    void load();
+  }, [load]);
+
+  useEffect(() => {
+    if (!settings) {
+      return;
+    }
+
+    setDraft((current) => applyBrandingSettingsToDraft(current, settings));
+  }, [settings]);
+
+  const updateDraft = useCallback((updates: Partial<BrandingDraft>) => {
+    setDraft((current) => ({ ...current, ...updates }));
+  }, []);
+
+  const toggleHighContrast = useCallback(() => {
+    const next = !highContrast;
+    shellPreferencesStore.getState().setHighContrast(next);
+    const root = document.getElementById("react-shell-root");
+
+    if (root) {
+      root.classList.toggle("wp-react-ui-high-contrast", next);
+      document.body.classList.toggle("wp-react-ui-high-contrast", next);
+    }
+  }, [highContrast]);
+
+  const isDirty = useMemo(
+    () => isBrandingDraftDirty(settings, draft, getThemePreferenceSnapshot()),
+    [draft, settings]
+  );
+
+  const handleSave = useCallback(async () => {
+    await save(buildBrandingSaveInput(draft));
+    shellPreferencesStore
+      .getState()
+      .setThemePreset(draft.themePreset, draft.customPresetColor);
+  }, [draft, save]);
+
+  if (loading && !settings) {
+    return (
+      <Flex align="center" justify="center" style={{ height: "100%", pointerEvents: "auto" }}>
+        <Spin size="large" />
+      </Flex>
+    );
+  }
+
+  return (
+    <div
+      style={{
+        width: "100%",
+        height: "100%",
+        overflowY: "auto",
+        overflowX: "hidden",
+        background: token.colorBgLayout,
+        pointerEvents: "auto",
+      }}
+    >
+      <div
+        style={{
+          width: "100%",
+          maxWidth: 1240,
+          margin: "0 auto",
+          padding: screens.md ? 40 : 20,
+          boxSizing: "border-box",
+        }}
+      >
+        <Flex
+          justify="space-between"
+          align="flex-start"
+          gap={24}
+          wrap
+          style={{ marginBottom: 32 }}
+        >
+          <div style={{ minWidth: 0 }}>
+            <Title
+              level={2}
+              style={{ marginTop: 0, marginBottom: 6, fontSize: screens.md ? 30 : 24 }}
+            >
+              {t("Brand Assets")}
+            </Title>
+            <Paragraph type="secondary" style={{ marginBottom: 0, maxWidth: 760, fontSize: 14 }}>
+              {t(
+                "Centralized management for identity logos, color accents, and global navigation fragments used across the shell."
+              )}
+            </Paragraph>
+          </div>
+
+          <Flex gap={12} wrap align="center">
+            <div
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: 12,
+                padding: "8px 14px",
+                borderRadius: token.borderRadiusLG,
+                background: token.colorFillAlter,
+              }}
+            >
+              <Text style={{ fontSize: 12, fontWeight: 700, color: token.colorTextSecondary }}>
+                {t("Logo-only sidebar")}
+              </Text>
+              <Switch
+                checked={draft.useLongLogo}
+                onChange={(useLongLogo) => updateDraft({ useLongLogo })}
+                checkedChildren={t("On")}
+                unCheckedChildren={t("Off")}
+              />
+            </div>
+            <Button
+              type="primary"
+              loading={saving}
+              onClick={() => void handleSave()}
+              disabled={!isDirty}
+            >
+              {t("Save Brand Assets")}
+            </Button>
+          </Flex>
+        </Flex>
+
+        <BrandAssetsSection
+          t={t}
+          isMd={!!screens.md}
+          lightLogoId={draft.lightLogoId}
+          lightLogoUrl={draft.lightLogoUrl}
+          darkLogoId={draft.darkLogoId}
+          darkLogoUrl={draft.darkLogoUrl}
+          onLightLogoSelect={(id, url) =>
+            updateDraft({ lightLogoId: id, lightLogoUrl: url })
+          }
+          onLightLogoRemove={() =>
+            updateDraft({ lightLogoId: 0, lightLogoUrl: null })
+          }
+          onDarkLogoSelect={(id, url) =>
+            updateDraft({ darkLogoId: id, darkLogoUrl: url })
+          }
+          onDarkLogoRemove={() =>
+            updateDraft({ darkLogoId: 0, darkLogoUrl: null })
+          }
+        />
+
+        <div
+          style={{
+            display: "grid",
+            gridTemplateColumns: screens.md ? "repeat(2, minmax(0, 1fr))" : "1fr",
+            gap: 24,
+            alignItems: "stretch",
+            marginTop: 24,
+          }}
+        >
+          <ColorSettingsSection
+            t={t}
+            themePresetOptions={themePresetOptions}
+            draftThemePreset={draft.themePreset}
+            draftCustomColor={draft.customPresetColor}
+            highContrast={highContrast}
+            onThemePresetChange={(themePreset) => updateDraft({ themePreset })}
+            onCustomColorChange={(customPresetColor) =>
+              updateDraft({ customPresetColor })
+            }
+            onToggleHighContrast={toggleHighContrast}
+            onReset={() =>
+              updateDraft({
+                themePreset: "default",
+                customPresetColor: DEFAULT_PRIMARY_COLOR,
+              })
+            }
+          />
+
+          <LinkRulesSection
+            t={t}
+            patterns={draft.patterns}
+            onPatternsChange={(patterns) => updateDraft({ patterns })}
+          />
+        </div>
+
+        <div style={{ marginTop: 24 }}>
+          <TypographySection
+            t={t}
+            fontPreset={draft.fontPreset}
+            fontPresetOptions={fontPresetOptions}
+            isLg={!!screens.lg}
+            isSm={!!screens.sm}
+            isMd={!!screens.md}
+            onFontPresetChange={(fontPreset: FontPresetKey) => updateDraft({ fontPreset })}
+          />
+        </div>
+
+        <Flex
+          justify="space-between"
+          align="center"
+          gap={16}
+          wrap
+          style={{
+            marginTop: 32,
+            paddingTop: 24,
+            borderTop: `1px solid ${token.colorBorderSecondary}`,
+          }}
+        >
+          <Text type="secondary" style={{ fontSize: 12 }}>
+            {t("Changes are applied live after saving.")}
+          </Text>
+
+          <Flex gap={12} wrap />
+        </Flex>
+      </div>
+    </div>
+  );
+}

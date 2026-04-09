@@ -1,4 +1,10 @@
 {
+  "autoload": {
+    "psr-4": {
+      "WpReactUi\\": "app/",
+      "WpReactUi\\Contracts\\": "contracts/php/"
+    }
+  },
   "require-dev": {
     "squizlabs/php_codesniffer": "^3.10",
     "wp-coding-standards/wpcs": "^3.1",
@@ -8,9 +14,10 @@
     "yoast/phpunit-polyfills": "^2"
   },
   "scripts": {
-    "lint": "phpcs --standard=WordPress --extensions=php --ignore=vendor/,node_modules/ --warning-severity=0 wp-custom-dashboard.php includes/",
-    "lint-fix": "phpcbf --standard=WordPress --extensions=php --ignore=vendor/,node_modules/ wp-custom-dashboard.php includes/",
-    "test": "phpunit"
+    "lint": "phpcs --standard=WordPress --extensions=php --ignore=vendor/,node_modules/ --warning-severity=0 wp-custom-dashboard.php includes/ app/ contracts/php/ tests/php/",
+    "lint-fix": "phpcbf --standard=WordPress --extensions=php --ignore=vendor/,node_modules/ wp-custom-dashboard.php includes/ app/ contracts/php/ tests/php/",
+    "test": "phpunit",
+    "test:contracts": "phpunit tests/php/BootPayloadContractTest.php tests/php/RestRouteContractTest.php tests/php/RestRoutePermissionCompatibilityTest.php tests/php/PluginEntryCompatibilityTest.php tests/php/ArtifactContractTest.php"
   },
   "config": {
     "allow-plugins": {
