@@ -80,11 +80,12 @@ export function TypographySection({
             return (
               <div
                 key={key}
+                className="wp-react-ui-inset-panel"
                 style={{
                   padding: 18,
                   borderRadius: token.borderRadiusLG,
                   border: `1px solid ${active ? token.colorPrimary : token.colorBorderSecondary}`,
-                  background: active ? `${token.colorPrimary}10` : token.colorBgContainer,
+                  background: active ? `${token.colorPrimary}10` : "var(--surface-inset)",
                 }}
               >
                 <Text

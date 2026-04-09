@@ -63,11 +63,9 @@ export function UpcomingBookings({
                 key={booking.id}
                 align="center"
                 gap={10}
+                className="wp-react-ui-inset-panel"
                 style={{
                   padding: "10px 14px",
-                  background: token.colorBgLayout,
-                  borderRadius: token.borderRadius,
-                  border: `1px solid ${token.colorBorderSecondary}`,
                 }}
               >
                 <div

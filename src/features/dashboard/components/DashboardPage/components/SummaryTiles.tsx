@@ -33,10 +33,15 @@ export function SummaryTiles({
 
   return (
     <div
+      className="wp-react-ui-kpi-grid"
       style={{
         display: "grid",
-        gridTemplateColumns: isLg ? "repeat(5, 1fr)" : isMd ? "repeat(3, 1fr)" : "repeat(2, 1fr)",
-        gap: 10,
+        gridTemplateColumns: isLg
+          ? "repeat(5, minmax(0, 1fr))"
+          : isMd
+            ? "repeat(3, minmax(0, 1fr))"
+            : "repeat(2, minmax(0, 1fr))",
+        gap: 12,
         marginBottom: 20,
       }}
     >
@@ -52,9 +57,7 @@ export function SummaryTiles({
           )
         }
         label={t("Website")}
-        value={
-          isSiteDown ? t("Offline") : health?.status === "good" ? t("Online") : t("Check")
-        }
+        value={isSiteDown ? t("Offline") : health?.status === "good" ? t("Online") : t("Check")}
         sub={
           health && health.score > 0 && !isSiteDown ? (
             <Progress

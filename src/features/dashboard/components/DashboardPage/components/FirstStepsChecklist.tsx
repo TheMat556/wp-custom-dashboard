@@ -24,7 +24,7 @@ export function FirstStepsChecklist({
         total: checklist.length,
       })}
       description={t(
-        "Complete these steps to get your site fully ready. Each one takes just a few minutes.",
+        "Complete these steps to get your site fully ready. Each one takes just a few minutes."
       )}
       extra={
         <Flex align="center" gap={12}>
@@ -58,11 +58,13 @@ export function FirstStepsChecklist({
             key={item.key}
             align="center"
             gap={10}
+            className={
+              item.done
+                ? "wp-react-ui-inset-panel wp-react-ui-inset-panel--success"
+                : "wp-react-ui-inset-panel"
+            }
             style={{
               padding: "10px 14px",
-              borderRadius: token.borderRadius,
-              background: item.done ? `${token.colorSuccess}08` : token.colorBgLayout,
-              border: `1px solid ${item.done ? `${token.colorSuccess}30` : token.colorBorderSecondary}`,
               cursor: item.done ? "default" : "pointer",
               transition: "border-color 0.15s",
             }}

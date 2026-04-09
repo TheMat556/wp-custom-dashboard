@@ -1,4 +1,4 @@
-import { Flex, Menu, theme } from "antd";
+import { Flex, Menu } from "antd";
 import { memo, useCallback, useMemo } from "react";
 import type { MenuItem } from "../../../../types/menu";
 import { cancelPrefetch, startPrefetch } from "../../../../utils/prefetch";
@@ -33,8 +33,6 @@ export const SidebarContent = memo(function SidebarContent({
   onClose?: () => void;
   adminUrl?: string;
 }) {
-  const { token } = theme.useToken();
-
   const transformedItems = useMemo(
     () => transformMenuItems(menuItems, collapsed, onParentClick),
     [menuItems, collapsed, onParentClick]
@@ -67,7 +65,7 @@ export const SidebarContent = memo(function SidebarContent({
       className="wp-react-ui-sidebar-shell"
       style={{
         height: "100%",
-        backgroundColor: token.colorBgContainer,
+        backgroundColor: "var(--shell-chrome-bg)",
       }}
     >
       <Logo collapsed={collapsed} showClose={showClose} onClose={onClose} />

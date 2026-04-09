@@ -1,42 +1,563 @@
 /* Base styles — loaded globally via wp_enqueue_style */
 #react-shell-root {
-  font-family: "Inter", -apple-system, BlinkMacSystemFont, sans-serif;
-  line-height: 1.5;
-  font-size: 14px;
+  --font-display: var(
+    --wp-react-ui-font-family,
+    "Inter",
+    -apple-system,
+    BlinkMacSystemFont,
+    "Segoe UI",
+    sans-serif
+  );
+  --font-body: var(
+    --wp-react-ui-font-family,
+    "Inter",
+    -apple-system,
+    BlinkMacSystemFont,
+    "Segoe UI",
+    sans-serif
+  );
+  --font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
+  --text-xs: 12px;
+  --text-sm: 14px;
+  --text-md: 16px;
+  --text-lg: 18px;
+  --text-xl: 24px;
+  --text-2xl: 30px;
+  --line-tight: 1.2;
+  --line-normal: 1.5;
+  --line-relaxed: 1.7;
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 20px;
+  --space-6: 24px;
+  --space-8: 32px;
+  --space-10: 40px;
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-lg: 16px;
+  --radius-xl: 20px;
+  --shadow-sm: 0 8px 24px rgba(15, 23, 42, 0.08);
+  --shadow-md: 0 18px 40px rgba(15, 23, 42, 0.08);
+  --shadow-lg: 0 24px 80px rgba(15, 23, 42, 0.18);
+  --shell-navbar-height: 64px;
+  --shell-sidebar-width: 240px;
+  --shell-sidebar-width-collapsed: 64px;
+  --content-max-width: 1240px;
+  --page-pad-mobile: 20px;
+  --page-pad-desktop: 40px;
+  --motion-fast: 150ms;
+  --motion-base: 220ms;
+  --motion-slow: 300ms;
+  --ease-standard: cubic-bezier(0.2, 0, 0, 1);
+  --ease-emphasized: cubic-bezier(0.2, 0.9, 0.2, 1);
+  --focus-ring: rgba(79, 70, 229, 0.24);
+  --disabled-opacity: 0.48;
+  --skeleton-shimmer: linear-gradient(
+    90deg,
+    var(--color-bg-surface-muted) 25%,
+    var(--color-bg-surface) 50%,
+    var(--color-bg-surface-muted) 75%
+  );
+  font-family: var(--font-body);
+  line-height: var(--line-normal);
+  font-size: var(--text-sm);
+  color: var(--color-text-primary);
+  background: var(--color-bg-app);
 }
 
 body[data-theme="light"] {
+  --color-bg-app: #f4f6fa;
+  --color-bg-surface: #ffffff;
+  --color-bg-surface-muted: #eef2f7;
+  --color-bg-overlay: rgba(15, 23, 42, 0.52);
+  --color-border-subtle: rgba(15, 23, 42, 0.09);
+  --color-border-strong: rgba(15, 23, 42, 0.14);
+  --color-text-primary: #172033;
+  --color-text-secondary: #475467;
+  --color-text-muted: #667085;
+  --color-text-on-accent: #ffffff;
+  --color-accent-primary: #4f46e5;
+  --color-accent-primary-hover: #4338ca;
+  --color-accent-soft: rgba(79, 70, 229, 0.12);
+  --color-success: #15803d;
+  --color-warning: #b45309;
+  --color-danger: #b42318;
+  --color-info: #1d4ed8;
+  --shell-chrome-bg: #edf1f5;
+  --shell-chrome-raised: rgba(255, 255, 255, 0.76);
+  --surface-inset: #f6f8fb;
   --wp-react-ui-scrollbar-track: rgba(15, 23, 42, 0.06);
   --wp-react-ui-scrollbar-thumb: rgba(15, 23, 42, 0.22);
   --wp-react-ui-scrollbar-thumb-hover: rgba(15, 23, 42, 0.34);
-  --wp-react-ui-command-surface: #ffffff;
-  --wp-react-ui-command-surface-muted: #f6f8fb;
-  --wp-react-ui-command-border: rgba(15, 23, 42, 0.09);
-  --wp-react-ui-command-text: #172033;
-  --wp-react-ui-command-text-muted: #667085;
-  --wp-react-ui-command-shadow: 0 24px 80px rgba(15, 23, 42, 0.18);
-  --wp-react-ui-shell-surface-soft: rgba(15, 23, 42, 0.035);
-  --wp-react-ui-shell-surface-elevated: rgba(255, 255, 255, 0.78);
-  --wp-react-ui-shell-border-strong: rgba(15, 23, 42, 0.08);
-  --wp-react-ui-shell-shadow-soft: 0 18px 40px rgba(15, 23, 42, 0.08);
-  --wp-react-ui-shell-accent-soft: rgba(79, 70, 229, 0.12);
+  --wp-react-ui-command-surface: var(--color-bg-surface);
+  --wp-react-ui-command-surface-muted: var(--color-bg-surface-muted);
+  --wp-react-ui-command-border: var(--color-border-subtle);
+  --wp-react-ui-command-text: var(--color-text-primary);
+  --wp-react-ui-command-text-muted: var(--color-text-muted);
+  --wp-react-ui-command-shadow: var(--shadow-lg);
+  --wp-react-ui-command-item-hover: var(--color-bg-surface-muted);
+  --wp-react-ui-command-item-active: var(--color-accent-primary);
+  --wp-react-ui-command-item-active-text: var(--color-text-on-accent);
+  --wp-react-ui-shell-surface-soft: var(--color-bg-surface-muted);
+  --wp-react-ui-shell-surface-elevated: var(--color-bg-surface);
+  --wp-react-ui-shell-border-strong: var(--color-border-strong);
+  --wp-react-ui-shell-shadow-soft: var(--shadow-md);
+  --wp-react-ui-shell-accent-soft: var(--color-accent-soft);
 }
 
 body[data-theme="dark"] {
+  --color-bg-app: #0f1723;
+  --color-bg-surface: #131c2b;
+  --color-bg-surface-muted: #1a2435;
+  --color-bg-overlay: rgba(2, 6, 23, 0.68);
+  --color-border-subtle: rgba(255, 255, 255, 0.12);
+  --color-border-strong: rgba(255, 255, 255, 0.2);
+  --color-text-primary: #f8fafc;
+  --color-text-secondary: #cbd5e1;
+  --color-text-muted: #94a3b8;
+  --color-text-on-accent: #f8fafc;
+  --color-accent-primary: #818cf8;
+  --color-accent-primary-hover: #a5b4fc;
+  --color-accent-soft: rgba(129, 140, 248, 0.18);
+  --color-success: #4ade80;
+  --color-warning: #f59e0b;
+  --color-danger: #fb7185;
+  --color-info: #60a5fa;
+  --shell-chrome-bg: #172132;
+  --shell-chrome-raised: rgba(19, 28, 43, 0.88);
+  --surface-inset: #1a2435;
+  --shadow-sm: 0 10px 28px rgba(0, 0, 0, 0.22);
+  --shadow-md: 0 22px 48px rgba(0, 0, 0, 0.3);
+  --shadow-lg: 0 28px 90px rgba(0, 0, 0, 0.45);
   --wp-react-ui-scrollbar-track: rgba(255, 255, 255, 0.06);
   --wp-react-ui-scrollbar-thumb: rgba(255, 255, 255, 0.18);
   --wp-react-ui-scrollbar-thumb-hover: rgba(255, 255, 255, 0.3);
-  --wp-react-ui-command-surface: #111827;
-  --wp-react-ui-command-surface-muted: #0b1220;
-  --wp-react-ui-command-border: rgba(255, 255, 255, 0.12);
-  --wp-react-ui-command-text: #f8fafc;
-  --wp-react-ui-command-text-muted: #94a3b8;
-  --wp-react-ui-command-shadow: 0 28px 90px rgba(0, 0, 0, 0.45);
-  --wp-react-ui-shell-surface-soft: rgba(255, 255, 255, 0.04);
-  --wp-react-ui-shell-surface-elevated: rgba(17, 24, 39, 0.82);
-  --wp-react-ui-shell-border-strong: rgba(255, 255, 255, 0.12);
-  --wp-react-ui-shell-shadow-soft: 0 22px 48px rgba(0, 0, 0, 0.3);
-  --wp-react-ui-shell-accent-soft: rgba(129, 140, 248, 0.18);
+  --wp-react-ui-command-surface: var(--color-bg-surface);
+  --wp-react-ui-command-surface-muted: var(--color-bg-surface-muted);
+  --wp-react-ui-command-border: var(--color-border-subtle);
+  --wp-react-ui-command-text: var(--color-text-primary);
+  --wp-react-ui-command-text-muted: var(--color-text-muted);
+  --wp-react-ui-command-shadow: var(--shadow-lg);
+  --wp-react-ui-command-item-hover: var(--color-bg-surface-muted);
+  --wp-react-ui-command-item-active: var(--color-accent-primary);
+  --wp-react-ui-command-item-active-text: var(--color-text-on-accent);
+  --wp-react-ui-shell-surface-soft: var(--color-bg-surface-muted);
+  --wp-react-ui-shell-surface-elevated: var(--color-bg-surface);
+  --wp-react-ui-shell-border-strong: var(--color-border-strong);
+  --wp-react-ui-shell-shadow-soft: var(--shadow-md);
+  --wp-react-ui-shell-accent-soft: var(--color-accent-soft);
+}
+
+.wp-react-ui-shell {
+  display: grid;
+  grid-template-columns: var(--sidebar-width, var(--shell-sidebar-width, 240px)) minmax(0, 1fr);
+  grid-template-rows: var(--shell-navbar-height, 64px) 1fr;
+  grid-template-areas: "sidebar navbar" "sidebar content";
+  transition: grid-template-columns var(--motion-base) var(--ease-standard);
+  width: 100%;
+  height: 100%;
+  min-height: 100%;
+  pointer-events: none;
+  background: var(--color-bg-app);
+}
+
+.wp-react-ui-shell-sidebar-slot,
+.wp-react-ui-shell-navbar-slot {
+  min-width: 0;
+  min-height: 0;
+  pointer-events: auto;
+}
+
+.wp-react-ui-shell-sidebar-slot {
+  grid-area: sidebar;
+}
+
+.wp-react-ui-shell-navbar-slot {
+  grid-area: navbar;
+}
+
+.wp-react-ui-shell-content-slot {
+  grid-area: content;
+  position: relative;
+  overflow: hidden;
+  pointer-events: auto;
+  min-width: 0;
+  min-height: 0;
+  outline: none;
+}
+
+.wp-react-ui-shell-content-slot--native {
+  background: var(--color-bg-app);
+}
+
+.wp-react-ui-shell-content-slot--embed {
+  background: transparent;
+}
+
+.wp-react-ui-shell-sidebar-frame {
+  border-right: 1px solid var(--color-border-subtle);
+  background: var(--shell-chrome-bg);
+  box-shadow: none;
+}
+
+.wp-react-ui-page-canvas {
+  width: 100%;
+  height: 100%;
+  overflow-y: auto;
+  overflow-x: hidden;
+  background: var(--color-bg-app);
+  pointer-events: auto;
+}
+
+.wp-react-ui-page-intro {
+  border-radius: var(--radius-xl);
+  border: 1px solid var(--color-border-subtle);
+  background:
+    linear-gradient(135deg, var(--color-accent-soft) 0%, transparent 24%), var(--color-bg-surface);
+  padding: 20px 22px;
+  margin-bottom: 20px;
+  box-sizing: border-box;
+}
+
+.wp-react-ui-page-intro__header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--space-6);
+  flex-wrap: wrap;
+}
+
+.wp-react-ui-page-intro__copy {
+  min-width: 0;
+  flex: 1 1 420px;
+}
+
+.wp-react-ui-page-intro__title {
+  margin: 0;
+  color: var(--color-text-primary);
+}
+
+.wp-react-ui-page-intro__description {
+  margin: 6px 0 0;
+  max-width: 760px;
+  color: var(--color-text-secondary);
+  font-size: var(--text-sm);
+  line-height: var(--line-normal);
+}
+
+.wp-react-ui-page-intro__actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.wp-react-ui-inline-control {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 14px;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--color-border-subtle);
+  background: var(--surface-inset);
+}
+
+.wp-react-ui-surface-panel {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--color-border-subtle);
+  background: var(--color-bg-surface);
+  padding: 28px;
+  box-sizing: border-box;
+}
+
+.wp-react-ui-surface-panel__header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--space-4);
+  margin-bottom: var(--space-6);
+}
+
+.wp-react-ui-surface-panel__lead {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-3);
+  min-width: 0;
+}
+
+.wp-react-ui-surface-panel__copy {
+  min-width: 0;
+}
+
+.wp-react-ui-surface-panel__icon {
+  width: 38px;
+  height: 38px;
+  border-radius: var(--radius-md);
+  background: var(--color-accent-soft);
+  color: var(--color-accent-primary);
+  font-size: 20px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.wp-react-ui-surface-panel__title {
+  color: var(--color-text-primary);
+}
+
+.wp-react-ui-surface-panel__description {
+  margin-top: 4px;
+  color: var(--color-text-secondary);
+}
+
+.wp-react-ui-surface-panel__extra {
+  flex-shrink: 0;
+}
+
+.wp-react-ui-surface-panel__body {
+  flex: 1 1 auto;
+  min-height: 0;
+}
+
+.wp-react-ui-inset-panel {
+  border: 1px solid var(--color-border-subtle);
+  border-radius: var(--radius-md);
+  background: var(--surface-inset);
+  box-sizing: border-box;
+}
+
+.wp-react-ui-inset-panel--success {
+  background: color-mix(in srgb, var(--color-success) 8%, var(--surface-inset));
+  border-color: color-mix(in srgb, var(--color-success) 24%, var(--color-border-subtle));
+}
+
+.wp-react-ui-dashboard-widget-card.ant-card {
+  border: 1px solid var(--color-border-subtle);
+  border-radius: var(--radius-lg);
+  background: var(--color-bg-surface);
+  box-shadow: none;
+}
+
+.wp-react-ui-dashboard-widget-card.ant-card .ant-card-head {
+  min-height: auto;
+  padding: 18px 22px 0;
+  border-bottom: 0;
+  background: transparent;
+}
+
+.wp-react-ui-dashboard-widget-card.ant-card .ant-card-head-title {
+  padding: 0;
+  color: var(--color-text-primary);
+  font-size: 16px;
+  font-weight: 700;
+}
+
+.wp-react-ui-dashboard-widget-card.ant-card .ant-card-body {
+  padding: 16px 22px 22px;
+}
+
+.wp-react-ui-dashboard-widget-card--compact.ant-card .ant-card-body {
+  padding-top: 8px;
+}
+
+.wp-react-ui-metric-tile {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  min-height: 164px;
+  width: 100%;
+  padding: 16px;
+  border: 1px solid var(--color-border-subtle);
+  border-radius: var(--radius-lg);
+  background: linear-gradient(
+    180deg,
+    color-mix(
+        in srgb,
+        var(--metric-accent, var(--color-accent-primary)) 8%,
+        var(--color-bg-surface)
+      )
+      0%,
+    var(--color-bg-surface) 36%
+  );
+  box-shadow: var(--shadow-sm);
+  box-sizing: border-box;
+  overflow: hidden;
+  text-align: left;
+  transition:
+    border-color var(--motion-fast) var(--ease-standard),
+    box-shadow var(--motion-fast) var(--ease-standard),
+    transform var(--motion-fast) var(--ease-standard);
+}
+
+.wp-react-ui-metric-tile::before {
+  content: "";
+  position: absolute;
+  inset: 0 0 auto;
+  height: 3px;
+  background: var(--metric-accent, var(--color-accent-primary));
+}
+
+.wp-react-ui-metric-tile--interactive {
+  appearance: none;
+  border: 1px solid var(--color-border-subtle);
+  cursor: pointer;
+}
+
+.wp-react-ui-metric-tile--interactive:hover {
+  border-color: color-mix(
+    in srgb,
+    var(--metric-accent, var(--color-accent-primary)) 28%,
+    var(--color-border-subtle)
+  );
+  box-shadow: var(--shadow-md);
+  transform: translateY(-1px);
+}
+
+.wp-react-ui-metric-tile--interactive:active {
+  transform: translateY(0);
+}
+
+.wp-react-ui-metric-tile__header,
+.wp-react-ui-metric-tile__body,
+.wp-react-ui-metric-tile__footer {
+  position: relative;
+  z-index: 1;
+}
+
+.wp-react-ui-metric-tile__header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 18px;
+}
+
+.wp-react-ui-metric-tile__icon {
+  width: 40px;
+  height: 40px;
+  border-radius: 12px;
+  background: color-mix(
+    in srgb,
+    var(--metric-accent, var(--color-accent-primary)) 12%,
+    var(--color-bg-surface)
+  );
+  color: var(--metric-accent, var(--color-accent-primary));
+  font-size: 17px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.wp-react-ui-metric-tile__hint {
+  width: 28px;
+  height: 28px;
+  border-radius: 999px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--color-text-muted);
+}
+
+.wp-react-ui-metric-tile__body {
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+  justify-content: flex-start;
+  min-width: 0;
+}
+
+.wp-react-ui-metric-tile__label {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  line-height: 1.2;
+  text-transform: uppercase;
+  color: var(--color-text-muted) !important;
+}
+
+.wp-react-ui-metric-tile__value {
+  margin-top: 8px;
+  color: var(--color-text-primary);
+  font-family: var(--font-display);
+  font-size: clamp(1.5rem, 1.15rem + 0.9vw, 2rem);
+  font-weight: 700;
+  line-height: 1.05;
+  letter-spacing: -0.03em;
+}
+
+.wp-react-ui-metric-tile__footer {
+  margin-top: 18px;
+  padding-top: 12px;
+  border-top: 1px solid
+    color-mix(in srgb, var(--metric-accent, var(--color-accent-primary)) 12%, transparent);
+}
+
+.wp-react-ui-kpi-grid {
+  align-items: stretch;
+}
+
+.wp-react-ui-kpi-grid .ant-tag {
+  border-radius: 999px;
+  font-weight: 600;
+}
+
+.wp-react-ui-kpi-grid .ant-progress {
+  line-height: 1;
+}
+
+.wp-react-ui-kpi-grid .ant-progress-inner {
+  background: var(--surface-inset);
+}
+
+.wp-react-ui-page-canvas__inner {
+  width: 100%;
+  max-width: var(--content-max-width);
+  margin: 0 auto;
+  padding: var(--page-pad-mobile);
+  box-sizing: border-box;
+}
+
+.wp-react-ui-page-canvas--centered .wp-react-ui-page-canvas__inner {
+  min-height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.wp-react-ui-navbar-icon-button,
+.wp-react-ui-navbar-toggle {
+  min-width: 44px;
+  min-height: 44px;
+}
+
+#react-shell-root
+  :where(a, button, input, select, textarea, [role="button"], [tabindex]):focus-visible {
+  outline: 2px solid var(--focus-ring);
+  outline-offset: 2px;
+}
+
+@media (min-width: 768px) {
+  .wp-react-ui-page-canvas__inner {
+    padding: var(--page-pad-desktop);
+  }
+}
+
+@media (max-width: 560px) {
+  .wp-react-ui-kpi-grid {
+    grid-template-columns: 1fr !important;
+  }
+
+  .wp-react-ui-metric-tile {
+    min-height: 152px;
+  }
 }
 
 /* Hover effects handled in CSS instead of useState */
@@ -62,7 +583,7 @@ body[data-theme="dark"] {
   min-width: 0;
   flex-shrink: 1;
   border-radius: 999px;
-  background: var(--wp-react-ui-shell-surface-soft);
+  background: var(--shell-chrome-raised);
   border: 1px solid var(--wp-react-ui-shell-border-strong);
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04);
   overflow: hidden;
@@ -129,14 +650,14 @@ body[data-theme="dark"] {
 
 .wp-react-ui-navbar-icon-button:hover,
 .wp-react-ui-navbar-toggle:hover {
-  background: var(--wp-react-ui-shell-surface-soft) !important;
+  background: var(--shell-chrome-raised) !important;
   transform: translateY(-1px);
 }
 
 .wp-react-ui-sidebar-shell {
   background:
-    radial-gradient(circle at top left, var(--wp-react-ui-shell-surface-soft), transparent 38%),
-    transparent;
+    radial-gradient(circle at top left, var(--color-accent-soft), transparent 42%),
+    linear-gradient(180deg, var(--shell-chrome-bg) 0%, var(--color-bg-app) 100%);
 }
 
 .wp-react-ui-sidebar-scroll,
@@ -260,7 +781,7 @@ body[data-theme="dark"] {
 }
 
 .wp-react-ui-sidebar-bottom-actions {
-  background: linear-gradient(180deg, transparent 0%, var(--wp-react-ui-shell-surface-soft) 100%);
+  background: linear-gradient(180deg, transparent 0%, var(--shell-chrome-raised) 100%);
 }
 
 .wp-react-ui-sidebar-bottom-actions .ant-btn {
@@ -288,6 +809,7 @@ body[data-theme="dark"] {
   justify-content: center;
   height: 100%;
   padding: 24px;
+  background: var(--color-bg-app);
 }
 
 .commands-command-menu {
@@ -481,6 +1003,11 @@ body[data-theme="dark"] {
     padding: 16px;
   }
 
+  .wp-react-ui-page-intro,
+  .wp-react-ui-surface-panel {
+    padding: 20px;
+  }
+
   .wp-react-ui-sidebar-menu .ant-menu-item,
   .wp-react-ui-sidebar-menu .ant-menu-submenu-title {
     min-height: max(var(--shell-menu-item-height, 42px), 46px);
@@ -552,7 +1079,10 @@ body[data-theme="dark"] {
 }
 
 .wp-react-ui-high-contrast .wp-react-ui-sidebar-menu .ant-menu-item-selected,
-.wp-react-ui-high-contrast .wp-react-ui-sidebar-menu .ant-menu-submenu-selected > .ant-menu-submenu-title {
+.wp-react-ui-high-contrast
+  .wp-react-ui-sidebar-menu
+  .ant-menu-submenu-selected
+  > .ant-menu-submenu-title {
   background: var(--wp-react-ui-shell-accent-soft);
   box-shadow: inset 0 0 0 2px var(--wp-react-ui-shell-border-strong);
 }
@@ -582,9 +1112,15 @@ body[data-theme="dark"] {
 /* ── Badge pulse animation ── */
 
 @keyframes wp-react-ui-badge-pulse {
-  0% { transform: scale(1); }
-  50% { transform: scale(1.3); }
-  100% { transform: scale(1); }
+  0% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.3);
+  }
+  100% {
+    transform: scale(1);
+  }
 }
 
 .wp-react-ui-badge-pulse .ant-badge-count {
@@ -594,17 +1130,16 @@ body[data-theme="dark"] {
 /* ── Skeleton shimmer ── */
 
 @keyframes wp-react-ui-shimmer {
-  from { background-position: -200% 0; }
-  to { background-position: 200% 0; }
+  from {
+    background-position: -200% 0;
+  }
+  to {
+    background-position: 200% 0;
+  }
 }
 
 .wp-react-ui-skeleton {
-  background: linear-gradient(
-    90deg,
-    var(--wp-react-ui-shell-surface-soft) 25%,
-    var(--wp-react-ui-shell-surface-elevated) 50%,
-    var(--wp-react-ui-shell-surface-soft) 75%
-  );
+  background: var(--skeleton-shimmer);
   background-size: 200% 100%;
   animation: wp-react-ui-shimmer 1.5s ease-in-out infinite;
   border-radius: 8px;
@@ -613,9 +1148,15 @@ body[data-theme="dark"] {
 /* ── Content loading bar ── */
 
 @keyframes wp-react-ui-progress-bar {
-  0%   { transform: translateX(-100%); }
-  60%  { transform: translateX(0%); }
-  100% { transform: translateX(100%); }
+  0% {
+    transform: translateX(-100%);
+  }
+  60% {
+    transform: translateX(0%);
+  }
+  100% {
+    transform: translateX(100%);
+  }
 }
 
 .wp-react-ui-content-loading-bar {

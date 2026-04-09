@@ -21,7 +21,7 @@ export function BottomActions({
       className="wp-react-ui-sidebar-bottom-actions"
       style={{
         padding: "12px 12px 14px",
-        borderTop: `1px solid ${token.colorBorderSecondary}`,
+        borderTop: "1px solid var(--color-border-subtle)",
         flexShrink: 0,
       }}
     >

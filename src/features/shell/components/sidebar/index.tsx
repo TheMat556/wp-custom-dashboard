@@ -1,11 +1,11 @@
-import { Layout, theme } from "antd";
+import { Layout } from "antd";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { getBootConfig } from "../../../../config/bootConfig";
+import type { MenuItem } from "../../../../types/menu";
+import { useMenu } from "../../../navigation/hooks/useMenu";
 import { useShellConfig } from "../../context/ShellConfigContext";
 import { useSidebar } from "../../context/SidebarContext";
 import { useTheme } from "../../context/ThemeContext";
-import { useMenu } from "../../../navigation/hooks/useMenu";
-import type { MenuItem } from "../../../../types/menu";
 import "../../../../types/wp";
 import { useActiveKey } from "../../../../utils/spaNavigate";
 import { navigate } from "../../../../utils/wp";
@@ -27,7 +27,6 @@ export default function Sidebar() {
   const { adminUrl } = useShellConfig();
   const { theme: appTheme } = useTheme();
   const { collapsed, toggle, isMobile, mobileOpen } = useSidebar();
-  const { token } = theme.useToken();
   const isDark = appTheme === "dark";
 
   const { menuItems, loading, refresh } = useMenu();
@@ -103,6 +102,7 @@ export default function Sidebar() {
   return (
     <div style={{ height: "100%", display: "flex", flexDirection: "column" }}>
       <Sider
+        className="wp-react-ui-shell-sidebar-frame"
         width={SIDEBAR_WIDTHS.expanded}
         collapsedWidth={SIDEBAR_WIDTHS.collapsed}
         collapsed={collapsed}
@@ -111,7 +111,6 @@ export default function Sidebar() {
           height: "100%",
           minHeight: "100%",
           flex: "1 1 auto",
-          borderRight: `1px solid ${token.colorBorderSecondary}`,
           overflow: "hidden",
         }}
       >

@@ -53,11 +53,10 @@ export function LogoField({
 
   return (
     <div
+      className="wp-react-ui-inset-panel"
       style={{
         minWidth: 0,
-        border: `1px solid ${token.colorBorderSecondary}`,
         borderRadius: token.borderRadiusLG,
-        background: token.colorBgContainer,
         padding: 28,
       }}
     >
@@ -77,6 +76,7 @@ export function LogoField({
       </Flex>
 
       <div
+        className="wp-react-ui-inset-panel"
         style={{
           height: 160,
           marginBottom: 18,

@@ -22,7 +22,7 @@ export function UpdatesSection({ updates, t, adminUrl, isMd }: UpdatesSectionPro
         message={
           <Text style={{ fontSize: 12 }}>
             {t(
-              "Create a backup before updating. Most hosting control panels offer one-click backups.",
+              "Create a backup before updating. Most hosting control panels offer one-click backups."
             )}
           </Text>
         }
@@ -41,11 +41,10 @@ export function UpdatesSection({ updates, t, adminUrl, isMd }: UpdatesSectionPro
             align="center"
             justify="space-between"
             gap={8}
+            className="wp-react-ui-inset-panel"
             style={{
               padding: "10px 14px",
-              background: `${token.colorError}08`,
-              borderRadius: token.borderRadius,
-              border: `1px solid ${token.colorError}20`,
+              borderLeft: `3px solid ${token.colorError}`,
             }}
           >
             <div>
@@ -54,11 +53,7 @@ export function UpdatesSection({ updates, t, adminUrl, isMd }: UpdatesSectionPro
                 {u.currentVersion} → {u.newVersion}
               </Text>
             </div>
-            <Button
-              size="small"
-              danger
-              onClick={() => navigate("update-core.php", adminUrl)}
-            >
+            <Button size="small" danger onClick={() => navigate("update-core.php", adminUrl)}>
               {t("Update")}
             </Button>
           </Flex>
@@ -69,11 +64,9 @@ export function UpdatesSection({ updates, t, adminUrl, isMd }: UpdatesSectionPro
             align="center"
             justify="space-between"
             gap={8}
+            className="wp-react-ui-inset-panel"
             style={{
               padding: "10px 14px",
-              background: token.colorBgLayout,
-              borderRadius: token.borderRadius,
-              border: `1px solid ${token.colorBorderSecondary}`,
             }}
           >
             <div style={{ minWidth: 0 }}>
@@ -109,11 +102,9 @@ export function UpdatesSection({ updates, t, adminUrl, isMd }: UpdatesSectionPro
             align="center"
             justify="space-between"
             gap={8}
+            className="wp-react-ui-inset-panel"
             style={{
               padding: "10px 14px",
-              background: token.colorBgLayout,
-              borderRadius: token.borderRadius,
-              border: `1px solid ${token.colorBorderSecondary}`,
             }}
           >
             <div>

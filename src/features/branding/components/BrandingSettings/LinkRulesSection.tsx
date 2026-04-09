@@ -11,11 +11,7 @@ interface LinkRulesSectionProps {
   onPatternsChange: (value: string) => void;
 }
 
-export function LinkRulesSection({
-  t,
-  patterns,
-  onPatternsChange,
-}: LinkRulesSectionProps) {
+export function LinkRulesSection({ t, patterns, onPatternsChange }: LinkRulesSectionProps) {
   const { token } = theme.useToken();
 
   return (
@@ -52,7 +48,8 @@ export function LinkRulesSection({
           fontFamily:
             'ui-monospace, SFMono-Regular, SF Mono, Menlo, Consolas, "Liberation Mono", monospace',
           borderRadius: token.borderRadiusLG,
-          background: token.colorFillAlter,
+          background: "var(--surface-inset)",
+          borderColor: "var(--color-border-subtle)",
           resize: "none",
         }}
       />

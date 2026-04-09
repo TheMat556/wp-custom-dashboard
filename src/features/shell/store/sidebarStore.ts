@@ -21,6 +21,16 @@ function getSidebarWidth(collapsed: boolean, isMobile: boolean): number {
   return collapsed ? SIDEBAR_COLLAPSED : SIDEBAR_FULL;
 }
 
+function applyLayoutVars() {
+  if (!canUseDOM()) return;
+
+  document.documentElement.style.setProperty("--shell-sidebar-width", `${SIDEBAR_FULL}px`);
+  document.documentElement.style.setProperty(
+    "--shell-sidebar-width-collapsed",
+    `${SIDEBAR_COLLAPSED}px`
+  );
+}
+
 function applyCssVar(sidebarWidth: number) {
   if (!canUseDOM()) return;
   document.documentElement.style.setProperty("--sidebar-width", `${sidebarWidth}px`);
@@ -140,6 +150,7 @@ export function bootstrapSidebarStore() {
 
   desktopCollapsed = readPersistedCollapsed();
   sidebarStore.setState(getSnapshot(getViewportIsMobile(), false));
+  applyLayoutVars();
   applyCssVar(sidebarStore.getState().sidebarWidth);
   teardownResizeListener = startResizeListener();
 
@@ -155,4 +166,6 @@ export function resetSidebarStore() {
   desktopCollapsed = false;
   sidebarStore.setState(getSnapshot(false, false));
   document.documentElement.style.removeProperty("--sidebar-width");
+  document.documentElement.style.removeProperty("--shell-sidebar-width");
+  document.documentElement.style.removeProperty("--shell-sidebar-width-collapsed");
 }

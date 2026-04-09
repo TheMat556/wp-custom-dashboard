@@ -98,9 +98,9 @@ export function ColorSettingsSection({
         </div>
 
         <div
+          className="wp-react-ui-inset-panel"
           style={{
-            paddingTop: 4,
-            borderTop: `1px solid ${token.colorBorderSecondary}`,
+            padding: "16px 18px",
           }}
         >
           <Flex justify="space-between" align="center" gap={16}>
@@ -122,12 +122,14 @@ export function ColorSettingsSection({
 
         <div style={{ marginTop: "auto" }}>
           <div
+            className="wp-react-ui-inset-panel"
             style={{
               height: 8,
               borderRadius: 999,
               overflow: "hidden",
               display: "flex",
               marginBottom: 12,
+              padding: 0,
             }}
           >
             <div style={{ flex: "0 0 48%", background: token.colorPrimary }} />

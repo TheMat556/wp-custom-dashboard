@@ -1,10 +1,6 @@
 import { LinkOutlined, PlusOutlined } from "@ant-design/icons";
 import { Button, Flex, Tag, Tooltip, Typography, theme } from "antd";
-import {
-  Line,
-  LineChart,
-  ResponsiveContainer,
-} from "recharts";
+import { Line, LineChart, ResponsiveContainer } from "recharts";
 import { navigate } from "../../../../../utils/wp";
 import type { HeroBannerProps } from "../types";
 
@@ -27,20 +23,26 @@ export function HeroBanner({
 
   return (
     <div
+      className="wp-react-ui-page-intro"
       style={{
-        borderRadius: token.borderRadiusLG,
-        border: "1px solid var(--wp-react-ui-shell-border-strong)",
-        background:
-          "linear-gradient(135deg, var(--wp-react-ui-shell-accent-soft) 0%, transparent 100%)",
-        padding: isMd ? "22px 28px" : "16px 18px",
+        padding: isMd ? "22px 28px" : undefined,
         marginBottom: 16,
-        boxSizing: "border-box",
       }}
     >
-      <Flex justify="space-between" align="center" wrap gap={14}>
-        <Flex vertical gap={4} style={{ minWidth: 0 }}>
+      <Flex
+        className="wp-react-ui-page-intro__header"
+        justify="space-between"
+        align="center"
+        wrap
+        gap={14}
+      >
+        <Flex vertical gap={4} className="wp-react-ui-page-intro__copy" style={{ minWidth: 0 }}>
           <Flex align="center" gap={10} wrap>
-            <Title level={3} style={{ margin: 0, fontSize: isMd ? 22 : 18 }}>
+            <Title
+              level={3}
+              className="wp-react-ui-page-intro__title"
+              style={{ fontSize: isMd ? 24 : 20 }}
+            >
               {t(greetingKey)}, {userName}!
             </Title>
             {readiness !== null && (
@@ -86,7 +88,7 @@ export function HeroBanner({
             </Flex>
           )}
         </Flex>
-        <Flex align="center" gap={8} wrap>
+        <Flex className="wp-react-ui-page-intro__actions" align="center" gap={8} wrap>
           {isMd && sparkline.some((d) => d.views > 0) && (
             <Tooltip title="Page views — last 7 days">
               <div style={{ width: 90, height: 34 }}>
@@ -107,11 +109,7 @@ export function HeroBanner({
           <Button
             icon={<LinkOutlined />}
             onClick={() =>
-              window.open(
-                adminUrl.replace(/wp-admin\/?$/, ""),
-                "_blank",
-                "noopener,noreferrer",
-              )
+              window.open(adminUrl.replace(/wp-admin\/?$/, ""), "_blank", "noopener,noreferrer")
             }
           >
             {t("View Site")}

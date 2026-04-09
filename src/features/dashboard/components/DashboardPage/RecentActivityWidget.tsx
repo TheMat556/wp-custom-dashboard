@@ -40,8 +40,8 @@ export function RecentActivityWidget({ posts }: { posts: RecentPostData[] }) {
 
   return (
     <Card
+      className="wp-react-ui-dashboard-widget-card wp-react-ui-dashboard-widget-card--compact"
       title="Recent Activity"
-      styles={{ body: { padding: "8px 0" } }}
       style={{ borderRadius: token.borderRadiusLG }}
     >
       <List
@@ -68,7 +68,10 @@ export function RecentActivityWidget({ posts }: { posts: RecentPostData[] }) {
                 {post.title}
               </Text>
               <Flex gap={8} align="center">
-                <Tag color={STATUS_COLORS[post.status] ?? "default"} style={{ margin: 0, fontSize: 12 }}>
+                <Tag
+                  color={STATUS_COLORS[post.status] ?? "default"}
+                  style={{ margin: 0, fontSize: 12 }}
+                >
                   {post.status}
                 </Tag>
                 <Text type="secondary" style={{ fontSize: 12 }}>

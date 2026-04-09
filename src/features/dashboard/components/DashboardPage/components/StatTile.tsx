@@ -1,78 +1,56 @@
 import { QuestionCircleOutlined } from "@ant-design/icons";
-import { Flex, Tooltip, Typography, theme } from "antd";
+import { Tooltip, Typography, theme } from "antd";
+import type { CSSProperties } from "react";
 import type { StatTileProps } from "../types";
 
 const { Text } = Typography;
 
 export function StatTile({ icon, label, value, sub, color, tooltip, onClick }: StatTileProps) {
   const { token } = theme.useToken();
-  return (
-    <div
-      onClick={onClick}
-      role={onClick ? "button" : undefined}
-      tabIndex={onClick ? 0 : undefined}
-      onKeyDown={onClick ? (e) => e.key === "Enter" && onClick() : undefined}
-      style={{
-        background: token.colorBgContainer,
-        borderRadius: token.borderRadius,
-        border: `1px solid ${token.colorBorderSecondary}`,
-        borderTop: `2px solid ${color}`,
-        padding: "12px 14px",
-        cursor: onClick ? "pointer" : "default",
-        transition: "box-shadow 0.15s",
-      }}
-      onMouseEnter={(e) => {
-        if (onClick) (e.currentTarget as HTMLElement).style.boxShadow = token.boxShadow;
-      }}
-      onMouseLeave={(e) => {
-        (e.currentTarget as HTMLElement).style.boxShadow = "none";
-      }}
-    >
-      <Flex align="flex-start" gap={10}>
-        <div
-          style={{
-            width: 32,
-            height: 32,
-            borderRadius: 8,
-            background: `${color}15`,
-            color,
-            fontSize: 15,
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            flexShrink: 0,
-          }}
-        >
+  const tileStyle = {
+    "--metric-accent": color,
+  } as CSSProperties;
+
+  const content = (
+    <>
+      <div className="wp-react-ui-metric-tile__header">
+        <div className="wp-react-ui-metric-tile__icon" aria-hidden="true">
           {icon}
         </div>
-        <div style={{ minWidth: 0, flex: 1 }}>
-          <Flex align="center" gap={4}>
-            <Text
-              type="secondary"
-              style={{ fontSize: 11, textTransform: "uppercase", letterSpacing: "0.06em" }}
-            >
-              {label}
-            </Text>
-            {tooltip && (
-              <Tooltip title={tooltip} overlayStyle={{ maxWidth: 240 }}>
-                <QuestionCircleOutlined style={{ fontSize: 11, color: token.colorTextTertiary }} />
-              </Tooltip>
-            )}
-          </Flex>
-          <div
-            style={{
-              fontSize: 18,
-              fontWeight: 700,
-              lineHeight: 1.25,
-              color: token.colorText,
-              marginTop: 1,
-            }}
-          >
-            {value}
-          </div>
-          {sub && <div style={{ marginTop: 3 }}>{sub}</div>}
-        </div>
-      </Flex>
+        {tooltip ? (
+          <Tooltip title={tooltip} overlayStyle={{ maxWidth: 240 }}>
+            <span className="wp-react-ui-metric-tile__hint" aria-label={tooltip}>
+              <QuestionCircleOutlined style={{ fontSize: 13, color: token.colorTextTertiary }} />
+            </span>
+          </Tooltip>
+        ) : null}
+      </div>
+
+      <div className="wp-react-ui-metric-tile__body">
+        <Text className="wp-react-ui-metric-tile__label">{label}</Text>
+        <div className="wp-react-ui-metric-tile__value">{value}</div>
+      </div>
+
+      {sub ? <div className="wp-react-ui-metric-tile__footer">{sub}</div> : null}
+    </>
+  );
+
+  if (onClick) {
+    return (
+      <button
+        type="button"
+        className="wp-react-ui-metric-tile wp-react-ui-metric-tile--interactive"
+        onClick={onClick}
+        style={tileStyle}
+      >
+        {content}
+      </button>
+    );
+  }
+
+  return (
+    <div className="wp-react-ui-metric-tile" style={tileStyle}>
+      {content}
     </div>
   );
 }

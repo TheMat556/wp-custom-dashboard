@@ -11,19 +11,15 @@ export function OfflineAlert({ speed, t, intlLocale, adminUrl }: OfflineAlertPro
 
   const nextStep =
     speed.errorClass === "ssl"
-      ? t(
-          "Contact your hosting provider about your SSL certificate — it may be expired.",
-        )
+      ? t("Contact your hosting provider about your SSL certificate — it may be expired.")
       : speed.errorClass === "dns"
-        ? t(
-            "Check if your domain registration is still active and DNS settings are correct.",
-          )
+        ? t("Check if your domain registration is still active and DNS settings are correct.")
         : speed.errorClass === "timeout"
           ? t(
-              "Contact your hosting provider — the server may be overloaded or a plugin may have caused a PHP error.",
+              "Contact your hosting provider — the server may be overloaded or a plugin may have caused a PHP error."
             )
           : t(
-              "Contact your hosting provider. Tell them your website is not loading and ask them to check the server.",
+              "Contact your hosting provider. Tell them your website is not loading and ask them to check the server."
             );
 
   return (
@@ -45,8 +41,8 @@ export function OfflineAlert({ speed, t, intlLocale, adminUrl }: OfflineAlertPro
                 {new Date(speed.firstFailAt * 1000).toLocaleString(intlLocale, {
                   dateStyle: "medium",
                   timeStyle: "short",
-                })}
-                {" "}({relativeTime(speed.firstFailAt, intlLocale)})
+                })}{" "}
+                ({relativeTime(speed.firstFailAt, intlLocale)})
               </p>
             )}
             <Text type="secondary" style={{ fontSize: 12 }}>
@@ -67,11 +63,10 @@ export function OfflineAlert({ speed, t, intlLocale, adminUrl }: OfflineAlertPro
                     ),
                     children: (
                       <div
+                        className="wp-react-ui-inset-panel"
                         style={{
                           fontFamily: "monospace",
                           fontSize: 12,
-                          background: token.colorBgLayout,
-                          borderRadius: token.borderRadius,
                           padding: "8px 12px",
                           color: token.colorTextSecondary,
                         }}

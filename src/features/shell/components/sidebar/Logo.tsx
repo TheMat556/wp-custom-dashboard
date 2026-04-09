@@ -1,8 +1,8 @@
 import { CloseOutlined } from "@ant-design/icons";
-import { Button, Flex, Typography, theme } from "antd";
+import { Button, Flex, Typography } from "antd";
 import { useStore } from "zustand";
-import { useShellConfig } from "../../context/ShellConfigContext";
 import { brandingStore } from "../../../branding/store/brandingStore";
+import { useShellConfig } from "../../context/ShellConfigContext";
 import { useTheme } from "../../context/ThemeContext";
 
 const { Text } = Typography;
@@ -19,17 +19,14 @@ export function Logo({
   const { assetsUrl, branding, siteName } = useShellConfig();
   const brandingSettings = useStore(brandingStore, (state) => state.settings);
   const { theme: appTheme } = useTheme();
-  const { token } = theme.useToken();
   const isDark = appTheme === "dark";
   const fallbackLogoUrl = `${assetsUrl}logo.svg`;
   const lightLogoUrl = brandingSettings?.lightLogoUrl ?? branding?.logos.lightUrl ?? null;
   const darkLogoUrl = brandingSettings?.darkLogoUrl ?? branding?.logos.darkUrl ?? null;
-  const useLongLogo = !collapsed && (brandingSettings?.useLongLogo ?? branding?.useLongLogo ?? false);
+  const useLongLogo =
+    !collapsed && (brandingSettings?.useLongLogo ?? branding?.useLongLogo ?? false);
   const logoUrl = isDark
-    ? (darkLogoUrl ??
-      lightLogoUrl ??
-      branding?.logos.defaultUrl ??
-      fallbackLogoUrl)
+    ? (darkLogoUrl ?? lightLogoUrl ?? branding?.logos.defaultUrl ?? fallbackLogoUrl)
     : (lightLogoUrl ?? branding?.logos.defaultUrl ?? fallbackLogoUrl);
 
   return (
@@ -37,10 +34,10 @@ export function Logo({
       align="center"
       style={{
         boxSizing: "border-box",
-        height: 64,
+        height: "var(--shell-navbar-height, 64px)",
         padding: collapsed ? 0 : "0 16px 0 20px",
         justifyContent: collapsed ? "center" : "space-between",
-        borderBottom: `1px solid ${token.colorBorderSecondary}`,
+        borderBottom: "1px solid var(--color-border-subtle)",
         flexShrink: 0,
       }}
     >

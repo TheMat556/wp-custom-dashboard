@@ -1,23 +1,16 @@
 import { theme as antTheme, ConfigProvider } from "antd";
-import React from "react";
+import React, { useLayoutEffect, useMemo } from "react";
 import { createRoot, type Root } from "react-dom/client";
-import { useLayoutEffect } from "react";
 import { useStore } from "zustand";
-import App from "./AppShell";
-import { ErrorBoundary } from "./components/ErrorBoundary";
-import { NativeCommandPaletteEnhancer } from "./components/NativeCommandPaletteEnhancer";
-import { NotificationRenderer } from "./components/NotificationRenderer";
-import { SessionExpiredModal } from "../session/components/SessionExpiredModal";
-import { ShellMountEffects } from "./components/ShellMountEffects";
-import { ShellConfigProvider } from "./context/ShellConfigContext";
-import { useShellConfig } from "./context/ShellConfigContext";
-import { useTheme } from "./context/ThemeContext";
+import { CUSTOM_PRESET_KEY, THEME_PRESETS } from "../../config/themePresets";
+import { resetNotificationStore } from "../../store/notificationStore";
+import type { WpReactUiConfig } from "../../types/wp";
+import { getFontFamilyForPreset } from "../../utils/fontPresets";
 import {
   bootstrapBrandingStore,
   brandingStore,
   resetBrandingStore,
 } from "../branding/store/brandingStore";
-import { bootstrapSessionStore, resetSessionStore } from "../session/store/sessionStore";
 import {
   bootstrapMenuCountsStore,
   resetMenuCountsStore,
@@ -28,7 +21,16 @@ import {
   navigationStore,
   resetNavigationStore,
 } from "../navigation/store/navigationStore";
-import { resetNotificationStore } from "../../store/notificationStore";
+import { SessionExpiredModal } from "../session/components/SessionExpiredModal";
+import { SessionHeartbeatEffect } from "../session/components/SessionHeartbeatEffect";
+import { bootstrapSessionStore, resetSessionStore } from "../session/store/sessionStore";
+import App from "./AppShell";
+import { ErrorBoundary } from "./components/ErrorBoundary";
+import { NativeCommandPaletteEnhancer } from "./components/NativeCommandPaletteEnhancer";
+import { NotificationRenderer } from "./components/NotificationRenderer";
+import { ShellMountEffects } from "./components/ShellMountEffects";
+import { ShellConfigProvider, useShellConfig } from "./context/ShellConfigContext";
+import { useTheme } from "./context/ThemeContext";
 import {
   bootstrapShellPreferencesStore,
   resetShellPreferencesStore,
@@ -36,42 +38,19 @@ import {
 } from "./store/shellPreferencesStore";
 import { bootstrapSidebarStore, resetSidebarStore } from "./store/sidebarStore";
 import { bootstrapThemeStore, resetThemeStore } from "./store/themeStore";
-import { CUSTOM_PRESET_KEY, THEME_PRESETS } from "../../config/themePresets";
-import type { WpReactUiConfig } from "../../types/wp";
-import { getFontFamilyForPreset } from "../../utils/fontPresets";
 
-function ShellCssVarSync() {
-  const { token } = antTheme.useToken();
+function applyCssVars(cssVars: Record<string, string>) {
+  const targets = [
+    document.documentElement,
+    document.body,
+    document.getElementById("react-shell-root"),
+  ].filter((target): target is HTMLElement => target instanceof HTMLElement);
 
-  useLayoutEffect(() => {
-    const root = document.documentElement;
-    const body = document.body;
-
-    const cssVars: Record<string, string> = {
-      "--wp-react-ui-command-surface": token.colorBgContainer,
-      "--wp-react-ui-command-surface-muted": token.colorFillAlter,
-      "--wp-react-ui-command-border": token.colorBorderSecondary,
-      "--wp-react-ui-command-text": token.colorText,
-      "--wp-react-ui-command-text-muted": token.colorTextTertiary,
-      "--wp-react-ui-command-shadow": token.boxShadowSecondary,
-      "--wp-react-ui-command-item-hover": token.colorFillSecondary,
-      "--wp-react-ui-command-item-active": token.colorPrimary,
-      "--wp-react-ui-command-item-active-text": token.colorTextLightSolid,
-      "--wp-react-ui-scrollbar-track": token.colorFillSecondary,
-      "--wp-react-ui-scrollbar-thumb": token.colorTextQuaternary,
-      "--wp-react-ui-scrollbar-thumb-hover": token.colorTextTertiary,
-      // Keep sidebar gradient in sync with the active theme preset primary color
-      "--wp-react-ui-shell-accent-soft": token.colorPrimaryBg,
-      "--wp-react-ui-shell-border-strong": token.colorPrimaryBorder,
-    };
-
+  for (const target of targets) {
     for (const [name, value] of Object.entries(cssVars)) {
-      root.style.setProperty(name, value);
-      body.style.setProperty(name, value);
+      target.style.setProperty(name, value);
     }
-  }, [token]);
-
-  return null;
+  }
 }
 
 function AntConfigProvider({ children }: { children: React.ReactNode }) {
@@ -92,23 +71,42 @@ function AntConfigProvider({ children }: { children: React.ReactNode }) {
 
   const fontPreset = brandingSettings?.fontPreset ?? branding.fontPreset ?? "inter";
   const fontFamily = getFontFamilyForPreset(fontPreset);
+  const algorithm = theme === "dark" ? antTheme.darkAlgorithm : antTheme.defaultAlgorithm;
+  const resolvedAntTokens = useMemo(
+    () =>
+      antTheme.getDesignToken({
+        algorithm,
+        token: {
+          fontFamily,
+          colorPrimary: primaryColor,
+        },
+      }),
+    [algorithm, fontFamily, primaryColor]
+  );
 
   useLayoutEffect(() => {
-    document.documentElement.style.setProperty("--wp-react-ui-font-family", fontFamily);
-    document.body.style.setProperty("--wp-react-ui-font-family", fontFamily);
-  }, [fontFamily]);
+    applyCssVars({
+      "--font-display": fontFamily,
+      "--font-body": fontFamily,
+      "--wp-react-ui-font-family": fontFamily,
+      "--color-accent-primary": resolvedAntTokens.colorPrimary,
+      "--color-accent-primary-hover": resolvedAntTokens.colorPrimaryHover,
+      "--color-accent-soft": resolvedAntTokens.colorPrimaryBg,
+      "--color-text-on-accent": resolvedAntTokens.colorTextLightSolid,
+      "--focus-ring": resolvedAntTokens.colorPrimaryBorder,
+    });
+  }, [fontFamily, resolvedAntTokens]);
 
   return (
     <ConfigProvider
       theme={{
-        algorithm: theme === "dark" ? antTheme.darkAlgorithm : antTheme.defaultAlgorithm,
+        algorithm,
         token: {
           fontFamily,
           colorPrimary: primaryColor,
         },
       }}
     >
-      <ShellCssVarSync />
       {children}
     </ConfigProvider>
   );
@@ -120,6 +118,7 @@ function ShellRoot({ host, config }: { host: HTMLElement; config: Readonly<WpRea
       <ShellConfigProvider config={config}>
         <AntConfigProvider>
           <NotificationRenderer />
+          <SessionHeartbeatEffect />
           <SessionExpiredModal />
           <NativeCommandPaletteEnhancer />
           <ShellMountEffects host={host} />

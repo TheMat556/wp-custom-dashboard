@@ -22,8 +22,8 @@ export function SiteHealthWidget({ data }: { data: SiteHealthData }) {
 
   return (
     <Card
+      className="wp-react-ui-dashboard-widget-card"
       title="Site Health"
-      styles={{ body: { padding: "20px" } }}
       style={{ borderRadius: token.borderRadiusLG }}
     >
       <Flex align="center" gap={24}>

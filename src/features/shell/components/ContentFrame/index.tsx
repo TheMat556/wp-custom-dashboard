@@ -7,12 +7,12 @@
  * The parent shell (React) stays alive across all navigations.
  */
 
-import { Spin, Flex, Typography } from "antd";
-import { lazy, Suspense, useEffect, useRef, useMemo } from "react";
+import { Flex, Spin, Typography } from "antd";
+import { lazy, Suspense, useEffect, useMemo, useRef } from "react";
 import { useStore } from "zustand";
-import { useShellConfig } from "../../context/ShellConfigContext";
-import { navigationStore } from "../../../navigation/store/navigationStore";
 import type { WpReactUiShellRoute } from "../../../../types/wp";
+import { navigationStore } from "../../../navigation/store/navigationStore";
+import { useShellConfig } from "../../context/ShellConfigContext";
 
 const BrandingSettings = lazy(() => import("../../../branding/components/BrandingSettings"));
 const DashboardPage = lazy(() => import("../../../dashboard/components/DashboardPage"));
@@ -26,16 +26,16 @@ const SHELL_ROUTES: Record<string, React.ComponentType> = {
 // Cache for dynamically imported plugin components.
 const dynamicComponentCache = new Map<string, React.LazyExoticComponent<React.ComponentType>>();
 
-function getDynamicComponent(route: WpReactUiShellRoute): React.LazyExoticComponent<React.ComponentType> {
+function getDynamicComponent(
+  route: WpReactUiShellRoute
+): React.LazyExoticComponent<React.ComponentType> {
   let cached = dynamicComponentCache.get(route.slug);
   if (!cached) {
     cached = lazy(() =>
       import(/* @vite-ignore */ route.entrypoint_url).catch(() => ({
         default: () => (
           <Flex align="center" justify="center" style={{ height: "100%", padding: 40 }}>
-            <Text type="danger">
-              Failed to load plugin page: {route.label}
-            </Text>
+            <Text type="danger">Failed to load plugin page: {route.label}</Text>
           </Flex>
         ),
       }))
@@ -68,7 +68,11 @@ function getShellRoute(
 
     // Check pathname-based routes (e.g., index.php = dashboard).
     const pathname = url.pathname;
-    if (pathname.endsWith("/index.php") || pathname.endsWith("/wp-admin/") || pathname.endsWith("/wp-admin")) {
+    if (
+      pathname.endsWith("/index.php") ||
+      pathname.endsWith("/wp-admin/") ||
+      pathname.endsWith("/wp-admin")
+    ) {
       return DashboardPage;
     }
   } catch {
@@ -109,15 +113,7 @@ export default function ContentFrame() {
       <div
         id="wp-react-ui-content"
         tabIndex={-1}
-        style={{
-          gridArea: "content",
-          position: "relative",
-          overflow: "hidden",
-          pointerEvents: "auto",
-          minWidth: 0,
-          minHeight: 0,
-          outline: "none",
-        }}
+        className="wp-react-ui-shell-content-slot wp-react-ui-shell-content-slot--native"
       >
         <Suspense
           fallback={
@@ -136,15 +132,7 @@ export default function ContentFrame() {
     <div
       id="wp-react-ui-content"
       tabIndex={-1}
-      style={{
-        gridArea: "content",
-        position: "relative",
-        overflow: "hidden",
-        pointerEvents: "auto",
-        minWidth: 0,
-        minHeight: 0,
-        outline: "none",
-      }}
+      className="wp-react-ui-shell-content-slot wp-react-ui-shell-content-slot--embed"
     >
       {isLoading && <div className="wp-react-ui-content-loading-bar" aria-hidden="true" />}
       <iframe

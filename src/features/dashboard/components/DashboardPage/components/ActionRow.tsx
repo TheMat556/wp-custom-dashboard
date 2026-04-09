@@ -67,10 +67,9 @@ export function ActionRow({ item, adminUrl }: ActionRowProps) {
           </Flex>
           {open && hasDetail && (
             <div
+              className="wp-react-ui-inset-panel"
               style={{
                 marginTop: 6,
-                background: token.colorBgLayout,
-                borderRadius: token.borderRadius,
                 padding: "8px 12px",
                 borderLeft: `3px solid ${severityColor}`,
               }}

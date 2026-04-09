@@ -12,11 +12,6 @@ import {
 import { Breadcrumb, Button, Dropdown, Tooltip, Typography, theme } from "antd";
 import { lazy, Suspense, useEffect, useMemo, useRef, useState } from "react";
 import { useStore } from "zustand";
-import { useShellConfig } from "../../context/ShellConfigContext";
-import { useSidebar } from "../../context/SidebarContext";
-import { useTheme } from "../../context/ThemeContext";
-import { useMenu } from "../../../navigation/hooks/useMenu";
-import { navigationStore } from "../../../navigation/store/navigationStore";
 import {
   readAdminBarAction,
   triggerAdminBarAction,
@@ -24,6 +19,11 @@ import {
 } from "../../../../utils/adminBar";
 import { useActiveKey } from "../../../../utils/spaNavigate";
 import { navigate, navigateHome } from "../../../../utils/wp";
+import { useMenu } from "../../../navigation/hooks/useMenu";
+import { navigationStore } from "../../../navigation/store/navigationStore";
+import { useShellConfig } from "../../context/ShellConfigContext";
+import { useSidebar } from "../../context/SidebarContext";
+import { useTheme } from "../../context/ThemeContext";
 import { CommandPaletteTrigger } from "./CommandPalette";
 
 const { Text } = Typography;
@@ -41,7 +41,6 @@ export default function Navbar() {
   const { token } = theme.useToken();
   const isDark = appTheme === "dark";
   const activeKey = useActiveKey();
-  const pageUrl = useStore(navigationStore, (state) => state.pageUrl);
   const navigationStatus = useStore(navigationStore, (state) => state.status);
   const [activityOpen, setActivityOpen] = useState(false);
   const [activityEverOpened, setActivityEverOpened] = useState(false);
@@ -104,12 +103,11 @@ export default function Navbar() {
     return () => {
       cancelled = true;
     };
-  }, [pageUrl, navigationStatus]);
+  }, [navigationStatus]);
 
-  const headerBackground = isDark
-    ? `linear-gradient(180deg, ${token.colorBgElevated} 0%, ${token.colorBgContainer} 100%)`
-    : token.colorBgContainer;
-  const headerBorderColor = isDark ? token.colorSplit : token.colorBorderSecondary;
+  const headerBackground =
+    "linear-gradient(180deg, var(--shell-chrome-raised) 0%, var(--shell-chrome-bg) 100%)";
+  const headerBorderColor = "var(--color-border-subtle)";
 
   const showExport = containerWidth >= 860;
   const showHistory = containerWidth >= 720;
@@ -161,14 +159,20 @@ export default function Navbar() {
     const items: { title: React.ReactNode }[] = [
       {
         title: (
-          <span
+          <button
+            type="button"
             style={{
+              appearance: "none",
+              background: "transparent",
+              border: 0,
               cursor: "pointer",
+              padding: 0,
               minWidth: 0,
               maxWidth: 160,
               display: "inline-flex",
               alignItems: "center",
               gap: 4,
+              color: token.colorTextSecondary,
             }}
             onClick={() => navigateHome(adminUrl)}
           >
@@ -185,7 +189,7 @@ export default function Navbar() {
             >
               Home
             </Text>
-          </span>
+          </button>
         ),
       },
     ];
@@ -299,7 +303,6 @@ export default function Navbar() {
   return (
     <header
       ref={containerRef}
-      role="banner"
       className="wp-react-ui-navbar"
       style={{
         boxSizing: "border-box",
@@ -313,7 +316,7 @@ export default function Navbar() {
         paddingLeft: 0,
         paddingRight: 0,
         borderBottom: `1px solid ${headerBorderColor}`,
-        boxShadow: isDark ? token.boxShadowTertiary : "none",
+        boxShadow: "none",
         transition: "background 300ms ease, border-color 300ms ease, box-shadow 300ms ease",
       }}
     >
@@ -392,10 +395,15 @@ export default function Navbar() {
               shape="circle"
               aria-label={mirroredAdminBarAction.title}
               onClick={() => {
-                const iframe = document.querySelector<HTMLIFrameElement>("#wp-react-ui-content iframe");
+                const iframe = document.querySelector<HTMLIFrameElement>(
+                  "#wp-react-ui-content iframe"
+                );
                 if (
                   triggerAdminBarAction(mirroredAdminBarAction.id) ||
-                  triggerAdminBarActionIn(mirroredAdminBarAction.id, iframe?.contentDocument ?? null)
+                  triggerAdminBarActionIn(
+                    mirroredAdminBarAction.id,
+                    iframe?.contentDocument ?? null
+                  )
                 ) {
                   return;
                 }
