@@ -161,7 +161,7 @@ export default function BrandingSettings() {
 
       <BrandAssetsSection
         t={t}
-        isMd={!!screens.md}
+        isLg={!!screens.lg}
         lightLogoId={draft.lightLogoId}
         lightLogoUrl={draft.lightLogoUrl}
         darkLogoId={draft.darkLogoId}
@@ -175,7 +175,7 @@ export default function BrandingSettings() {
       <div
         style={{
           display: "grid",
-          gridTemplateColumns: screens.md ? "repeat(2, minmax(0, 1fr))" : "1fr",
+          gridTemplateColumns: screens.lg ? "repeat(2, minmax(0, 1fr))" : "1fr",
           gap: 24,
           alignItems: "stretch",
           marginTop: 24,
@@ -210,9 +210,9 @@ export default function BrandingSettings() {
           t={t}
           fontPreset={draft.fontPreset}
           fontPresetOptions={fontPresetOptions}
-          isLg={!!screens.lg}
-          isSm={!!screens.sm}
+          isXl={!!screens.xl}
           isMd={!!screens.md}
+          isLg={!!screens.lg}
           onFontPresetChange={(fontPreset: FontPresetKey) => updateDraft({ fontPreset })}
         />
       </div>

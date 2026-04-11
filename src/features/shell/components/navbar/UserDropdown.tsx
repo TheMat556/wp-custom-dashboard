@@ -1,6 +1,6 @@
 import { EditOutlined, LogoutOutlined } from "@ant-design/icons";
 import { Avatar, Dropdown, Flex, type MenuProps, Typography, theme } from "antd";
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { getAdminBaseUrl, navigate } from "../../../../utils/wp";
 import { useShellConfig } from "../../context/ShellConfigContext";
 
@@ -29,6 +29,7 @@ export default function UserDropdown({
 }) {
   const { adminUrl, logoutUrl, user } = useShellConfig();
   const { token } = theme.useToken();
+  const [open, setOpen] = useState(false);
 
   const displayUser = useMemo(
     () => ({
@@ -112,6 +113,8 @@ export default function UserDropdown({
 
   return (
     <Dropdown
+      open={open}
+      onOpenChange={setOpen}
       menu={{
         items: menuItems,
         style: { minWidth: 220, borderRadius: token.borderRadiusLG },
@@ -119,64 +122,70 @@ export default function UserDropdown({
       trigger={["click"]}
       placement="bottomRight"
       getPopupContainer={getContainer}
+      overlayClassName="wp-react-ui-navbar-dropdown wp-react-ui-user-dropdown"
       overlayStyle={{ minWidth: 220 }}
     >
-      <Flex
-        align="center"
-        gap={10}
+      <button
+        type="button"
+        aria-haspopup="menu"
+        aria-expanded={open}
         style={{
           cursor: "pointer",
           padding: compact ? 0 : "6px 10px",
           borderRadius: token.borderRadiusLG,
           color: token.colorText,
+          background: "transparent",
+          border: 0,
           transition: "background-color 180ms ease, color 180ms ease",
         }}
         className="wp-react-ui-user-trigger"
       >
-        {!compact && (
-          <div style={{ textAlign: "right", minWidth: 0, maxWidth: 110, overflow: "hidden" }}>
-            <Text
-              strong
-              style={{
-                display: "block",
-                fontSize: 13,
-                lineHeight: 1.3,
-                color: token.colorText,
-                overflow: "hidden",
-                textOverflow: "ellipsis",
-                whiteSpace: "nowrap",
-              }}
-            >
-              {displayUser.name}
-            </Text>
-            <Text
-              style={{
-                fontSize: 11,
-                color: token.colorTextSecondary,
-                overflow: "hidden",
-                textOverflow: "ellipsis",
-                whiteSpace: "nowrap",
-                display: "block",
-              }}
-            >
-              {displayUser.role}
-            </Text>
-          </div>
-        )}
-        <Avatar
-          size={38}
-          style={{
-            backgroundColor: avatarBackground,
-            color: avatarColor,
-            fontWeight: 700,
-            fontSize: 13,
-            flexShrink: 0,
-            boxShadow: `inset 0 0 0 1px ${token.colorBorderSecondary}`,
-          }}
-        >
-          {displayUser.initials}
-        </Avatar>
-      </Flex>
+        <Flex align="center" gap={10}>
+          {!compact && (
+            <div style={{ textAlign: "right", minWidth: 0, maxWidth: 110, overflow: "hidden" }}>
+              <Text
+                strong
+                style={{
+                  display: "block",
+                  fontSize: 13,
+                  lineHeight: 1.3,
+                  color: token.colorText,
+                  overflow: "hidden",
+                  textOverflow: "ellipsis",
+                  whiteSpace: "nowrap",
+                }}
+              >
+                {displayUser.name}
+              </Text>
+              <Text
+                style={{
+                  fontSize: 11,
+                  color: token.colorTextSecondary,
+                  overflow: "hidden",
+                  textOverflow: "ellipsis",
+                  whiteSpace: "nowrap",
+                  display: "block",
+                }}
+              >
+                {displayUser.role}
+              </Text>
+            </div>
+          )}
+          <Avatar
+            size={38}
+            style={{
+              backgroundColor: avatarBackground,
+              color: avatarColor,
+              fontWeight: 700,
+              fontSize: 13,
+              flexShrink: 0,
+              boxShadow: `inset 0 0 0 1px ${token.colorBorderSecondary}`,
+            }}
+          >
+            {displayUser.initials}
+          </Avatar>
+        </Flex>
+      </button>
     </Dropdown>
   );
 }

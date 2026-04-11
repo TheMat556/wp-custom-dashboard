@@ -25,7 +25,7 @@ export function WeekCalendar({ weekDays, intlLocale }: WeekCalendarProps) {
             style={{
               borderRadius: token.borderRadius,
               border: `1px solid ${day.isToday ? `${token.colorPrimary}60` : token.colorBorderSecondary}`,
-              background: day.isToday ? `${token.colorPrimary}08` : token.colorBgLayout,
+              background: day.isToday ? `${token.colorPrimary}08` : "var(--color-bg-surface-muted)",
               padding: "8px 4px",
               minWidth: 0,
             }}

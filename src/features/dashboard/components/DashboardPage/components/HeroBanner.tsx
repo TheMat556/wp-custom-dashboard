@@ -100,6 +100,9 @@ export function HeroBanner({
                       stroke={token.colorPrimary}
                       strokeWidth={2}
                       dot={false}
+                      isAnimationActive
+                      animationDuration={700}
+                      animationEasing="ease-out"
                     />
                   </LineChart>
                 </ResponsiveContainer>

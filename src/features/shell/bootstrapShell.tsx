@@ -73,7 +73,29 @@ function AntConfigProvider({ children }: { children: React.ReactNode }) {
 
   const fontPreset = brandingSettings?.fontPreset ?? branding.fontPreset ?? "inter";
   const fontFamily = getFontFamilyForPreset(fontPreset);
-  const algorithm = theme === "dark" ? antTheme.darkAlgorithm : antTheme.defaultAlgorithm;
+  const isDark = theme === "dark";
+  const algorithm = isDark ? antTheme.darkAlgorithm : antTheme.defaultAlgorithm;
+  const tooltipBackground = isDark ? "#131c2b" : "#ffffff";
+  const tooltipTextColor = isDark ? "#f8fafc" : "#172033";
+
+  // Bridge Ant Design's generic dark tokens to the shell's navy palette so all
+  // components (Button, Alert, Card, etc.) inherit the correct dark backgrounds.
+  const darkTokenOverrides = useMemo(
+    () =>
+      isDark
+        ? {
+            colorBgContainer: "#131c2b", // --color-bg-surface
+            colorBgElevated: "#192437", // elevated surfaces (dropdowns, popovers)
+            colorBgLayout: "#0f1723", // --color-bg-app
+            colorFillAlter: "#1a2435", // table stripes, tree hover, etc.
+            colorFillSecondary: "#1e2a3b", // secondary fills
+            colorBorderSecondary: "rgba(255,255,255,0.09)", // --color-border-subtle
+            colorBorder: "rgba(255,255,255,0.12)", // --color-border-strong
+          }
+        : {},
+    [isDark]
+  );
+
   const resolvedAntTokens = useMemo(
     () =>
       antTheme.getDesignToken({
@@ -81,9 +103,10 @@ function AntConfigProvider({ children }: { children: React.ReactNode }) {
         token: {
           fontFamily,
           colorPrimary: primaryColor,
+          ...darkTokenOverrides,
         },
       }),
-    [algorithm, fontFamily, primaryColor]
+    [algorithm, fontFamily, primaryColor, darkTokenOverrides]
   );
 
   useLayoutEffect(() => {
@@ -106,6 +129,25 @@ function AntConfigProvider({ children }: { children: React.ReactNode }) {
         token: {
           fontFamily,
           colorPrimary: primaryColor,
+          ...darkTokenOverrides,
+        },
+        components: {
+          Tooltip: {
+            colorBgSpotlight: tooltipBackground,
+            colorTextLightSolid: tooltipTextColor,
+          },
+          ...(isDark && {
+            Button: {
+              defaultBg: "rgba(255,255,255,0.06)",
+              defaultBorderColor: "rgba(255,255,255,0.18)",
+              defaultColor: "#e2e8f0",
+              defaultHoverBg: "rgba(255,255,255,0.10)",
+              defaultHoverBorderColor: "rgba(255,255,255,0.28)",
+              defaultHoverColor: "#f8fafc",
+              defaultActiveBg: "rgba(255,255,255,0.13)",
+              defaultActiveBorderColor: "rgba(255,255,255,0.32)",
+            },
+          }),
         },
       }}
     >
