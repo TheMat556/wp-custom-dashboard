@@ -136,10 +136,7 @@ export function TrafficCharts({ trend, countries, t, intlLocale, isMd }: Traffic
                 animationEasing="ease-out"
               >
                 {countries.slice(0, 7).map((entry, i) => (
-                  <Cell
-                    key={entry.country}
-                    fill={chartColors[i % chartColors.length]}
-                  />
+                  <Cell key={entry.country} fill={chartColors[i % chartColors.length]} />
                 ))}
               </Bar>
             </BarChart>

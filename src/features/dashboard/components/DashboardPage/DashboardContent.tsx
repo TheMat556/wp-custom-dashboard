@@ -67,7 +67,10 @@ export function DashboardContent({
         </div>
       )}
 
-      <div className="wp-react-ui-dashboard-reveal" style={{ ...revealVar("120ms"), marginBottom: 20 }}>
+      <div
+        className="wp-react-ui-dashboard-reveal"
+        style={{ ...revealVar("120ms"), marginBottom: 20 }}
+      >
         <SummaryTiles
           isSiteDown={viewModel.isSiteDown}
           health={viewModel.health}
@@ -126,7 +129,13 @@ export function DashboardContent({
 
       <div
         className="wp-react-ui-dashboard-reveal"
-        style={{ ...revealVar("280ms"), display: "flex", flexDirection: "column", gap: 16, marginBottom: 16 }}
+        style={{
+          ...revealVar("280ms"),
+          display: "flex",
+          flexDirection: "column",
+          gap: 16,
+          marginBottom: 16,
+        }}
       >
         <ActionCenter
           actions={viewModel.actions}

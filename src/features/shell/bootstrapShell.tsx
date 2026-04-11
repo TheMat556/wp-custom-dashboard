@@ -80,17 +80,21 @@ function AntConfigProvider({ children }: { children: React.ReactNode }) {
 
   // Bridge Ant Design's generic dark tokens to the shell's navy palette so all
   // components (Button, Alert, Card, etc.) inherit the correct dark backgrounds.
-  const darkTokenOverrides = isDark
-    ? {
-        colorBgContainer: "#131c2b", // --color-bg-surface
-        colorBgElevated: "#192437", // elevated surfaces (dropdowns, popovers)
-        colorBgLayout: "#0f1723", // --color-bg-app
-        colorFillAlter: "#1a2435", // table stripes, tree hover, etc.
-        colorFillSecondary: "#1e2a3b", // secondary fills
-        colorBorderSecondary: "rgba(255,255,255,0.09)", // --color-border-subtle
-        colorBorder: "rgba(255,255,255,0.12)", // --color-border-strong
-      }
-    : {};
+  const darkTokenOverrides = useMemo(
+    () =>
+      isDark
+        ? {
+            colorBgContainer: "#131c2b", // --color-bg-surface
+            colorBgElevated: "#192437", // elevated surfaces (dropdowns, popovers)
+            colorBgLayout: "#0f1723", // --color-bg-app
+            colorFillAlter: "#1a2435", // table stripes, tree hover, etc.
+            colorFillSecondary: "#1e2a3b", // secondary fills
+            colorBorderSecondary: "rgba(255,255,255,0.09)", // --color-border-subtle
+            colorBorder: "rgba(255,255,255,0.12)", // --color-border-strong
+          }
+        : {},
+    [isDark]
+  );
 
   const resolvedAntTokens = useMemo(
     () =>
@@ -102,8 +106,7 @@ function AntConfigProvider({ children }: { children: React.ReactNode }) {
           ...darkTokenOverrides,
         },
       }),
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    [algorithm, fontFamily, primaryColor, isDark]
+    [algorithm, fontFamily, primaryColor, darkTokenOverrides]
   );
 
   useLayoutEffect(() => {
