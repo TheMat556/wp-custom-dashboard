@@ -254,6 +254,23 @@ body[data-theme="dark"] {
   flex-wrap: wrap;
 }
 
+.wp-react-ui-dashboard-reveal {
+  --dashboard-reveal-delay: 0ms;
+  animation: wp-react-ui-dashboard-reveal 420ms var(--ease-emphasized) both;
+  animation-delay: var(--dashboard-reveal-delay);
+}
+
+@keyframes wp-react-ui-dashboard-reveal {
+  from {
+    opacity: 0;
+    transform: translateY(14px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
 .wp-react-ui-inline-control {
   display: flex;
   align-items: center;
@@ -559,11 +576,59 @@ body[data-theme="dark"] {
 .wp-react-ui-user-trigger:active {
   background-color: rgba(0, 0, 0, 0.08);
 }
+.wp-react-ui-user-trigger {
+  display: inline-flex;
+  align-items: center;
+}
 [data-theme="dark"] .wp-react-ui-user-trigger:hover {
   background-color: rgba(255, 255, 255, 0.08);
 }
 [data-theme="dark"] .wp-react-ui-user-trigger:active {
   background-color: rgba(255, 255, 255, 0.12);
+}
+
+.wp-react-ui-navbar-dropdown .ant-dropdown-menu {
+  background: var(--color-bg-surface) !important;
+  color: var(--color-text-primary) !important;
+  border: 1px solid var(--color-border-subtle) !important;
+  box-shadow: var(--shadow-md) !important;
+}
+
+.wp-react-ui-navbar-dropdown .ant-dropdown-menu {
+  padding: 8px;
+  border-radius: var(--radius-lg);
+}
+
+.wp-react-ui-navbar-dropdown .ant-dropdown-menu-item,
+.wp-react-ui-navbar-dropdown .ant-dropdown-menu-title-content,
+.wp-react-ui-navbar-dropdown .ant-dropdown-menu-item-icon,
+.wp-react-ui-navbar-dropdown .ant-dropdown-menu-submenu-title {
+  color: var(--color-text-primary);
+}
+
+.wp-react-ui-navbar-dropdown .ant-dropdown-menu-item:hover,
+.wp-react-ui-navbar-dropdown .ant-dropdown-menu-submenu-title:hover {
+  background: var(--color-bg-surface-muted);
+}
+
+.wp-react-ui-navbar-dropdown .ant-dropdown-menu-item-danger,
+.wp-react-ui-navbar-dropdown .ant-dropdown-menu-item-danger .ant-dropdown-menu-title-content,
+.wp-react-ui-navbar-dropdown .ant-dropdown-menu-item-danger .ant-dropdown-menu-item-icon {
+  color: var(--color-danger);
+}
+
+.wp-react-ui-navbar-dropdown .ant-dropdown-menu-item-group-title,
+.wp-react-ui-user-dropdown .ant-dropdown-menu-item-group-title {
+  padding: 0;
+}
+
+.wp-react-ui-navbar-dropdown .ant-dropdown-menu-item-group-list,
+.wp-react-ui-user-dropdown .ant-dropdown-menu-item-group-list {
+  margin: 0;
+}
+
+.wp-react-ui-navbar-dropdown .ant-dropdown-menu-item-divider {
+  background: var(--color-border-subtle);
 }
 
 .wp-react-ui-navbar-breadcrumb {
@@ -644,6 +709,55 @@ body[data-theme="dark"] {
 .wp-react-ui-navbar-toggle:hover {
   background: var(--shell-chrome-raised) !important;
   transform: translateY(-1px);
+}
+
+.wp-react-ui-navbar-icon-button.ant-btn {
+  width: 38px !important;
+  min-width: 38px !important;
+  max-width: 38px !important;
+  height: 38px !important;
+  padding: 0 !important;
+  border-radius: 999px !important;
+}
+
+.wp-react-ui-navbar-search-button.ant-btn {
+  background: var(--shell-chrome-raised) !important;
+  border-color: var(--color-border-subtle) !important;
+  color: var(--color-text-secondary) !important;
+}
+
+.wp-react-ui-navbar-search-button.ant-btn:hover,
+.wp-react-ui-navbar-search-button.ant-btn:focus,
+.wp-react-ui-navbar-search-button.ant-btn:active {
+  background: var(--color-bg-surface) !important;
+  border-color: var(--wp-react-ui-shell-border-strong) !important;
+  color: var(--color-text-primary) !important;
+}
+
+.wp-react-ui-navbar-search-input.ant-input-affix-wrapper,
+.wp-react-ui-navbar-search-input.ant-input-outlined,
+.wp-react-ui-navbar-search-input.ant-input {
+  background: var(--shell-chrome-raised) !important;
+  border-color: var(--color-border-subtle) !important;
+  box-shadow: none !important;
+  border-radius: 999px !important;
+}
+
+.wp-react-ui-navbar-search-input.ant-input-affix-wrapper:hover,
+.wp-react-ui-navbar-search-input.ant-input-affix-wrapper:focus-within {
+  background: var(--color-bg-surface) !important;
+  border-color: var(--wp-react-ui-shell-border-strong) !important;
+}
+
+.wp-react-ui-navbar-search-input.ant-input-affix-wrapper .ant-input,
+.wp-react-ui-navbar-search-input.ant-input-affix-wrapper .ant-input::placeholder {
+  background: transparent !important;
+  color: var(--color-text-secondary) !important;
+}
+
+.wp-react-ui-navbar-search-input.ant-input-affix-wrapper .ant-input-prefix,
+.wp-react-ui-navbar-search-input.ant-input-affix-wrapper .ant-input-suffix {
+  color: var(--color-text-muted) !important;
 }
 
 .wp-react-ui-sidebar-shell {
@@ -1038,12 +1152,15 @@ body[data-theme="dark"] {
 
 .wp-react-ui-nav-item__children {
   overflow: hidden;
-  max-height: 0;
-  transition: max-height 240ms ease;
+  height: 0;
+  opacity: 0;
+  transition:
+    height 260ms cubic-bezier(0.22, 1, 0.36, 1),
+    opacity 180ms ease;
 }
 
 .wp-react-ui-nav-item__children--open {
-  max-height: 600px;
+  opacity: 1;
 }
 
 .wp-react-ui-nav-item__children-inner {
@@ -1467,13 +1584,23 @@ body[data-theme="dark"] {
 }
 
 @media (prefers-reduced-motion: reduce) {
-  #react-shell-root *,
-  #react-shell-root *::before,
-  #react-shell-root *::after {
+  #react-shell-root {
+    scroll-behavior: auto !important;
+  }
+
+  #react-shell-root:not(.mounted)::before,
+  #react-shell-root:not(.mounted)::after,
+  ::view-transition-group(root),
+  ::view-transition-image-pair(root),
+  ::view-transition-old(root),
+  ::view-transition-new(root),
+  ::view-transition-group(wp-shell),
+  ::view-transition-image-pair(wp-shell),
+  ::view-transition-old(wp-shell),
+  ::view-transition-new(wp-shell) {
     animation-duration: 0.01ms !important;
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
-    scroll-behavior: auto !important;
   }
 }
 

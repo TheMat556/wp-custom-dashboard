@@ -392,6 +392,7 @@ export function CommandPaletteTrigger({ compact: forceCompact = false }: { compa
     <>
       {showIconOnly ? (
         <Button
+          className="wp-react-ui-navbar-search-button"
           type="default"
           onClick={handleOpen}
           icon={<SearchOutlined style={{ color: token.colorTextSecondary, fontSize: 18 }} />}
@@ -429,6 +430,7 @@ export function CommandPaletteTrigger({ compact: forceCompact = false }: { compa
           }}
         >
           <Input
+            className="wp-react-ui-navbar-search-input"
             readOnly
             size="large"
             value=""

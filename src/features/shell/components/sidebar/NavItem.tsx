@@ -1,6 +1,6 @@
 import { DownOutlined } from "@ant-design/icons";
 import { Tooltip } from "antd";
-import { memo } from "react";
+import { memo, useLayoutEffect, useRef, useState } from "react";
 import { cancelPrefetch, startPrefetch } from "../../../../utils/prefetch";
 import { resolveIcon } from "./iconMap";
 import NavBadge from "./NavBadge";
@@ -33,6 +33,57 @@ export const NavItem = memo(function NavItem({
 }: NavItemProps) {
   const hasChildren = item.children.length > 0;
   const childListId = hasChildren ? `${item.slug}-children` : undefined;
+  const childrenRef = useRef<HTMLDivElement | null>(null);
+  const animationFrameRef = useRef<number | null>(null);
+  const previousExpandedRef = useRef(expanded);
+  const [childrenHeight, setChildrenHeight] = useState<string>(
+    hasChildren && !collapsed && expanded ? "auto" : "0px"
+  );
+
+  useLayoutEffect(() => {
+    const node = childrenRef.current;
+
+    if (!hasChildren || collapsed || !node) {
+      setChildrenHeight("0px");
+      previousExpandedRef.current = expanded;
+      return;
+    }
+
+    if (animationFrameRef.current !== null) {
+      cancelAnimationFrame(animationFrameRef.current);
+      animationFrameRef.current = null;
+    }
+
+    const contentHeight = `${node.scrollHeight}px`;
+    const wasExpanded = previousExpandedRef.current;
+    previousExpandedRef.current = expanded;
+
+    if (expanded) {
+      if (!wasExpanded) {
+        setChildrenHeight("0px");
+        animationFrameRef.current = requestAnimationFrame(() => {
+          setChildrenHeight(contentHeight);
+        });
+      }
+      return;
+    }
+
+    if (wasExpanded) {
+      setChildrenHeight(contentHeight);
+      animationFrameRef.current = requestAnimationFrame(() => {
+        setChildrenHeight("0px");
+      });
+      return;
+    }
+
+    setChildrenHeight("0px");
+
+    return () => {
+      if (animationFrameRef.current !== null) {
+        cancelAnimationFrame(animationFrameRef.current);
+      }
+    };
+  }, [collapsed, expanded, hasChildren]);
 
   const button = (
     <button
@@ -59,7 +110,7 @@ export const NavItem = memo(function NavItem({
       onBlur={() => cancelPrefetch()}
       aria-current={item.isActive ? "page" : undefined}
       aria-expanded={hasChildren ? expanded : undefined}
-      aria-controls={hasChildren && expanded ? childListId : undefined}
+      aria-controls={hasChildren ? childListId : undefined}
       title={collapsed ? item.label : undefined}
     >
       <span className="wp-react-ui-nav-item__rail" aria-hidden="true" />
@@ -111,8 +162,27 @@ export const NavItem = memo(function NavItem({
         button
       )}
 
-      {hasChildren && !collapsed && expanded ? (
-        <div className="wp-react-ui-nav-item__children wp-react-ui-nav-item__children--open">
+      {hasChildren && !collapsed ? (
+        <div
+          ref={childrenRef}
+          className={[
+            "wp-react-ui-nav-item__children",
+            expanded ? "wp-react-ui-nav-item__children--open" : "",
+          ]
+            .filter(Boolean)
+            .join(" ")}
+          style={{ height: childrenHeight }}
+          aria-hidden={!expanded}
+          onTransitionEnd={(event) => {
+            if (event.target !== event.currentTarget || event.propertyName !== "height") {
+              return;
+            }
+
+            if (expanded) {
+              setChildrenHeight("auto");
+            }
+          }}
+        >
           <div className="wp-react-ui-nav-item__children-inner">
             <ul id={childListId} className="wp-react-ui-nav-sublist">
               {item.children.map((child) => (
@@ -131,6 +201,7 @@ export const NavItem = memo(function NavItem({
                     onFocus={() => handlePrefetchStart(child, adminUrl)}
                     onBlur={() => cancelPrefetch()}
                     aria-current={child.isActive ? "page" : undefined}
+                    tabIndex={expanded ? 0 : -1}
                   >
                     <span className="wp-react-ui-nav-subitem__label">{child.label}</span>
                     {child.count !== null && child.count > 0 ? (

@@ -1,3 +1,4 @@
+import type { CSSProperties } from "react";
 import type { WpReactUiConfig } from "../../../../types/wp";
 import type { DashboardViewModel } from "../../dashboardViewModel";
 import { ActionCenter } from "./components/ActionCenter";
@@ -32,24 +33,31 @@ export function DashboardContent({
   isLg,
   closeChecklist,
 }: DashboardContentProps) {
+  const revealVar = (delay: string) => ({ "--dashboard-reveal-delay": delay }) as CSSProperties;
+
   return (
     <>
-      <HeroBanner
-        userName={config.user.name}
-        adminUrl={config.adminUrl}
-        greetingKey={greetingKey}
-        intlLocale={intlLocale}
-        t={t}
-        total30Views={viewModel.total30Views}
-        viewTrend={viewModel.viewTrend}
-        sparkline={viewModel.sparkline}
-        stats={viewModel.stats}
-        readiness={viewModel.readiness}
-        isMd={isMd}
-      />
+      <div className="wp-react-ui-dashboard-reveal" style={revealVar("40ms")}>
+        <HeroBanner
+          userName={config.user.name}
+          adminUrl={config.adminUrl}
+          greetingKey={greetingKey}
+          intlLocale={intlLocale}
+          t={t}
+          total30Views={viewModel.total30Views}
+          viewTrend={viewModel.viewTrend}
+          sparkline={viewModel.sparkline}
+          stats={viewModel.stats}
+          readiness={viewModel.readiness}
+          isMd={isMd}
+        />
+      </div>
 
       {viewModel.isSiteDown && viewModel.speed && (
-        <div style={{ marginBottom: 16 }}>
+        <div
+          className="wp-react-ui-dashboard-reveal"
+          style={{ ...revealVar("90ms"), marginBottom: 16 }}
+        >
           <OfflineAlert
             speed={viewModel.speed}
             t={t}
@@ -59,7 +67,7 @@ export function DashboardContent({
         </div>
       )}
 
-      <div style={{ marginBottom: 20 }}>
+      <div className="wp-react-ui-dashboard-reveal" style={{ ...revealVar("120ms"), marginBottom: 20 }}>
         <SummaryTiles
           isSiteDown={viewModel.isSiteDown}
           health={viewModel.health}
@@ -80,37 +88,46 @@ export function DashboardContent({
 
       {viewModel.showChecklist && (
         <>
-          <FirstStepsChecklist
-            checklist={viewModel.checklist}
-            checklistDone={viewModel.checklistDone}
-            t={t}
-            adminUrl={config.adminUrl}
-            isMd={isMd}
-            onClose={closeChecklist}
-          />
+          <div className="wp-react-ui-dashboard-reveal" style={revealVar("160ms")}>
+            <FirstStepsChecklist
+              checklist={viewModel.checklist}
+              checklistDone={viewModel.checklistDone}
+              t={t}
+              adminUrl={config.adminUrl}
+              isMd={isMd}
+              onClose={closeChecklist}
+            />
+          </div>
           <div style={{ height: 20 }} />
         </>
       )}
 
-      <TrafficCharts
-        trend={viewModel.trend}
-        countries={viewModel.countries}
-        t={t}
-        intlLocale={intlLocale}
-        isMd={isMd}
-      />
-
-      {viewModel.calendar?.available && (
-        <UpcomingBookings
-          calendar={viewModel.calendar}
+      <div className="wp-react-ui-dashboard-reveal" style={revealVar("200ms")}>
+        <TrafficCharts
+          trend={viewModel.trend}
+          countries={viewModel.countries}
           t={t}
           intlLocale={intlLocale}
-          adminUrl={config.adminUrl}
           isMd={isMd}
         />
+      </div>
+
+      {viewModel.calendar?.available && (
+        <div className="wp-react-ui-dashboard-reveal" style={revealVar("240ms")}>
+          <UpcomingBookings
+            calendar={viewModel.calendar}
+            t={t}
+            intlLocale={intlLocale}
+            adminUrl={config.adminUrl}
+            isMd={isMd}
+          />
+        </div>
       )}
 
-      <div style={{ display: "flex", flexDirection: "column", gap: 16, marginBottom: 16 }}>
+      <div
+        className="wp-react-ui-dashboard-reveal"
+        style={{ ...revealVar("280ms"), display: "flex", flexDirection: "column", gap: 16, marginBottom: 16 }}
+      >
         <ActionCenter
           actions={viewModel.actions}
           criticalActions={viewModel.criticalActions}

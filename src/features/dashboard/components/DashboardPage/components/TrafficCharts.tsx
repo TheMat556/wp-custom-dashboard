@@ -79,6 +79,10 @@ export function TrafficCharts({ trend, countries, t, intlLocale, isMd }: Traffic
                 stroke={token.colorPrimary}
                 fill="url(#viewsGrad)"
                 strokeWidth={2}
+                isAnimationActive
+                animationBegin={120}
+                animationDuration={900}
+                animationEasing="ease-out"
               />
             </AreaChart>
           </ResponsiveContainer>
@@ -123,9 +127,19 @@ export function TrafficCharts({ trend, countries, t, intlLocale, isMd }: Traffic
                 contentStyle={tooltipStyle}
                 formatter={(v) => [`${v}`, t("Visits")] as [string, string]}
               />
-              <Bar dataKey="visits" radius={[0, 4, 4, 0]}>
+              <Bar
+                dataKey="visits"
+                radius={[0, 4, 4, 0]}
+                isAnimationActive
+                animationBegin={180}
+                animationDuration={900}
+                animationEasing="ease-out"
+              >
                 {countries.slice(0, 7).map((entry, i) => (
-                  <Cell key={entry.country} fill={chartColors[i % chartColors.length]} />
+                  <Cell
+                    key={entry.country}
+                    fill={chartColors[i % chartColors.length]}
+                  />
                 ))}
               </Bar>
             </BarChart>

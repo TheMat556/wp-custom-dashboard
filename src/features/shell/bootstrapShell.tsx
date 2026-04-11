@@ -74,6 +74,8 @@ function AntConfigProvider({ children }: { children: React.ReactNode }) {
   const fontPreset = brandingSettings?.fontPreset ?? branding.fontPreset ?? "inter";
   const fontFamily = getFontFamilyForPreset(fontPreset);
   const algorithm = theme === "dark" ? antTheme.darkAlgorithm : antTheme.defaultAlgorithm;
+  const tooltipBackground = theme === "dark" ? "#131c2b" : "#ffffff";
+  const tooltipTextColor = theme === "dark" ? "#f8fafc" : "#172033";
   const resolvedAntTokens = useMemo(
     () =>
       antTheme.getDesignToken({
@@ -106,6 +108,12 @@ function AntConfigProvider({ children }: { children: React.ReactNode }) {
         token: {
           fontFamily,
           colorPrimary: primaryColor,
+        },
+        components: {
+          Tooltip: {
+            colorBgSpotlight: tooltipBackground,
+            colorTextLightSolid: tooltipTextColor,
+          },
         },
       }}
     >

@@ -324,7 +324,10 @@ export default function Navbar() {
         {ctrl.isMobile && <CommandPaletteTrigger compact />}
 
         {ctrl.mirroredAdminBarAction && (
-          <Tooltip title={ctrl.mirroredAdminBarAction.title}>
+          <Tooltip
+            title={ctrl.mirroredAdminBarAction.title}
+            getPopupContainer={getPopupContainer}
+          >
             <Button
               className="wp-react-ui-navbar-icon-button"
               type="text"
@@ -366,7 +369,10 @@ export default function Navbar() {
         )}
 
         {ctrl.showExport && (
-          <Tooltip title="Open frontend">
+          <Tooltip
+            title="Open frontend"
+            getPopupContainer={getPopupContainer}
+          >
             <Button
               className="wp-react-ui-navbar-icon-button"
               type="text"
@@ -387,7 +393,10 @@ export default function Navbar() {
         )}
 
         {ctrl.showHistory && (
-          <Tooltip title="Activity log">
+          <Tooltip
+            title="Activity log"
+            getPopupContainer={getPopupContainer}
+          >
             <Button
               className="wp-react-ui-navbar-icon-button"
               type="text"
@@ -439,6 +448,7 @@ export default function Navbar() {
             menu={{ items: overflowMenuItems }}
             trigger={["click"]}
             getPopupContainer={getPopupContainer}
+            overlayClassName="wp-react-ui-navbar-dropdown"
           >
             <Button
               className="wp-react-ui-navbar-icon-button"
