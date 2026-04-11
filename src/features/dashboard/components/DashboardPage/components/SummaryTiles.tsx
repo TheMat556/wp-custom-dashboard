@@ -144,12 +144,12 @@ export function SummaryTiles({
             <Flex gap={3} wrap="wrap">
               {(updates?.plugins ?? 0) > 0 && (
                 <Tag color="blue" style={{ margin: 0, fontSize: 11 }}>
-                  {updates!.plugins} plugins
+                  {updates?.plugins} plugins
                 </Tag>
               )}
               {(updates?.themes ?? 0) > 0 && (
                 <Tag color="purple" style={{ margin: 0, fontSize: 11 }}>
-                  {updates!.themes} themes
+                  {updates?.themes} themes
                 </Tag>
               )}
               {(updates?.core ?? 0) > 0 && (

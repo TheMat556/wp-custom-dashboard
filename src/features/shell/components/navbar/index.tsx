@@ -339,12 +339,14 @@ export default function Navbar() {
               shape="circle"
               aria-label={ctrl.mirroredAdminBarAction.title}
               onClick={() => {
+                const action = ctrl.mirroredAdminBarAction;
+                if (!action) return;
                 const iframe = document.querySelector<HTMLIFrameElement>(
                   "#wp-react-ui-content iframe"
                 );
-                ctrl.triggerAdminBarAction(ctrl.mirroredAdminBarAction!.id) ||
+                ctrl.triggerAdminBarAction(action.id) ||
                   ctrl.triggerAdminBarActionIn(
-                    ctrl.mirroredAdminBarAction!.id,
+                    action.id,
                     iframe?.contentDocument ?? null
                   );
               }}

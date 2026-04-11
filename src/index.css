@@ -817,14 +817,6 @@ body[data-theme="dark"] {
   justify-content: center;
 }
 
-.wp-react-ui-sidebar-brand--collapsed .wp-react-ui-sidebar-brand__identity {
-  flex: 0 0 auto;
-  width: 100%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
 .wp-react-ui-sidebar-brand__identity {
   display: flex;
   align-items: center;
@@ -841,6 +833,14 @@ body[data-theme="dark"] {
 .wp-react-ui-sidebar-brand__identity--collapsed {
   flex: 0 1 auto;
   margin-inline: auto;
+}
+
+.wp-react-ui-sidebar-brand--collapsed .wp-react-ui-sidebar-brand__identity {
+  flex: 0 0 auto;
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .wp-react-ui-sidebar-brand__mark {
@@ -1423,15 +1423,6 @@ body[data-theme="dark"] {
   fill: currentColor;
 }
 
-.commands-command-menu__header .components-button + [cmdk-input] {
-  border-top-right-radius: 14px;
-  border-bottom-right-radius: 14px;
-  border-top-left-radius: 0;
-  border-bottom-left-radius: 0;
-  border: 1px solid var(--wp-react-ui-command-border);
-  border-left: 0;
-}
-
 .commands-command-menu__container [cmdk-input] {
   min-height: 64px;
   padding: 18px 12px;
@@ -1447,6 +1438,15 @@ body[data-theme="dark"] {
 .commands-command-menu__header > [cmdk-input] {
   flex: 1 1 auto;
   min-width: 0;
+}
+
+.commands-command-menu__header .components-button + [cmdk-input] {
+  border-top-right-radius: 14px;
+  border-bottom-right-radius: 14px;
+  border-top-left-radius: 0;
+  border-bottom-left-radius: 0;
+  border: 1px solid var(--wp-react-ui-command-border);
+  border-left: 0;
 }
 
 .commands-command-menu__container [cmdk-input]::placeholder {
@@ -1492,6 +1492,15 @@ body[data-theme="dark"] {
   border-color: var(--wp-react-ui-command-border);
 }
 
+.commands-command-menu__item span {
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.commands-command-menu__item mark {
+  font-weight: 700;
+}
+
 .commands-command-menu__container [cmdk-item][aria-selected="true"],
 .commands-command-menu__container [cmdk-item]:active {
   background: var(--wp-react-ui-command-item-active);
@@ -1507,15 +1516,6 @@ body[data-theme="dark"] {
 .commands-command-menu__container [cmdk-item]:active mark {
   color: var(--wp-react-ui-command-item-active-text);
   fill: currentColor;
-}
-
-.commands-command-menu__item span {
-  font-size: 14px;
-  font-weight: 500;
-}
-
-.commands-command-menu__item mark {
-  font-weight: 700;
 }
 
 /* View Transitions for SPA navigation (progressive enhancement) */

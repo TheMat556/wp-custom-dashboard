@@ -64,7 +64,7 @@ export function SeoBasicsSection({ seoBasics, adminUrl }: SeoBasicsSectionProps)
               size="small"
               type="link"
               style={{ padding: 0, fontSize: 12, flexShrink: 0 }}
-              onClick={() => navigate(check.url!, adminUrl)}
+              onClick={() => { if (check.url) navigate(check.url, adminUrl); }}
             >
               Fix →
             </Button>

@@ -16,7 +16,7 @@ export function WeekCalendar({ weekDays, intlLocale }: WeekCalendarProps) {
       }}
     >
       {weekDays.map((day) => {
-        const localLabel = new Date(day.date + "T12:00:00").toLocaleDateString(intlLocale, {
+        const localLabel = new Date(`${day.date}T12:00:00`).toLocaleDateString(intlLocale, {
           weekday: "short",
         });
         return (
