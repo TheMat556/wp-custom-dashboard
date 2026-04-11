@@ -9,9 +9,9 @@ interface TypographySectionProps {
   t: (key: string, vars?: Record<string, string | number>) => string;
   fontPreset: FontPresetKey;
   fontPresetOptions: Array<{ value: string; label: string }>;
-  isLg: boolean;
-  isSm: boolean;
+  isXl: boolean;
   isMd: boolean;
+  isLg: boolean;
   onFontPresetChange: (value: FontPresetKey) => void;
 }
 
@@ -19,9 +19,9 @@ export function TypographySection({
   t,
   fontPreset,
   fontPresetOptions,
-  isLg,
-  isSm,
+  isXl,
   isMd,
+  isLg,
   onFontPresetChange,
 }: TypographySectionProps) {
   const { token } = theme.useToken();
@@ -35,7 +35,7 @@ export function TypographySection({
       <div
         style={{
           display: "grid",
-          gridTemplateColumns: isMd ? "320px minmax(0, 1fr)" : "1fr",
+          gridTemplateColumns: isLg ? "320px minmax(0, 1fr)" : "1fr",
           gap: 24,
           alignItems: "start",
         }}
@@ -66,9 +66,9 @@ export function TypographySection({
         <div
           style={{
             display: "grid",
-            gridTemplateColumns: isLg
+            gridTemplateColumns: isXl
               ? "repeat(4, minmax(0, 1fr))"
-              : isSm
+              : isMd
                 ? "repeat(2, minmax(0, 1fr))"
                 : "1fr",
             gap: 16,

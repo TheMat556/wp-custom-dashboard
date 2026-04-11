@@ -1,5 +1,5 @@
 import { AlertOutlined, InfoCircleOutlined, WarningOutlined } from "@ant-design/icons";
-import { Flex, Typography, theme } from "antd";
+import { Flex, Tag, Typography, theme } from "antd";
 import { useState } from "react";
 import { navigate } from "../../../../../utils/wp";
 import type { ActionRowProps } from "../types";
@@ -74,23 +74,13 @@ export function ActionRow({ item, adminUrl }: ActionRowProps) {
                 </span>
               )}
             </button>
-            <button
-              type="button"
-              style={{
-                appearance: "none",
-                cursor: "pointer",
-                margin: 0,
-                fontSize: 12,
-                flexShrink: 0,
-                padding: "2px 8px",
-                borderRadius: 4,
-                border: "none",
-              }}
-              className={`ant-tag ant-tag-${tagColor}`}
+            <Tag
+              color={tagColor}
+              style={{ margin: 0, cursor: "pointer", flexShrink: 0, fontSize: 12 }}
               onClick={() => navigate(item.url, adminUrl)}
             >
               {item.action}
-            </button>
+            </Tag>
           </Flex>
           {open && hasDetail && (
             <div

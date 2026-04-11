@@ -169,7 +169,17 @@ export default function ActivityLogPanel({
       open={open}
       onClose={onClose}
       width={420}
-      styles={{ body: { padding: "12px 20px" } }}
+      styles={{
+        content: { background: "var(--shell-chrome-bg)" },
+        header: {
+          background: "var(--shell-chrome-raised)",
+          borderBottom: `1px solid ${token.colorBorderSecondary}`,
+        },
+        body: {
+          padding: "12px 20px",
+          background: "var(--shell-chrome-bg)",
+        },
+      }}
     >
       <Flex gap={8} style={{ marginBottom: 16 }}>
         <Select

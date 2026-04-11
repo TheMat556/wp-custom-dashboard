@@ -30,6 +30,14 @@ export default function Navbar() {
 
   const getPopupContainer = () => ctrl.containerRef.current || document.body;
 
+  const tooltipProps = {
+    arrow: false,
+    placement: "bottom" as const,
+    mouseEnterDelay: 0.08,
+    getPopupContainer: getPopupContainer,
+    overlayInnerStyle: { border: `1px solid ${token.colorBorderSecondary}` },
+  } as const;
+
   const overflowMenuItems = useMemo(() => {
     const items: {
       key: string;
@@ -324,10 +332,7 @@ export default function Navbar() {
         {ctrl.isMobile && <CommandPaletteTrigger compact />}
 
         {ctrl.mirroredAdminBarAction && (
-          <Tooltip
-            title={ctrl.mirroredAdminBarAction.title}
-            getPopupContainer={getPopupContainer}
-          >
+          <Tooltip title={ctrl.mirroredAdminBarAction.title} {...tooltipProps}>
             <Button
               className="wp-react-ui-navbar-icon-button"
               type="text"
@@ -369,10 +374,7 @@ export default function Navbar() {
         )}
 
         {ctrl.showExport && (
-          <Tooltip
-            title="Open frontend"
-            getPopupContainer={getPopupContainer}
-          >
+          <Tooltip title="Open frontend" {...tooltipProps}>
             <Button
               className="wp-react-ui-navbar-icon-button"
               type="text"
@@ -393,10 +395,7 @@ export default function Navbar() {
         )}
 
         {ctrl.showHistory && (
-          <Tooltip
-            title="Activity log"
-            getPopupContainer={getPopupContainer}
-          >
+          <Tooltip title="Activity log" {...tooltipProps}>
             <Button
               className="wp-react-ui-navbar-icon-button"
               type="text"
@@ -421,26 +420,30 @@ export default function Navbar() {
         )}
 
         {ctrl.showTheme && (
-          <Button
-            className="wp-react-ui-navbar-icon-button"
-            type="text"
-            shape="circle"
-            icon={
-              ctrl.isDark ? (
-                <BulbFilled style={{ color: token.colorPrimary, fontSize: 18 }} />
-              ) : (
-                <BulbOutlined style={{ color: token.colorTextSecondary, fontSize: 18 }} />
-              )
-            }
-            onClick={ctrl.toggleTheme}
+          <Tooltip
             title={ctrl.isDark ? "Switch to light mode" : "Switch to dark mode"}
-            aria-label={ctrl.isDark ? "Switch to light mode" : "Switch to dark mode"}
-            style={{
-              width: 38,
-              height: 38,
-              transition: "background-color 180ms ease, color 180ms ease",
-            }}
-          />
+            {...tooltipProps}
+          >
+            <Button
+              className="wp-react-ui-navbar-icon-button"
+              type="text"
+              shape="circle"
+              icon={
+                ctrl.isDark ? (
+                  <BulbFilled style={{ color: token.colorPrimary, fontSize: 18 }} />
+                ) : (
+                  <BulbOutlined style={{ color: token.colorTextSecondary, fontSize: 18 }} />
+                )
+              }
+              onClick={ctrl.toggleTheme}
+              aria-label={ctrl.isDark ? "Switch to light mode" : "Switch to dark mode"}
+              style={{
+                width: 38,
+                height: 38,
+                transition: "background-color 180ms ease, color 180ms ease",
+              }}
+            />
+          </Tooltip>
         )}
 
         {overflowMenuItems.length > 0 && (

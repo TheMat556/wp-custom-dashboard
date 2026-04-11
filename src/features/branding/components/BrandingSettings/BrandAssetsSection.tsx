@@ -4,7 +4,7 @@ import { SurfaceCard } from "./SurfaceCard";
 
 interface BrandAssetsSectionProps {
   t: (key: string, vars?: Record<string, string | number>) => string;
-  isMd: boolean;
+  isLg: boolean;
   lightLogoId: number;
   lightLogoUrl: string | null;
   darkLogoId: number;
@@ -17,7 +17,7 @@ interface BrandAssetsSectionProps {
 
 export function BrandAssetsSection({
   t,
-  isMd,
+  isLg,
   lightLogoId,
   lightLogoUrl,
   darkLogoId,
@@ -36,7 +36,7 @@ export function BrandAssetsSection({
       <div
         style={{
           display: "grid",
-          gridTemplateColumns: isMd ? "repeat(2, minmax(0, 1fr))" : "1fr",
+          gridTemplateColumns: isLg ? "repeat(2, minmax(0, 1fr))" : "1fr",
           gap: 24,
         }}
       >
