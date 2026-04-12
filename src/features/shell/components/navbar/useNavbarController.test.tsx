@@ -136,7 +136,7 @@ describe("useNavbarController", () => {
       );
 
       act(() => {
-        capturedResizeCallback!(
+        capturedResizeCallback?.(
           [{ contentRect: { width: 400 } } as ResizeObserverEntry],
           null as unknown as ResizeObserver
         );
@@ -180,7 +180,7 @@ describe("useNavbarController", () => {
       );
 
       act(() => {
-        capturedResizeCallback!(
+        capturedResizeCallback?.(
           [{ contentRect: { width } } as ResizeObserverEntry],
           null as unknown as ResizeObserver
         );

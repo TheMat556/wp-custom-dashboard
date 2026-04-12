@@ -9,8 +9,9 @@ import {
   MenuOutlined,
   MenuUnfoldOutlined,
 } from "@ant-design/icons";
-import { Breadcrumb, Button, Dropdown, Tooltip, Typography, theme } from "antd";
+import { Breadcrumb, Button, Dropdown, Tooltip, type TooltipProps, Typography, theme } from "antd";
 import { lazy, Suspense, useMemo } from "react";
+import type { AdminBarAction } from "../../../../utils/adminBar";
 import { CommandPaletteTrigger } from "./CommandPalette";
 import { useNavbarController } from "./useNavbarController";
 
@@ -19,6 +20,88 @@ const UserDropdown = lazy(() => import("./UserDropdown"));
 const ActivityLogPanel = lazy(() => import("../../../activity/components/ActivityLogPanel"));
 
 // ── Main Navbar ───────────────────────────────────────────────────────────────
+
+interface NavbarActionButtonProps {
+  action: AdminBarAction;
+  tooltipProps: Omit<TooltipProps, "title" | "children">;
+  triggerAdminBarAction: (id: string) => boolean;
+  triggerAdminBarActionIn: (id: string, doc: Document | ParentNode | null) => boolean;
+}
+
+function NavbarActionButton({
+  action,
+  tooltipProps,
+  triggerAdminBarAction,
+  triggerAdminBarActionIn,
+}: NavbarActionButtonProps) {
+  return (
+    <Tooltip title={action.title} {...tooltipProps}>
+      <Button
+        className="wp-react-ui-navbar-icon-button"
+        type="text"
+        shape="circle"
+        aria-label={action.title}
+        onClick={() => {
+          const iframe = document.querySelector<HTMLIFrameElement>("#wp-react-ui-content iframe");
+          triggerAdminBarAction(action.id) ||
+            triggerAdminBarActionIn(action.id, iframe?.contentDocument ?? null);
+        }}
+        style={{
+          width: 38,
+          height: 38,
+          transition: "background-color 180ms ease, color 180ms ease",
+          display: "inline-flex",
+          alignItems: "center",
+          justifyContent: "center",
+        }}
+        icon={
+          <span
+            aria-hidden="true"
+            style={{
+              display: "inline-flex",
+              alignItems: "center",
+              justifyContent: "center",
+              lineHeight: 1,
+            }}
+            // biome-ignore lint/security/noDangerouslySetInnerHtml: trusted WordPress admin bar HTML from server
+            dangerouslySetInnerHTML={{ __html: action.html }}
+          />
+        }
+      />
+    </Tooltip>
+  );
+}
+
+interface NavbarOverflowMenuProps {
+  items: { key: string; label: React.ReactNode; icon: React.ReactNode; onClick: () => void }[];
+  getPopupContainer: () => HTMLElement;
+}
+
+function NavbarOverflowMenu({ items, getPopupContainer }: NavbarOverflowMenuProps) {
+  if (items.length === 0) return null;
+  return (
+    <Dropdown
+      menu={{ items }}
+      trigger={["click"]}
+      getPopupContainer={getPopupContainer}
+      overlayClassName="wp-react-ui-navbar-dropdown"
+    >
+      <Button
+        className="wp-react-ui-navbar-icon-button"
+        type="text"
+        shape="circle"
+        icon={<EllipsisOutlined style={{ fontSize: 18 }} />}
+        style={{ width: 38, height: 38 }}
+        aria-label="More options"
+      />
+    </Dropdown>
+  );
+}
+
+function getNavbarToggleIcon(isMobile: boolean, collapsed: boolean) {
+  if (isMobile) return <MenuOutlined />;
+  return collapsed ? <MenuUnfoldOutlined /> : <MenuFoldOutlined />;
+}
 
 export default function Navbar() {
   const ctrl = useNavbarController();
@@ -235,10 +318,14 @@ export default function Navbar() {
     token.fontWeightStrong,
   ]);
 
-  const getToggleIcon = () => {
-    if (ctrl.isMobile) return <MenuOutlined />;
-    return ctrl.collapsed ? <MenuUnfoldOutlined /> : <MenuFoldOutlined />;
-  };
+  const getToggleIcon = () => getNavbarToggleIcon(ctrl.isMobile, ctrl.collapsed);
+
+  let toggleLabel: string;
+  if (ctrl.isMobile) toggleLabel = "Open menu";
+  else if (ctrl.collapsed) toggleLabel = "Expand sidebar";
+  else toggleLabel = "Collapse sidebar";
+
+  const themeLabel = ctrl.isDark ? "Switch to light mode" : "Switch to dark mode";
 
   return (
     <header
@@ -275,12 +362,8 @@ export default function Navbar() {
           type="text"
           icon={getToggleIcon()}
           onClick={ctrl.toggleSidebar}
-          title={
-            ctrl.isMobile ? "Open menu" : ctrl.collapsed ? "Expand sidebar" : "Collapse sidebar"
-          }
-          aria-label={
-            ctrl.isMobile ? "Open menu" : ctrl.collapsed ? "Expand sidebar" : "Collapse sidebar"
-          }
+          title={toggleLabel}
+          aria-label={toggleLabel}
           style={{
             width: "var(--shell-navbar-height, 64px)",
             height: "var(--shell-navbar-height, 64px)",
@@ -332,45 +415,12 @@ export default function Navbar() {
         {ctrl.isMobile && <CommandPaletteTrigger compact />}
 
         {ctrl.mirroredAdminBarAction && (
-          <Tooltip title={ctrl.mirroredAdminBarAction.title} {...tooltipProps}>
-            <Button
-              className="wp-react-ui-navbar-icon-button"
-              type="text"
-              shape="circle"
-              aria-label={ctrl.mirroredAdminBarAction.title}
-              onClick={() => {
-                const iframe = document.querySelector<HTMLIFrameElement>(
-                  "#wp-react-ui-content iframe"
-                );
-                ctrl.triggerAdminBarAction(ctrl.mirroredAdminBarAction!.id) ||
-                  ctrl.triggerAdminBarActionIn(
-                    ctrl.mirroredAdminBarAction!.id,
-                    iframe?.contentDocument ?? null
-                  );
-              }}
-              style={{
-                width: 38,
-                height: 38,
-                transition: "background-color 180ms ease, color 180ms ease",
-                display: "inline-flex",
-                alignItems: "center",
-                justifyContent: "center",
-              }}
-              icon={
-                <span
-                  aria-hidden="true"
-                  style={{
-                    display: "inline-flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    lineHeight: 1,
-                  }}
-                  // biome-ignore lint/security/noDangerouslySetInnerHtml: trusted WordPress admin bar HTML from server
-                  dangerouslySetInnerHTML={{ __html: ctrl.mirroredAdminBarAction.html }}
-                />
-              }
-            />
-          </Tooltip>
+          <NavbarActionButton
+            action={ctrl.mirroredAdminBarAction}
+            tooltipProps={tooltipProps}
+            triggerAdminBarAction={ctrl.triggerAdminBarAction}
+            triggerAdminBarActionIn={ctrl.triggerAdminBarActionIn}
+          />
         )}
 
         {ctrl.showExport && (
@@ -420,10 +470,7 @@ export default function Navbar() {
         )}
 
         {ctrl.showTheme && (
-          <Tooltip
-            title={ctrl.isDark ? "Switch to light mode" : "Switch to dark mode"}
-            {...tooltipProps}
-          >
+          <Tooltip title={themeLabel} {...tooltipProps}>
             <Button
               className="wp-react-ui-navbar-icon-button"
               type="text"
@@ -436,7 +483,7 @@ export default function Navbar() {
                 )
               }
               onClick={ctrl.toggleTheme}
-              aria-label={ctrl.isDark ? "Switch to light mode" : "Switch to dark mode"}
+              aria-label={themeLabel}
               style={{
                 width: 38,
                 height: 38,
@@ -446,23 +493,7 @@ export default function Navbar() {
           </Tooltip>
         )}
 
-        {overflowMenuItems.length > 0 && (
-          <Dropdown
-            menu={{ items: overflowMenuItems }}
-            trigger={["click"]}
-            getPopupContainer={getPopupContainer}
-            overlayClassName="wp-react-ui-navbar-dropdown"
-          >
-            <Button
-              className="wp-react-ui-navbar-icon-button"
-              type="text"
-              shape="circle"
-              icon={<EllipsisOutlined style={{ fontSize: 18, color: token.colorTextSecondary }} />}
-              style={{ width: 38, height: 38 }}
-              aria-label="More options"
-            />
-          </Dropdown>
-        )}
+        <NavbarOverflowMenu items={overflowMenuItems} getPopupContainer={getPopupContainer} />
 
         <Suspense fallback={null}>
           <UserDropdown

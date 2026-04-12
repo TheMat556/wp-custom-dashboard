@@ -63,10 +63,8 @@ describe("useMenu", () => {
 
     render(
       <ShellConfigProvider config={config}>
-        <>
-          <NavbarConsumer />
-          <SidebarConsumer />
-        </>
+        <NavbarConsumer />
+        <SidebarConsumer />
       </ShellConfigProvider>
     );
 

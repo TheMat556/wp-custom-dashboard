@@ -1,6 +1,6 @@
 import { DownOutlined } from "@ant-design/icons";
 import { Tooltip } from "antd";
-import { memo, useLayoutEffect, useRef, useState } from "react";
+import { memo, type TransitionEvent, useLayoutEffect, useRef, useState } from "react";
 import { cancelPrefetch, startPrefetch } from "../../../../utils/prefetch";
 import { resolveIcon } from "./iconMap";
 import NavBadge from "./NavBadge";
@@ -23,17 +23,19 @@ function handlePrefetchStart(item: NavModelItem, adminUrl?: string) {
   startPrefetch(item.slug, adminUrl);
 }
 
-export const NavItem = memo(function NavItem({
-  item,
+interface UseChildrenHeightOptions {
+  hasChildren: boolean;
+  collapsed: boolean;
+  expanded: boolean;
+  childrenRef: React.RefObject<HTMLDivElement | null>;
+}
+
+function useChildrenHeight({
+  hasChildren,
   collapsed,
   expanded,
-  adminUrl,
-  onNavigate,
-  onToggle,
-}: NavItemProps) {
-  const hasChildren = item.children.length > 0;
-  const childListId = hasChildren ? `${item.slug}-children` : undefined;
-  const childrenRef = useRef<HTMLDivElement | null>(null);
+  childrenRef,
+}: UseChildrenHeightOptions) {
   const animationFrameRef = useRef<number | null>(null);
   const previousExpandedRef = useRef(expanded);
   const [childrenHeight, setChildrenHeight] = useState<string>(
@@ -83,16 +85,134 @@ export const NavItem = memo(function NavItem({
         cancelAnimationFrame(animationFrameRef.current);
       }
     };
-  }, [collapsed, expanded, hasChildren]);
+  }, [collapsed, expanded, hasChildren, childrenRef]);
+
+  return { childrenHeight, setChildrenHeight };
+}
+
+function NavItemIcon({
+  icon,
+  collapsed,
+  showCollapsedBadge,
+}: {
+  icon: NavModelItem["icon"];
+  collapsed: boolean;
+  showCollapsedBadge: boolean;
+}) {
+  return (
+    <span className="wp-react-ui-nav-item__icon" aria-hidden="true">
+      {resolveIcon(icon)}
+      {collapsed && showCollapsedBadge ? (
+        <span className="wp-react-ui-nav-item__icon-badge" aria-hidden="true" />
+      ) : null}
+    </span>
+  );
+}
+
+function NavItemMeta({
+  item,
+  expanded,
+  hasChildren,
+}: {
+  item: NavModelItem;
+  expanded: boolean;
+  hasChildren: boolean;
+}) {
+  const chevronClass = [
+    "wp-react-ui-nav-item__chevron",
+    expanded && "wp-react-ui-nav-item__chevron--open",
+  ]
+    .filter(Boolean)
+    .join(" ");
+  return (
+    <span className="wp-react-ui-nav-item__meta">
+      {item.count !== null && item.count > 0 ? (
+        <NavBadge count={item.count} tone={item.badgeTone} pulse={item.countChanged} />
+      ) : null}
+      {hasChildren ? (
+        <span className={chevronClass} aria-hidden="true">
+          <DownOutlined />
+        </span>
+      ) : null}
+    </span>
+  );
+}
+
+function handleNavTransitionEnd(
+  event: TransitionEvent<HTMLDivElement>,
+  expanded: boolean,
+  setChildrenHeight: (h: string) => void
+) {
+  if (event.target !== event.currentTarget || event.propertyName !== "height") return;
+  if (expanded) setChildrenHeight("auto");
+}
+
+interface NavSubListProps {
+  items: NavModelItem[];
+  childListId: string | undefined;
+  expanded: boolean;
+  adminUrl?: string;
+  onNavigate: (slug: string) => void;
+}
+
+function NavSubList({ items, childListId, expanded, adminUrl, onNavigate }: NavSubListProps) {
+  return (
+    <ul id={childListId} className="wp-react-ui-nav-sublist">
+      {items.map((child) => (
+        <li key={child.id} className="wp-react-ui-nav-subitem">
+          <button
+            type="button"
+            className={[
+              "wp-react-ui-nav-subitem__button",
+              child.isActive ? "wp-react-ui-nav-subitem__button--active" : "",
+            ]
+              .filter(Boolean)
+              .join(" ")}
+            onClick={() => onNavigate(child.slug)}
+            onMouseEnter={() => handlePrefetchStart(child, adminUrl)}
+            onMouseLeave={() => cancelPrefetch()}
+            onFocus={() => handlePrefetchStart(child, adminUrl)}
+            onBlur={() => cancelPrefetch()}
+            aria-current={child.isActive ? "page" : undefined}
+            tabIndex={expanded ? 0 : -1}
+          >
+            <span className="wp-react-ui-nav-subitem__label">{child.label}</span>
+            {child.count !== null && child.count > 0 ? (
+              <NavBadge count={child.count} tone={child.badgeTone} pulse={child.countChanged} />
+            ) : null}
+          </button>
+        </li>
+      ))}
+    </ul>
+  );
+}
+
+export const NavItem = memo(function NavItem({
+  item,
+  collapsed,
+  expanded,
+  adminUrl,
+  onNavigate,
+  onToggle,
+}: NavItemProps) {
+  const hasChildren = item.children.length > 0;
+  const childListId = hasChildren ? `${item.slug}-children` : undefined;
+  const childrenRef = useRef<HTMLDivElement | null>(null);
+  const { childrenHeight, setChildrenHeight } = useChildrenHeight({
+    hasChildren,
+    collapsed,
+    expanded,
+    childrenRef,
+  });
 
   const button = (
     <button
       type="button"
       className={[
         "wp-react-ui-nav-item__button",
-        item.isActive ? "wp-react-ui-nav-item__button--active" : "",
-        !item.isActive && item.isActiveBranch ? "wp-react-ui-nav-item__button--active-branch" : "",
-        collapsed ? "wp-react-ui-nav-item__button--collapsed" : "",
+        item.isActive && "wp-react-ui-nav-item__button--active",
+        !item.isActive && item.isActiveBranch && "wp-react-ui-nav-item__button--active-branch",
+        collapsed && "wp-react-ui-nav-item__button--collapsed",
       ]
         .filter(Boolean)
         .join(" ")}
@@ -114,46 +234,32 @@ export const NavItem = memo(function NavItem({
       title={collapsed ? item.label : undefined}
     >
       <span className="wp-react-ui-nav-item__rail" aria-hidden="true" />
-      <span className="wp-react-ui-nav-item__icon" aria-hidden="true">
-        {resolveIcon(item.icon)}
-        {collapsed && item.showCollapsedBadge ? (
-          <span className="wp-react-ui-nav-item__icon-badge" aria-hidden="true" />
-        ) : null}
-      </span>
+      <NavItemIcon
+        icon={item.icon}
+        collapsed={collapsed}
+        showCollapsedBadge={item.showCollapsedBadge}
+      />
       {!collapsed && (
         <>
           <span className="wp-react-ui-nav-item__label">{item.label}</span>
-          <span className="wp-react-ui-nav-item__meta">
-            {item.count !== null && item.count > 0 ? (
-              <NavBadge count={item.count} tone={item.badgeTone} pulse={item.countChanged} />
-            ) : null}
-            {hasChildren ? (
-              <span
-                className={[
-                  "wp-react-ui-nav-item__chevron",
-                  expanded ? "wp-react-ui-nav-item__chevron--open" : "",
-                ]
-                  .filter(Boolean)
-                  .join(" ")}
-                aria-hidden="true"
-              >
-                <DownOutlined />
-              </span>
-            ) : null}
-          </span>
+          <NavItemMeta item={item} expanded={expanded} hasChildren={hasChildren} />
         </>
       )}
     </button>
   );
 
+  const liClassName = hasChildren
+    ? "wp-react-ui-nav-item wp-react-ui-nav-item--group"
+    : "wp-react-ui-nav-item";
+  const childrenClassName = [
+    "wp-react-ui-nav-item__children",
+    expanded && "wp-react-ui-nav-item__children--open",
+  ]
+    .filter(Boolean)
+    .join(" ");
+
   return (
-    <li
-      className={
-        item.children.length > 0
-          ? "wp-react-ui-nav-item wp-react-ui-nav-item--group"
-          : "wp-react-ui-nav-item"
-      }
-    >
+    <li className={liClassName}>
       {collapsed ? (
         <Tooltip placement="right" title={item.label}>
           {button}
@@ -165,56 +271,19 @@ export const NavItem = memo(function NavItem({
       {hasChildren && !collapsed ? (
         <div
           ref={childrenRef}
-          className={[
-            "wp-react-ui-nav-item__children",
-            expanded ? "wp-react-ui-nav-item__children--open" : "",
-          ]
-            .filter(Boolean)
-            .join(" ")}
+          className={childrenClassName}
           style={{ height: childrenHeight }}
           aria-hidden={!expanded}
-          onTransitionEnd={(event) => {
-            if (event.target !== event.currentTarget || event.propertyName !== "height") {
-              return;
-            }
-
-            if (expanded) {
-              setChildrenHeight("auto");
-            }
-          }}
+          onTransitionEnd={(event) => handleNavTransitionEnd(event, expanded, setChildrenHeight)}
         >
           <div className="wp-react-ui-nav-item__children-inner">
-            <ul id={childListId} className="wp-react-ui-nav-sublist">
-              {item.children.map((child) => (
-                <li key={child.id} className="wp-react-ui-nav-subitem">
-                  <button
-                    type="button"
-                    className={[
-                      "wp-react-ui-nav-subitem__button",
-                      child.isActive ? "wp-react-ui-nav-subitem__button--active" : "",
-                    ]
-                      .filter(Boolean)
-                      .join(" ")}
-                    onClick={() => onNavigate(child.slug)}
-                    onMouseEnter={() => handlePrefetchStart(child, adminUrl)}
-                    onMouseLeave={() => cancelPrefetch()}
-                    onFocus={() => handlePrefetchStart(child, adminUrl)}
-                    onBlur={() => cancelPrefetch()}
-                    aria-current={child.isActive ? "page" : undefined}
-                    tabIndex={expanded ? 0 : -1}
-                  >
-                    <span className="wp-react-ui-nav-subitem__label">{child.label}</span>
-                    {child.count !== null && child.count > 0 ? (
-                      <NavBadge
-                        count={child.count}
-                        tone={child.badgeTone}
-                        pulse={child.countChanged}
-                      />
-                    ) : null}
-                  </button>
-                </li>
-              ))}
-            </ul>
+            <NavSubList
+              items={item.children}
+              childListId={childListId}
+              expanded={expanded}
+              adminUrl={adminUrl}
+              onNavigate={onNavigate}
+            />
           </div>
         </div>
       ) : null}

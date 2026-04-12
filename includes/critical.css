@@ -67,54 +67,106 @@ html, body {
     pointer-events: none;
 }
 
+/*
+ * Sidebar skeleton — matches the real layout:
+ *  y=0–64    brand header: 36×36 logo mark at (20,14), site name at (68,21), subtitle at (68,38)
+ *  y=64+     nav tree (padding 12px 10px): section labels + items (icon 20×20 at x=22, label at x=52)
+ *  Items: h=42px, margin=2px each side → gaps of 4px between items
+ *  Colors: bg=#edf1f5 (--shell-chrome-bg light), elements #d8e3ed→#e5eef7
+ */
 #wpwrap:not(.has-react-shell)::before {
     grid-area: sidebar;
     position: relative;
     background:
-        linear-gradient(90deg, #f1f5f9 25%, #e2e8f0 50%, #f1f5f9 75%) 32px 32px / 48px 48px no-repeat,
-        linear-gradient(90deg, #f1f5f9 25%, #e2e8f0 50%, #f1f5f9 75%) 96px 36px / 92px 16px no-repeat,
-        linear-gradient(90deg, #f1f5f9 25%, #e2e8f0 50%, #f1f5f9 75%) 96px 62px / 128px 12px no-repeat,
-        linear-gradient(90deg, #f1f5f9 25%, #e2e8f0 50%, #f1f5f9 75%) 16px 120px / 18px 18px no-repeat,
-        linear-gradient(90deg, #f1f5f9 25%, #e2e8f0 50%, #f1f5f9 75%) 48px 122px / calc(100% - 92px) 14px no-repeat,
-        linear-gradient(90deg, #f1f5f9 25%, #e2e8f0 50%, #f1f5f9 75%) 16px 164px / 18px 18px no-repeat,
-        linear-gradient(90deg, #f1f5f9 25%, #e2e8f0 50%, #f1f5f9 75%) 48px 166px / calc(100% - 108px) 14px no-repeat,
-        linear-gradient(90deg, #f1f5f9 25%, #e2e8f0 50%, #f1f5f9 75%) 16px 208px / 18px 18px no-repeat,
-        linear-gradient(90deg, #f1f5f9 25%, #e2e8f0 50%, #f1f5f9 75%) 48px 210px / calc(100% - 80px) 14px no-repeat,
-        linear-gradient(90deg, #f1f5f9 25%, #e2e8f0 50%, #f1f5f9 75%) 16px 268px / calc(100% - 64px) 12px no-repeat,
-        linear-gradient(90deg, #f1f5f9 25%, #e2e8f0 50%, #f1f5f9 75%) 16px 308px / calc(100% - 88px) 12px no-repeat,
-        linear-gradient(90deg, #f1f5f9 25%, #e2e8f0 50%, #f1f5f9 75%) 16px 348px / calc(100% - 72px) 12px no-repeat,
-        #ffffff;
-    border-right: 1px solid #e2e8f0 !important;
+        /* brand: logo mark */
+        linear-gradient(90deg, #d8e3ed 25%, #e5eef7 50%, #d8e3ed 75%) 20px 14px / 36px 36px no-repeat,
+        /* brand: site name */
+        linear-gradient(90deg, #d8e3ed 25%, #e5eef7 50%, #d8e3ed 75%) 68px 21px / 92px 14px no-repeat,
+        /* brand: subtitle */
+        linear-gradient(90deg, #d8e3ed 25%, #e5eef7 50%, #d8e3ed 75%) 68px 39px / 60px 9px no-repeat,
+        /* section 1 label */
+        linear-gradient(90deg, #d8e3ed 25%, #e5eef7 50%, #d8e3ed 75%) 20px 80px / 44px 7px no-repeat,
+        /* item 1: icon + label */
+        linear-gradient(90deg, #d8e3ed 25%, #e5eef7 50%, #d8e3ed 75%) 22px 103px / 20px 20px no-repeat,
+        linear-gradient(90deg, #d8e3ed 25%, #e5eef7 50%, #d8e3ed 75%) 52px 107px / 86px 12px no-repeat,
+        /* item 2: icon + label */
+        linear-gradient(90deg, #d8e3ed 25%, #e5eef7 50%, #d8e3ed 75%) 22px 149px / 20px 20px no-repeat,
+        linear-gradient(90deg, #d8e3ed 25%, #e5eef7 50%, #d8e3ed 75%) 52px 153px / 100px 12px no-repeat,
+        /* item 3: icon + label */
+        linear-gradient(90deg, #d8e3ed 25%, #e5eef7 50%, #d8e3ed 75%) 22px 195px / 20px 20px no-repeat,
+        linear-gradient(90deg, #d8e3ed 25%, #e5eef7 50%, #d8e3ed 75%) 52px 199px / 72px 12px no-repeat,
+        /* item 4: icon + label */
+        linear-gradient(90deg, #d8e3ed 25%, #e5eef7 50%, #d8e3ed 75%) 22px 241px / 20px 20px no-repeat,
+        linear-gradient(90deg, #d8e3ed 25%, #e5eef7 50%, #d8e3ed 75%) 52px 245px / 90px 12px no-repeat,
+        /* section 2 label */
+        linear-gradient(90deg, #d8e3ed 25%, #e5eef7 50%, #d8e3ed 75%) 20px 292px / 36px 7px no-repeat,
+        /* item 5: icon + label */
+        linear-gradient(90deg, #d8e3ed 25%, #e5eef7 50%, #d8e3ed 75%) 22px 315px / 20px 20px no-repeat,
+        linear-gradient(90deg, #d8e3ed 25%, #e5eef7 50%, #d8e3ed 75%) 52px 319px / 70px 12px no-repeat,
+        /* item 6: icon + label */
+        linear-gradient(90deg, #d8e3ed 25%, #e5eef7 50%, #d8e3ed 75%) 22px 361px / 20px 20px no-repeat,
+        linear-gradient(90deg, #d8e3ed 25%, #e5eef7 50%, #d8e3ed 75%) 52px 365px / 96px 12px no-repeat,
+        #edf1f5;
+    border-right: 1px solid #d0d8e4 !important;
 }
 
+/*
+ * Navbar skeleton — matches the real layout:
+ *  left:   burger toggle icon (64×64 area) + breadcrumb text
+ *  center: command palette search pill
+ *  right:  two icon circles + user avatar circle
+ *  Colors: bg=#f1f5f9 (chrome-raised light blend), elements #d8e3ed→#e5eef7
+ */
 #wpwrap:not(.has-react-shell)::after {
     grid-area: navbar;
     height: 64px;
-    background: linear-gradient(90deg, #f1f5f9 25%, #e2e8f0 50%, #f1f5f9 75%);
-    background-size: 200% 100%;
+    background:
+        /* burger icon */
+        linear-gradient(90deg, #d8e3ed 25%, #e5eef7 50%, #d8e3ed 75%) 22px 23px / 20px 18px no-repeat,
+        /* breadcrumb */
+        linear-gradient(90deg, #d8e3ed 25%, #e5eef7 50%, #d8e3ed 75%) 80px 26px / 116px 13px no-repeat,
+        /* command palette / search pill */
+        linear-gradient(90deg, #d8e3ed 25%, #e5eef7 50%, #d8e3ed 75%) calc(50% - 100px) 16px / 200px 32px no-repeat,
+        /* right: icon buttons */
+        linear-gradient(90deg, #d8e3ed 25%, #e5eef7 50%, #d8e3ed 75%) calc(100% - 122px) 16px / 32px 32px no-repeat,
+        linear-gradient(90deg, #d8e3ed 25%, #e5eef7 50%, #d8e3ed 75%) calc(100% - 82px) 16px / 32px 32px no-repeat,
+        /* right: user avatar */
+        linear-gradient(90deg, #d8e3ed 25%, #e5eef7 50%, #d8e3ed 75%) calc(100% - 20px) 16px / 32px 32px no-repeat,
+        #f1f5f9;
 }
 
 body[data-theme="dark"] #wpwrap:not(.has-react-shell)::before {
     background:
-        linear-gradient(90deg, #1f1f1f 25%, #303030 50%, #1f1f1f 75%) 32px 32px / 48px 48px no-repeat,
-        linear-gradient(90deg, #1f1f1f 25%, #303030 50%, #1f1f1f 75%) 96px 36px / 92px 16px no-repeat,
-        linear-gradient(90deg, #1f1f1f 25%, #303030 50%, #1f1f1f 75%) 96px 62px / 128px 12px no-repeat,
-        linear-gradient(90deg, #1f1f1f 25%, #303030 50%, #1f1f1f 75%) 16px 120px / 18px 18px no-repeat,
-        linear-gradient(90deg, #1f1f1f 25%, #303030 50%, #1f1f1f 75%) 48px 122px / calc(100% - 92px) 14px no-repeat,
-        linear-gradient(90deg, #1f1f1f 25%, #303030 50%, #1f1f1f 75%) 16px 164px / 18px 18px no-repeat,
-        linear-gradient(90deg, #1f1f1f 25%, #303030 50%, #1f1f1f 75%) 48px 166px / calc(100% - 108px) 14px no-repeat,
-        linear-gradient(90deg, #1f1f1f 25%, #303030 50%, #1f1f1f 75%) 16px 208px / 18px 18px no-repeat,
-        linear-gradient(90deg, #1f1f1f 25%, #303030 50%, #1f1f1f 75%) 48px 210px / calc(100% - 80px) 14px no-repeat,
-        linear-gradient(90deg, #1f1f1f 25%, #303030 50%, #1f1f1f 75%) 16px 268px / calc(100% - 64px) 12px no-repeat,
-        linear-gradient(90deg, #1f1f1f 25%, #303030 50%, #1f1f1f 75%) 16px 308px / calc(100% - 88px) 12px no-repeat,
-        linear-gradient(90deg, #1f1f1f 25%, #303030 50%, #1f1f1f 75%) 16px 348px / calc(100% - 72px) 12px no-repeat,
-        #141414;
-    border-right-color: #303030 !important;
+        linear-gradient(90deg, #1e2d3f 25%, #253547 50%, #1e2d3f 75%) 20px 14px / 36px 36px no-repeat,
+        linear-gradient(90deg, #1e2d3f 25%, #253547 50%, #1e2d3f 75%) 68px 21px / 92px 14px no-repeat,
+        linear-gradient(90deg, #1e2d3f 25%, #253547 50%, #1e2d3f 75%) 68px 39px / 60px 9px no-repeat,
+        linear-gradient(90deg, #1e2d3f 25%, #253547 50%, #1e2d3f 75%) 20px 80px / 44px 7px no-repeat,
+        linear-gradient(90deg, #1e2d3f 25%, #253547 50%, #1e2d3f 75%) 22px 103px / 20px 20px no-repeat,
+        linear-gradient(90deg, #1e2d3f 25%, #253547 50%, #1e2d3f 75%) 52px 107px / 86px 12px no-repeat,
+        linear-gradient(90deg, #1e2d3f 25%, #253547 50%, #1e2d3f 75%) 22px 149px / 20px 20px no-repeat,
+        linear-gradient(90deg, #1e2d3f 25%, #253547 50%, #1e2d3f 75%) 52px 153px / 100px 12px no-repeat,
+        linear-gradient(90deg, #1e2d3f 25%, #253547 50%, #1e2d3f 75%) 22px 195px / 20px 20px no-repeat,
+        linear-gradient(90deg, #1e2d3f 25%, #253547 50%, #1e2d3f 75%) 52px 199px / 72px 12px no-repeat,
+        linear-gradient(90deg, #1e2d3f 25%, #253547 50%, #1e2d3f 75%) 22px 241px / 20px 20px no-repeat,
+        linear-gradient(90deg, #1e2d3f 25%, #253547 50%, #1e2d3f 75%) 52px 245px / 90px 12px no-repeat,
+        linear-gradient(90deg, #1e2d3f 25%, #253547 50%, #1e2d3f 75%) 20px 292px / 36px 7px no-repeat,
+        linear-gradient(90deg, #1e2d3f 25%, #253547 50%, #1e2d3f 75%) 22px 315px / 20px 20px no-repeat,
+        linear-gradient(90deg, #1e2d3f 25%, #253547 50%, #1e2d3f 75%) 52px 319px / 70px 12px no-repeat,
+        linear-gradient(90deg, #1e2d3f 25%, #253547 50%, #1e2d3f 75%) 22px 361px / 20px 20px no-repeat,
+        linear-gradient(90deg, #1e2d3f 25%, #253547 50%, #1e2d3f 75%) 52px 365px / 96px 12px no-repeat,
+        #172132;
+    border-right-color: #253545 !important;
 }
 
 body[data-theme="dark"] #wpwrap:not(.has-react-shell)::after {
-    background: linear-gradient(90deg, #1f1f1f 25%, #303030 50%, #1f1f1f 75%);
-    background-size: 200% 100%;
+    background:
+        linear-gradient(90deg, #1e2d3f 25%, #253547 50%, #1e2d3f 75%) 22px 23px / 20px 18px no-repeat,
+        linear-gradient(90deg, #1e2d3f 25%, #253547 50%, #1e2d3f 75%) 80px 26px / 116px 13px no-repeat,
+        linear-gradient(90deg, #1e2d3f 25%, #253547 50%, #1e2d3f 75%) calc(50% - 100px) 16px / 200px 32px no-repeat,
+        linear-gradient(90deg, #1e2d3f 25%, #253547 50%, #1e2d3f 75%) calc(100% - 122px) 16px / 32px 32px no-repeat,
+        linear-gradient(90deg, #1e2d3f 25%, #253547 50%, #1e2d3f 75%) calc(100% - 82px) 16px / 32px 32px no-repeat,
+        linear-gradient(90deg, #1e2d3f 25%, #253547 50%, #1e2d3f 75%) calc(100% - 20px) 16px / 32px 32px no-repeat,
+        #192438;
 }
 
 /* ── Unified shell root ── */
@@ -158,6 +210,7 @@ body[data-theme="dark"] #wpwrap:not(.has-react-shell)::after {
     50%       { opacity: 1;   }
 }
 
+/* Navbar skeleton — animated (React root exists, not yet mounted) */
 #react-shell-root:not(.mounted)::before {
     content: "";
     position: absolute;
@@ -165,12 +218,24 @@ body[data-theme="dark"] #wpwrap:not(.has-react-shell)::after {
     left: var(--sidebar-width, 240px);
     right: 0;
     height: 64px;
-    background: linear-gradient(90deg, #f1f5f9 25%, #e2e8f0 50%, #f1f5f9 75%);
-    background-size: 200% 100%;
+    background:
+        /* burger icon */
+        linear-gradient(90deg, #d8e3ed 25%, #e5eef7 50%, #d8e3ed 75%) 22px 23px / 20px 18px no-repeat,
+        /* breadcrumb */
+        linear-gradient(90deg, #d8e3ed 25%, #e5eef7 50%, #d8e3ed 75%) 80px 26px / 116px 13px no-repeat,
+        /* command palette / search pill */
+        linear-gradient(90deg, #d8e3ed 25%, #e5eef7 50%, #d8e3ed 75%) calc(50% - 100px) 16px / 200px 32px no-repeat,
+        /* right: icon buttons */
+        linear-gradient(90deg, #d8e3ed 25%, #e5eef7 50%, #d8e3ed 75%) calc(100% - 122px) 16px / 32px 32px no-repeat,
+        linear-gradient(90deg, #d8e3ed 25%, #e5eef7 50%, #d8e3ed 75%) calc(100% - 82px) 16px / 32px 32px no-repeat,
+        /* right: user avatar */
+        linear-gradient(90deg, #d8e3ed 25%, #e5eef7 50%, #d8e3ed 75%) calc(100% - 20px) 16px / 32px 32px no-repeat,
+        #f1f5f9;
     animation: wp-react-skeleton 1.5s ease-in-out infinite;
     pointer-events: none;
 }
 
+/* Sidebar skeleton — animated */
 #react-shell-root:not(.mounted)::after {
     content: "";
     position: absolute;
@@ -179,45 +244,73 @@ body[data-theme="dark"] #wpwrap:not(.has-react-shell)::after {
     width: var(--sidebar-width, 240px);
     bottom: 0;
     background:
-        linear-gradient(90deg, #f1f5f9 25%, #e2e8f0 50%, #f1f5f9 75%) 32px 32px / 48px 48px no-repeat,
-        linear-gradient(90deg, #f1f5f9 25%, #e2e8f0 50%, #f1f5f9 75%) 96px 36px / 92px 16px no-repeat,
-        linear-gradient(90deg, #f1f5f9 25%, #e2e8f0 50%, #f1f5f9 75%) 96px 62px / 128px 12px no-repeat,
-        linear-gradient(90deg, #f1f5f9 25%, #e2e8f0 50%, #f1f5f9 75%) 0 0 / 18px 18px no-repeat,
-        linear-gradient(90deg, #f1f5f9 25%, #e2e8f0 50%, #f1f5f9 75%) 32px 2px / calc(100% - 76px) 14px no-repeat,
-        linear-gradient(90deg, #f1f5f9 25%, #e2e8f0 50%, #f1f5f9 75%) 0 44px / 18px 18px no-repeat,
-        linear-gradient(90deg, #f1f5f9 25%, #e2e8f0 50%, #f1f5f9 75%) 32px 46px / calc(100% - 92px) 14px no-repeat,
-        linear-gradient(90deg, #f1f5f9 25%, #e2e8f0 50%, #f1f5f9 75%) 0 88px / 18px 18px no-repeat,
-        linear-gradient(90deg, #f1f5f9 25%, #e2e8f0 50%, #f1f5f9 75%) 32px 90px / calc(100% - 64px) 14px no-repeat,
-        linear-gradient(90deg, #f1f5f9 25%, #e2e8f0 50%, #f1f5f9 75%) 0 148px / calc(100% - 48px) 12px no-repeat,
-        linear-gradient(90deg, #f1f5f9 25%, #e2e8f0 50%, #f1f5f9 75%) 0 188px / calc(100% - 72px) 12px no-repeat,
-        linear-gradient(90deg, #f1f5f9 25%, #e2e8f0 50%, #f1f5f9 75%) 0 228px / calc(100% - 56px) 12px no-repeat,
-        #ffffff;
-    border-right: 1px solid #e2e8f0 !important;
+        /* brand: logo mark */
+        linear-gradient(90deg, #d8e3ed 25%, #e5eef7 50%, #d8e3ed 75%) 20px 14px / 36px 36px no-repeat,
+        /* brand: site name */
+        linear-gradient(90deg, #d8e3ed 25%, #e5eef7 50%, #d8e3ed 75%) 68px 21px / 92px 14px no-repeat,
+        /* brand: subtitle */
+        linear-gradient(90deg, #d8e3ed 25%, #e5eef7 50%, #d8e3ed 75%) 68px 39px / 60px 9px no-repeat,
+        /* section 1 label */
+        linear-gradient(90deg, #d8e3ed 25%, #e5eef7 50%, #d8e3ed 75%) 20px 80px / 44px 7px no-repeat,
+        /* item 1: icon + label */
+        linear-gradient(90deg, #d8e3ed 25%, #e5eef7 50%, #d8e3ed 75%) 22px 103px / 20px 20px no-repeat,
+        linear-gradient(90deg, #d8e3ed 25%, #e5eef7 50%, #d8e3ed 75%) 52px 107px / 86px 12px no-repeat,
+        /* item 2: icon + label */
+        linear-gradient(90deg, #d8e3ed 25%, #e5eef7 50%, #d8e3ed 75%) 22px 149px / 20px 20px no-repeat,
+        linear-gradient(90deg, #d8e3ed 25%, #e5eef7 50%, #d8e3ed 75%) 52px 153px / 100px 12px no-repeat,
+        /* item 3: icon + label */
+        linear-gradient(90deg, #d8e3ed 25%, #e5eef7 50%, #d8e3ed 75%) 22px 195px / 20px 20px no-repeat,
+        linear-gradient(90deg, #d8e3ed 25%, #e5eef7 50%, #d8e3ed 75%) 52px 199px / 72px 12px no-repeat,
+        /* item 4: icon + label */
+        linear-gradient(90deg, #d8e3ed 25%, #e5eef7 50%, #d8e3ed 75%) 22px 241px / 20px 20px no-repeat,
+        linear-gradient(90deg, #d8e3ed 25%, #e5eef7 50%, #d8e3ed 75%) 52px 245px / 90px 12px no-repeat,
+        /* section 2 label */
+        linear-gradient(90deg, #d8e3ed 25%, #e5eef7 50%, #d8e3ed 75%) 20px 292px / 36px 7px no-repeat,
+        /* item 5: icon + label */
+        linear-gradient(90deg, #d8e3ed 25%, #e5eef7 50%, #d8e3ed 75%) 22px 315px / 20px 20px no-repeat,
+        linear-gradient(90deg, #d8e3ed 25%, #e5eef7 50%, #d8e3ed 75%) 52px 319px / 70px 12px no-repeat,
+        /* item 6: icon + label */
+        linear-gradient(90deg, #d8e3ed 25%, #e5eef7 50%, #d8e3ed 75%) 22px 361px / 20px 20px no-repeat,
+        linear-gradient(90deg, #d8e3ed 25%, #e5eef7 50%, #d8e3ed 75%) 52px 365px / 96px 12px no-repeat,
+        #edf1f5;
+    border-right: 1px solid #d0d8e4 !important;
     animation: wp-react-skeleton 1.5s ease-in-out infinite;
     pointer-events: none;
 }
 
+/* Dark theme overrides */
 #react-shell-root[data-theme="dark"]:not(.mounted)::before {
-    background: linear-gradient(90deg, #1f1f1f 25%, #303030 50%, #1f1f1f 75%);
-    background-size: 200% 100%;
+    background:
+        linear-gradient(90deg, #1e2d3f 25%, #253547 50%, #1e2d3f 75%) 22px 23px / 20px 18px no-repeat,
+        linear-gradient(90deg, #1e2d3f 25%, #253547 50%, #1e2d3f 75%) 80px 26px / 116px 13px no-repeat,
+        linear-gradient(90deg, #1e2d3f 25%, #253547 50%, #1e2d3f 75%) calc(50% - 100px) 16px / 200px 32px no-repeat,
+        linear-gradient(90deg, #1e2d3f 25%, #253547 50%, #1e2d3f 75%) calc(100% - 122px) 16px / 32px 32px no-repeat,
+        linear-gradient(90deg, #1e2d3f 25%, #253547 50%, #1e2d3f 75%) calc(100% - 82px) 16px / 32px 32px no-repeat,
+        linear-gradient(90deg, #1e2d3f 25%, #253547 50%, #1e2d3f 75%) calc(100% - 20px) 16px / 32px 32px no-repeat,
+        #192438;
 }
 
 #react-shell-root[data-theme="dark"]:not(.mounted)::after {
     background:
-        linear-gradient(90deg, #1f1f1f 25%, #303030 50%, #1f1f1f 75%) 32px 32px / 48px 48px no-repeat,
-        linear-gradient(90deg, #1f1f1f 25%, #303030 50%, #1f1f1f 75%) 96px 36px / 92px 16px no-repeat,
-        linear-gradient(90deg, #1f1f1f 25%, #303030 50%, #1f1f1f 75%) 96px 62px / 128px 12px no-repeat,
-        linear-gradient(90deg, #1f1f1f 25%, #303030 50%, #1f1f1f 75%) 0 0 / 18px 18px no-repeat,
-        linear-gradient(90deg, #1f1f1f 25%, #303030 50%, #1f1f1f 75%) 32px 2px / calc(100% - 76px) 14px no-repeat,
-        linear-gradient(90deg, #1f1f1f 25%, #303030 50%, #1f1f1f 75%) 0 44px / 18px 18px no-repeat,
-        linear-gradient(90deg, #1f1f1f 25%, #303030 50%, #1f1f1f 75%) 32px 46px / calc(100% - 92px) 14px no-repeat,
-        linear-gradient(90deg, #1f1f1f 25%, #303030 50%, #1f1f1f 75%) 0 88px / 18px 18px no-repeat,
-        linear-gradient(90deg, #1f1f1f 25%, #303030 50%, #1f1f1f 75%) 32px 90px / calc(100% - 64px) 14px no-repeat,
-        linear-gradient(90deg, #1f1f1f 25%, #303030 50%, #1f1f1f 75%) 0 148px / calc(100% - 48px) 12px no-repeat,
-        linear-gradient(90deg, #1f1f1f 25%, #303030 50%, #1f1f1f 75%) 0 188px / calc(100% - 72px) 12px no-repeat,
-        linear-gradient(90deg, #1f1f1f 25%, #303030 50%, #1f1f1f 75%) 0 228px / calc(100% - 56px) 12px no-repeat,
-        #141414;
-    border-right-color: #303030 !important;
+        linear-gradient(90deg, #1e2d3f 25%, #253547 50%, #1e2d3f 75%) 20px 14px / 36px 36px no-repeat,
+        linear-gradient(90deg, #1e2d3f 25%, #253547 50%, #1e2d3f 75%) 68px 21px / 92px 14px no-repeat,
+        linear-gradient(90deg, #1e2d3f 25%, #253547 50%, #1e2d3f 75%) 68px 39px / 60px 9px no-repeat,
+        linear-gradient(90deg, #1e2d3f 25%, #253547 50%, #1e2d3f 75%) 20px 80px / 44px 7px no-repeat,
+        linear-gradient(90deg, #1e2d3f 25%, #253547 50%, #1e2d3f 75%) 22px 103px / 20px 20px no-repeat,
+        linear-gradient(90deg, #1e2d3f 25%, #253547 50%, #1e2d3f 75%) 52px 107px / 86px 12px no-repeat,
+        linear-gradient(90deg, #1e2d3f 25%, #253547 50%, #1e2d3f 75%) 22px 149px / 20px 20px no-repeat,
+        linear-gradient(90deg, #1e2d3f 25%, #253547 50%, #1e2d3f 75%) 52px 153px / 100px 12px no-repeat,
+        linear-gradient(90deg, #1e2d3f 25%, #253547 50%, #1e2d3f 75%) 22px 195px / 20px 20px no-repeat,
+        linear-gradient(90deg, #1e2d3f 25%, #253547 50%, #1e2d3f 75%) 52px 199px / 72px 12px no-repeat,
+        linear-gradient(90deg, #1e2d3f 25%, #253547 50%, #1e2d3f 75%) 22px 241px / 20px 20px no-repeat,
+        linear-gradient(90deg, #1e2d3f 25%, #253547 50%, #1e2d3f 75%) 52px 245px / 90px 12px no-repeat,
+        linear-gradient(90deg, #1e2d3f 25%, #253547 50%, #1e2d3f 75%) 20px 292px / 36px 7px no-repeat,
+        linear-gradient(90deg, #1e2d3f 25%, #253547 50%, #1e2d3f 75%) 22px 315px / 20px 20px no-repeat,
+        linear-gradient(90deg, #1e2d3f 25%, #253547 50%, #1e2d3f 75%) 52px 319px / 70px 12px no-repeat,
+        linear-gradient(90deg, #1e2d3f 25%, #253547 50%, #1e2d3f 75%) 22px 361px / 20px 20px no-repeat,
+        linear-gradient(90deg, #1e2d3f 25%, #253547 50%, #1e2d3f 75%) 52px 365px / 96px 12px no-repeat,
+        #172132;
+    border-right-color: #253545 !important;
 }
 
 #react-shell-root.mounted::before,
