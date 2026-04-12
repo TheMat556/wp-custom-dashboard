@@ -58,9 +58,7 @@ describe("getShellRoute", () => {
 
   it("returns a lazy component for a registered plugin route", () => {
     const route = { slug: "my-plugin", label: "My Plugin", entrypoint_url: "/my-plugin.js" };
-    expect(
-      getShellRoute("http://localhost/wp-admin/?page=my-plugin", [route])
-    ).not.toBeNull();
+    expect(getShellRoute("http://localhost/wp-admin/?page=my-plugin", [route])).not.toBeNull();
   });
 });
 

@@ -9,9 +9,266 @@ import {
 } from "@ant-design/icons";
 import { Flex, Progress, Tag, Typography, theme } from "antd";
 import { navigate } from "../../../../../utils/wp";
-import type { SummaryTilesProps } from "../types";
+import type {
+  PendingUpdates,
+  SeoBasics,
+  SeoOverview,
+  SiteHealthData,
+  SiteSpeedData,
+  SummaryTilesProps,
+  TFunc,
+} from "../types";
 import { relativeTime } from "../utils/formatters";
 import { StatTile } from "./StatTile";
+
+type TokenType = ReturnType<typeof theme.useToken>["token"];
+
+function getWebsiteSub(
+  isSiteDown: boolean,
+  health: SiteHealthData | null | undefined,
+  strokeColor: string,
+  t: TFunc,
+  token: TokenType
+): React.ReactNode {
+  if (health && health.score > 0 && !isSiteDown) {
+    return (
+      <Progress
+        percent={health.score}
+        size="small"
+        showInfo={false}
+        strokeColor={strokeColor}
+        style={{ margin: 0 }}
+      />
+    );
+  }
+  const textColor = isSiteDown ? token.colorError : token.colorTextTertiary;
+  const text = isSiteDown ? t("Not reachable") : t("Click for details");
+  return <Typography.Text style={{ fontSize: 12, color: textColor }}>{text}</Typography.Text>;
+}
+
+function getWebsiteColor(
+  isSiteDown: boolean,
+  healthStatus: string | undefined,
+  token: TokenType
+): string {
+  if (isSiteDown || healthStatus === "critical") return token.colorError;
+  if (healthStatus === "good") return token.colorSuccess;
+  return token.colorWarning;
+}
+
+function getWebsiteTooltip(
+  isSiteDown: boolean,
+  healthStatus: string | undefined,
+  speed: SiteSpeedData | null | undefined
+): string {
+  if (isSiteDown) return speed?.reason ?? "Site unreachable";
+  if (healthStatus !== "good") return "WordPress found configuration issues";
+  return "Site is running and reachable";
+}
+
+function getWebsiteProps(
+  isSiteDown: boolean,
+  health: SiteHealthData | null | undefined,
+  speed: SiteSpeedData | null | undefined,
+  t: TFunc,
+  token: TokenType
+) {
+  const healthStatus = health?.status;
+
+  let icon: React.ReactNode;
+  if (isSiteDown) icon = <ExclamationCircleOutlined />;
+  else if (healthStatus === "good") icon = <CheckCircleOutlined />;
+  else icon = <WarningOutlined />;
+
+  let value: string;
+  if (isSiteDown) value = t("Offline");
+  else if (healthStatus === "good") value = t("Online");
+  else value = t("Check");
+
+  let strokeColor = token.colorWarning;
+  if (healthStatus === "good") strokeColor = token.colorSuccess;
+  else if (healthStatus === "critical") strokeColor = token.colorError;
+
+  return {
+    icon,
+    value,
+    sub: getWebsiteSub(isSiteDown, health, strokeColor, t, token),
+    color: getWebsiteColor(isSiteDown, healthStatus, token),
+    tooltip: getWebsiteTooltip(isSiteDown, healthStatus, speed),
+  };
+}
+
+function getVisitorsProps(
+  total30Views: number,
+  viewTrend: number,
+  _intlLocale: string,
+  t: TFunc,
+  token: TokenType
+) {
+  let sub: React.ReactNode;
+  if (total30Views > 0 && viewTrend !== 0) {
+    const trendColor = viewTrend > 0 ? token.colorSuccess : token.colorError;
+    const arrow = viewTrend > 0 ? "↑" : "↓";
+    sub = (
+      <Typography.Text style={{ fontSize: 12, color: trendColor }}>
+        {arrow} {Math.abs(viewTrend)}% {t("vs yesterday")}
+      </Typography.Text>
+    );
+  } else if (total30Views > 0) {
+    sub = (
+      <Typography.Text type="secondary" style={{ fontSize: 12 }}>
+        {t("Stable traffic")}
+      </Typography.Text>
+    );
+  } else {
+    sub = (
+      <Typography.Text type="secondary" style={{ fontSize: 12 }}>
+        {t("Tracking active")}
+      </Typography.Text>
+    );
+  }
+  return { sub };
+}
+
+function getUpdatesProps(
+  updates: PendingUpdates | null | undefined,
+  hasUpdates: boolean,
+  intlLocale: string,
+  t: TFunc,
+  token: TokenType
+) {
+  let sub: React.ReactNode;
+  if (hasUpdates) {
+    sub = (
+      <Flex gap={3} wrap="wrap">
+        {(updates?.plugins ?? 0) > 0 && (
+          <Tag color="blue" style={{ margin: 0, fontSize: 11 }}>
+            {updates?.plugins} plugins
+          </Tag>
+        )}
+        {(updates?.themes ?? 0) > 0 && (
+          <Tag color="purple" style={{ margin: 0, fontSize: 11 }}>
+            {updates?.themes} themes
+          </Tag>
+        )}
+        {(updates?.core ?? 0) > 0 && (
+          <Tag color="red" style={{ margin: 0, fontSize: 11 }}>
+            core
+          </Tag>
+        )}
+      </Flex>
+    );
+  } else if (updates?.lastChecked) {
+    sub = (
+      <Typography.Text type="secondary" style={{ fontSize: 12 }}>
+        {relativeTime(updates.lastChecked, intlLocale)}
+      </Typography.Text>
+    );
+  } else {
+    sub = (
+      <Typography.Text type="secondary" style={{ fontSize: 12 }}>
+        {t("All up to date")}
+      </Typography.Text>
+    );
+  }
+  const color = hasUpdates ? token.colorWarning : token.colorSuccess;
+  const tooltip = hasUpdates
+    ? t("Updates fix security issues. Make a backup first, then update.")
+    : t("Everything is up to date");
+  return { sub, color, tooltip };
+}
+
+function getSpeedProps(
+  isSiteDown: boolean,
+  speed: SiteSpeedData | null | undefined,
+  t: TFunc,
+  token: TokenType
+) {
+  let value: string;
+  if (isSiteDown) value = t("Error");
+  else if (speed?.ms != null) value = `${speed.ms} ms`;
+  else value = "—";
+
+  let color: string;
+  if (isSiteDown) color = token.colorError;
+  else if (speed?.status === "good") color = token.colorSuccess;
+  else if (speed?.status === "fair") color = token.colorWarning;
+  else color = token.colorError;
+
+  let speedLabel = "";
+  if (speed?.status === "good") speedLabel = t("Fast");
+  else if (speed?.status === "fair") speedLabel = t("Acceptable");
+  else if (speed?.status) speedLabel = t("Slow");
+
+  const sub: React.ReactNode =
+    !isSiteDown && speed?.status ? (
+      <Typography.Text style={{ fontSize: 12, color }}>{speedLabel}</Typography.Text>
+    ) : (
+      <Typography.Text style={{ fontSize: 12, color: token.colorError }}>
+        {t("Unreachable")}
+      </Typography.Text>
+    );
+
+  return { value, sub, color };
+}
+
+function getSeoColor(
+  seo: SeoOverview | null | undefined,
+  seoBasics: SeoBasics | null | undefined,
+  token: TokenType
+): string {
+  if (!seo?.plugin) {
+    if (!seoBasics) return token.colorTextSecondary;
+    return seoBasics.score >= 75 ? token.colorSuccess : token.colorWarning;
+  }
+  if (seo.score >= 80) return token.colorSuccess;
+  if (seo.score >= 50) return token.colorWarning;
+  return token.colorError;
+}
+
+function getSeoProps(
+  seo: SeoOverview | null | undefined,
+  seoBasics: SeoBasics | null | undefined,
+  t: TFunc,
+  token: TokenType
+) {
+  let value: string;
+  if (seo?.plugin) value = `${seo.score}%`;
+  else if (seoBasics) value = `${seoBasics.score}%`;
+  else value = "—";
+
+  const color = getSeoColor(seo, seoBasics, token);
+
+  let tooltip: string;
+  if (seo?.plugin) tooltip = t("Based on Yoast SEO data");
+  else if (seoBasics) tooltip = t("Basic SEO checks — install Yoast SEO (free) for full tracking");
+  else tooltip = t("Install Yoast SEO (free) to track your search visibility");
+
+  let sub: React.ReactNode;
+  if (seo?.plugin) {
+    const issueColor = seo.issues.length === 0 ? token.colorSuccess : token.colorWarning;
+    const issueText =
+      seo.issues.length === 0 ? t("No issues") : t("{n} issues", { n: seo.issues.length });
+    sub = (
+      <Typography.Text style={{ fontSize: 12, color: issueColor }}>{issueText}</Typography.Text>
+    );
+  } else if (seoBasics) {
+    const basicColor = seoBasics.score >= 75 ? token.colorSuccess : token.colorWarning;
+    sub = (
+      <Typography.Text style={{ fontSize: 12, color: basicColor }}>
+        {t("Basic check")}
+      </Typography.Text>
+    );
+  } else {
+    sub = (
+      <Typography.Text type="secondary" style={{ fontSize: 12 }}>
+        {t("No plugin")}
+      </Typography.Text>
+    );
+  }
+
+  return { value, sub, color, tooltip };
+}
 
 export function SummaryTiles({
   isSiteDown,
@@ -30,6 +287,11 @@ export function SummaryTiles({
   isMd,
 }: SummaryTilesProps) {
   const { token } = theme.useToken();
+  const websiteProps = getWebsiteProps(isSiteDown, health, speed, t, token);
+  const visitorsProps = getVisitorsProps(total30Views, viewTrend, intlLocale, t, token);
+  const updatesProps = getUpdatesProps(updates, hasUpdates, intlLocale, t, token);
+  const speedProps = getSpeedProps(isSiteDown, speed, t, token);
+  const seoProps = getSeoProps(seo, seoBasics, t, token);
 
   return (
     <div
@@ -45,231 +307,51 @@ export function SummaryTiles({
         marginBottom: 20,
       }}
     >
-      {/* Website Status */}
       <StatTile
-        icon={
-          isSiteDown ? (
-            <ExclamationCircleOutlined />
-          ) : health?.status === "good" ? (
-            <CheckCircleOutlined />
-          ) : (
-            <WarningOutlined />
-          )
-        }
+        icon={websiteProps.icon}
         label={t("Website")}
-        value={isSiteDown ? t("Offline") : health?.status === "good" ? t("Online") : t("Check")}
-        sub={
-          health && health.score > 0 && !isSiteDown ? (
-            <Progress
-              percent={health.score}
-              size="small"
-              showInfo={false}
-              strokeColor={
-                health.status === "good"
-                  ? token.colorSuccess
-                  : health.status === "critical"
-                    ? token.colorError
-                    : token.colorWarning
-              }
-              style={{ margin: 0 }}
-            />
-          ) : (
-            <Typography.Text
-              style={{
-                fontSize: 12,
-                color: isSiteDown ? token.colorError : token.colorTextTertiary,
-              }}
-            >
-              {isSiteDown ? t("Not reachable") : t("Click for details")}
-            </Typography.Text>
-          )
-        }
-        color={
-          isSiteDown
-            ? token.colorError
-            : health?.status === "good"
-              ? token.colorSuccess
-              : health?.status === "critical"
-                ? token.colorError
-                : token.colorWarning
-        }
-        tooltip={
-          isSiteDown
-            ? (speed?.reason ?? "Site unreachable")
-            : health?.status !== "good"
-              ? "WordPress found configuration issues"
-              : "Site is running and reachable"
-        }
+        value={websiteProps.value}
+        sub={websiteProps.sub}
+        color={websiteProps.color}
+        tooltip={websiteProps.tooltip}
         onClick={() => navigate("site-health.php", adminUrl)}
       />
 
-      {/* Visitors */}
       <StatTile
         icon={<LineChartOutlined />}
         label={t("Visitors 30d")}
-        value={total30Views > 0 ? total30Views.toLocaleString(intlLocale) : "—"}
-        sub={
-          total30Views > 0 ? (
-            viewTrend !== 0 ? (
-              <Typography.Text
-                style={{
-                  fontSize: 12,
-                  color: viewTrend > 0 ? token.colorSuccess : token.colorError,
-                }}
-              >
-                {viewTrend > 0 ? "↑" : "↓"} {Math.abs(viewTrend)}% {t("vs yesterday")}
-              </Typography.Text>
-            ) : (
-              <Typography.Text type="secondary" style={{ fontSize: 12 }}>
-                {t("Stable traffic")}
-              </Typography.Text>
-            )
-          ) : (
-            <Typography.Text type="secondary" style={{ fontSize: 12 }}>
-              {t("Tracking active")}
-            </Typography.Text>
-          )
-        }
+        value={total30Views > 0 ? total30Views.toLocaleString(intlLocale) : "\u2014"}
+        sub={visitorsProps.sub}
         color={token.colorPrimary}
         tooltip={t("Install Yoast SEO (free) to track your search visibility")}
       />
 
-      {/* Updates */}
       <StatTile
         icon={<UpCircleOutlined />}
         label={t("Updates")}
         value={updates?.total ?? 0}
-        sub={
-          hasUpdates ? (
-            <Flex gap={3} wrap="wrap">
-              {(updates?.plugins ?? 0) > 0 && (
-                <Tag color="blue" style={{ margin: 0, fontSize: 11 }}>
-                  {updates?.plugins} plugins
-                </Tag>
-              )}
-              {(updates?.themes ?? 0) > 0 && (
-                <Tag color="purple" style={{ margin: 0, fontSize: 11 }}>
-                  {updates?.themes} themes
-                </Tag>
-              )}
-              {(updates?.core ?? 0) > 0 && (
-                <Tag color="red" style={{ margin: 0, fontSize: 11 }}>
-                  core
-                </Tag>
-              )}
-            </Flex>
-          ) : updates?.lastChecked ? (
-            <Typography.Text type="secondary" style={{ fontSize: 12 }}>
-              {relativeTime(updates.lastChecked, intlLocale)}
-            </Typography.Text>
-          ) : (
-            <Typography.Text type="secondary" style={{ fontSize: 12 }}>
-              {t("All up to date")}
-            </Typography.Text>
-          )
-        }
-        color={hasUpdates ? token.colorWarning : token.colorSuccess}
-        tooltip={
-          hasUpdates
-            ? t("Updates fix security issues. Make a backup first, then update.")
-            : t("Everything is up to date")
-        }
+        sub={updatesProps.sub}
+        color={updatesProps.color}
+        tooltip={updatesProps.tooltip}
         onClick={() => navigate("update-core.php", adminUrl)}
       />
 
-      {/* Speed */}
       <StatTile
         icon={<ThunderboltOutlined />}
         label={t("Speed")}
-        value={isSiteDown ? t("Error") : speed?.ms != null ? `${speed.ms} ms` : "—"}
-        sub={
-          !isSiteDown && speed?.status ? (
-            <Typography.Text
-              style={{
-                fontSize: 12,
-                color:
-                  speed.status === "good"
-                    ? token.colorSuccess
-                    : speed.status === "fair"
-                      ? token.colorWarning
-                      : token.colorError,
-              }}
-            >
-              {speed.status === "good"
-                ? t("Fast")
-                : speed.status === "fair"
-                  ? t("Acceptable")
-                  : t("Slow")}
-            </Typography.Text>
-          ) : (
-            <Typography.Text style={{ fontSize: 12, color: token.colorError }}>
-              {t("Unreachable")}
-            </Typography.Text>
-          )
-        }
-        color={
-          isSiteDown
-            ? token.colorError
-            : speed?.status === "good"
-              ? token.colorSuccess
-              : speed?.status === "fair"
-                ? token.colorWarning
-                : token.colorError
-        }
+        value={speedProps.value}
+        sub={speedProps.sub}
+        color={speedProps.color}
         tooltip={t("Homepage load time. Under 600 ms is good. Refreshes every 5 minutes.")}
       />
 
-      {/* SEO */}
       <StatTile
         icon={<SearchOutlined />}
         label={t("SEO")}
-        value={seo?.plugin ? `${seo.score}%` : seoBasics ? `${seoBasics.score}%` : "—"}
-        sub={
-          seo?.plugin ? (
-            seo.issues.length === 0 ? (
-              <Typography.Text style={{ fontSize: 12, color: token.colorSuccess }}>
-                {t("No issues")}
-              </Typography.Text>
-            ) : (
-              <Typography.Text style={{ fontSize: 12, color: token.colorWarning }}>
-                {t("{n} issues", { n: seo.issues.length })}
-              </Typography.Text>
-            )
-          ) : seoBasics ? (
-            <Typography.Text
-              style={{
-                fontSize: 12,
-                color: seoBasics.score >= 75 ? token.colorSuccess : token.colorWarning,
-              }}
-            >
-              {t("Basic check")}
-            </Typography.Text>
-          ) : (
-            <Typography.Text type="secondary" style={{ fontSize: 12 }}>
-              {t("No plugin")}
-            </Typography.Text>
-          )
-        }
-        color={
-          seo?.plugin
-            ? seo.score >= 80
-              ? token.colorSuccess
-              : seo.score >= 50
-                ? token.colorWarning
-                : token.colorError
-            : seoBasics
-              ? seoBasics.score >= 75
-                ? token.colorSuccess
-                : token.colorWarning
-              : token.colorTextSecondary
-        }
-        tooltip={
-          seo?.plugin
-            ? t("Based on Yoast SEO data")
-            : seoBasics
-              ? t("Basic SEO checks — install Yoast SEO (free) for full tracking")
-              : t("Install Yoast SEO (free) to track your search visibility")
-        }
+        value={seoProps.value}
+        sub={seoProps.sub}
+        color={seoProps.color}
+        tooltip={seoProps.tooltip}
         onClick={() => navigate("edit.php?post_type=page", adminUrl)}
       />
     </div>

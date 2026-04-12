@@ -15,6 +15,61 @@ import type {
   VisitorTrendEntry,
 } from "./services/dashboardApi";
 
+function computeViewTrend(trendPct: number | undefined, trend: VisitorTrendEntry[]): number {
+  if (trendPct != null) return trendPct;
+  const yesterdayViews = trend[trend.length - 2]?.views ?? 0;
+  const todayViews = trend[trend.length - 1]?.views ?? 0;
+  return yesterdayViews > 0
+    ? Math.round(((todayViews - yesterdayViews) / yesterdayViews) * 100)
+    : 0;
+}
+
+function buildSeoActions(seo: SeoOverview | null, baseActions: ActionItem[]): ActionItem[] {
+  const seoActionIds = new Set(baseActions.map((action) => action.title));
+  return (seo?.issues ?? [])
+    .filter((issue) => !seoActionIds.has(issue.label))
+    .map((issue) => ({
+      type: "seo" as const,
+      title: issue.label,
+      url: issue.editUrl ?? issue.url,
+      action: "View page",
+      severity: "warning" as const,
+      description: "This page has an SEO issue that may reduce its visibility in search results.",
+    }));
+}
+
+function extractDataFields(data: DashboardData | null) {
+  const trendData = data?.visitorTrend ?? null;
+  const trend = trendData?.days ?? [];
+  return {
+    health: data?.siteHealth ?? null,
+    updates: data?.pendingUpdates ?? null,
+    trendData,
+    trend,
+    countries: data?.countryStats ?? [],
+    speed: data?.siteSpeed ?? null,
+    baseActions: data?.actionItems ?? [],
+    seo: data?.seoOverview ?? null,
+    seoBasics: data?.seoBasics ?? null,
+    legalData: data?.legalCompliance ?? null,
+    bizData: data?.businessFunctions ?? null,
+    stats: data?.atAGlance ?? null,
+    checklist: data?.onboardingChecklist ?? [],
+    readiness: data?.siteReadinessScore ?? null,
+    calendar: data?.calendarPreview ?? null,
+  };
+}
+
+function buildActionGroups(baseActions: ActionItem[], seoActions: ActionItem[]) {
+  const actions = [...baseActions, ...seoActions];
+  return {
+    actions,
+    criticalActions: actions.filter((a) => a.severity === "error"),
+    warningActions: actions.filter((a) => a.severity === "warning"),
+    infoActions: actions.filter((a) => a.severity === "info"),
+  };
+}
+
 export interface DashboardViewModel {
   health: SiteHealthData | null;
   updates: PendingUpdates | null;
@@ -46,49 +101,31 @@ export function createDashboardViewModel(
   data: DashboardData | null,
   checklistClosed: boolean
 ): DashboardViewModel {
-  const health = data?.siteHealth ?? null;
-  const updates = data?.pendingUpdates ?? null;
-  const trendData = data?.visitorTrend ?? null;
-  const trend = trendData?.days ?? [];
-  const countries = data?.countryStats ?? [];
-  const speed = data?.siteSpeed ?? null;
-  const baseActions = data?.actionItems ?? [];
-  const seo = data?.seoOverview ?? null;
-  const seoBasics = data?.seoBasics ?? null;
-  const legalData = data?.legalCompliance ?? null;
-  const bizData = data?.businessFunctions ?? null;
-  const stats = data?.atAGlance ?? null;
-  const checklist = data?.onboardingChecklist ?? [];
-  const readiness = data?.siteReadinessScore ?? null;
-  const calendar = data?.calendarPreview ?? null;
+  const {
+    health,
+    updates,
+    trendData,
+    trend,
+    countries,
+    speed,
+    baseActions,
+    seo,
+    seoBasics,
+    legalData,
+    bizData,
+    stats,
+    checklist,
+    readiness,
+    calendar,
+  } = extractDataFields(data);
   const total30Views = trendData?.total ?? trend.reduce((sum, day) => sum + day.views, 0);
   const sparkline = trend.slice(-7);
-  const viewTrend =
-    trendData?.trendPct ??
-    (() => {
-      const yesterdayViews = trend[trend.length - 2]?.views ?? 0;
-      const todayViews = trend[trend.length - 1]?.views ?? 0;
-      return yesterdayViews > 0
-        ? Math.round(((todayViews - yesterdayViews) / yesterdayViews) * 100)
-        : 0;
-    })();
-
-  const seoActionIds = new Set(baseActions.map((action) => action.title));
-  const seoActions: ActionItem[] = (seo?.issues ?? [])
-    .filter((issue) => !seoActionIds.has(issue.label))
-    .map((issue) => ({
-      type: "seo",
-      title: issue.label,
-      url: issue.editUrl ?? issue.url,
-      action: "View page",
-      severity: "warning",
-      description: "This page has an SEO issue that may reduce its visibility in search results.",
-    }));
-
-  const actions = [...baseActions, ...seoActions];
-  const criticalActions = actions.filter((action) => action.severity === "error");
-  const warningActions = actions.filter((action) => action.severity === "warning");
-  const infoActions = actions.filter((action) => action.severity === "info");
+  const viewTrend = computeViewTrend(trendData?.trendPct, trend);
+  const seoActions = buildSeoActions(seo, baseActions);
+  const { actions, criticalActions, warningActions, infoActions } = buildActionGroups(
+    baseActions,
+    seoActions
+  );
   const hasUpdates = (updates?.total ?? 0) > 0;
   const isSiteDown = speed?.status === "error";
   const checklistDone = checklist.filter((item) => item.done).length;

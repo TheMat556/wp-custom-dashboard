@@ -1,10 +1,85 @@
 import { FileProtectOutlined } from "@ant-design/icons";
 import { Alert, Button, Flex, Tag, Typography, theme } from "antd";
 import { navigate } from "../../../../../utils/wp";
+import type { LegalItem } from "../../../services/dashboardApi";
 import type { LegalSectionProps } from "../types";
 import { Section } from "./Section";
 
 const { Text } = Typography;
+
+interface LegalRowProps {
+  row: { key: string; label: string; item: LegalItem; url: string };
+  adminUrl: string;
+  token: ReturnType<typeof theme.useToken>["token"];
+}
+
+function LegalRow({ row, adminUrl, token }: LegalRowProps) {
+  const ok = row.item.exists && row.item.published;
+  const warn = row.item.exists && !row.item.published;
+
+  let color: string;
+  let tagColor: string;
+  if (ok) {
+    color = token.colorSuccess;
+    tagColor = "success";
+  } else if (warn) {
+    color = token.colorError;
+    tagColor = "error";
+  } else {
+    color = token.colorWarning;
+    tagColor = "warning";
+  }
+
+  let statusLabel: string;
+  const daysOldSuffix = row.item.daysOld ? ` (${row.item.daysOld}d old)` : "";
+  if (ok) statusLabel = "Published";
+  else if (warn) statusLabel = `Draft${daysOldSuffix}`;
+  else statusLabel = "Missing";
+
+  const noticeText = warn
+    ? "This legal page exists but is not published — visitors cannot access it."
+    : "This required page is missing.";
+  const buttonText = warn ? "Publish now" : "Create";
+  return (
+    <Flex
+      key={row.key}
+      align="center"
+      justify="space-between"
+      gap={8}
+      style={{ padding: "10px 0", borderBottom: `1px solid ${token.colorBorderSecondary}` }}
+    >
+      <Flex align="center" gap={8}>
+        <div
+          style={{
+            width: 8,
+            height: 8,
+            borderRadius: "50%",
+            background: color,
+            flexShrink: 0,
+          }}
+        />
+        <div>
+          <Text style={{ fontSize: 14 }}>{row.label}</Text>
+          {!ok && (
+            <Text type="secondary" style={{ fontSize: 12, display: "block" }}>
+              {noticeText}
+            </Text>
+          )}
+        </div>
+      </Flex>
+      <Flex align="center" gap={8} style={{ flexShrink: 0 }}>
+        <Tag color={tagColor} style={{ margin: 0, fontSize: 12 }}>
+          {statusLabel}
+        </Tag>
+        {!ok && (
+          <Button size="small" onClick={() => navigate(row.url, adminUrl)}>
+            {buttonText}
+          </Button>
+        )}
+      </Flex>
+    </Flex>
+  );
+}
 
 export function LegalSection({ legal, adminUrl }: LegalSectionProps) {
   const { token } = theme.useToken();
@@ -42,60 +117,9 @@ export function LegalSection({ legal, adminUrl }: LegalSectionProps) {
         )
       }
     >
-      {rows.map((row) => {
-        const ok = row.item.exists && row.item.published;
-        const warn = row.item.exists && !row.item.published;
-        const color = ok ? token.colorSuccess : warn ? token.colorError : token.colorWarning;
-        const statusLabel = ok
-          ? "Published"
-          : warn
-            ? `Draft${row.item.daysOld ? ` (${row.item.daysOld}d old)` : ""}`
-            : "Missing";
-        return (
-          <Flex
-            key={row.key}
-            align="center"
-            justify="space-between"
-            gap={8}
-            style={{ padding: "10px 0", borderBottom: `1px solid ${token.colorBorderSecondary}` }}
-          >
-            <Flex align="center" gap={8}>
-              <div
-                style={{
-                  width: 8,
-                  height: 8,
-                  borderRadius: "50%",
-                  background: color,
-                  flexShrink: 0,
-                }}
-              />
-              <div>
-                <Text style={{ fontSize: 14 }}>{row.label}</Text>
-                {!ok && (
-                  <Text type="secondary" style={{ fontSize: 12, display: "block" }}>
-                    {warn
-                      ? "This legal page exists but is not published — visitors cannot access it."
-                      : "This required page is missing."}
-                  </Text>
-                )}
-              </div>
-            </Flex>
-            <Flex align="center" gap={8} style={{ flexShrink: 0 }}>
-              <Tag
-                color={ok ? "success" : warn ? "error" : "warning"}
-                style={{ margin: 0, fontSize: 12 }}
-              >
-                {statusLabel}
-              </Tag>
-              {!ok && (
-                <Button size="small" onClick={() => navigate(row.url, adminUrl)}>
-                  {warn ? "Publish now" : "Create"}
-                </Button>
-              )}
-            </Flex>
-          </Flex>
-        );
-      })}
+      {rows.map((row) => (
+        <LegalRow key={row.key} row={row} adminUrl={adminUrl} token={token} />
+      ))}
       <Flex
         align="center"
         justify="space-between"

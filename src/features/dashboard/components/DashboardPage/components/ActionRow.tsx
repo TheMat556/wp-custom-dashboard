@@ -6,26 +6,31 @@ import type { ActionRowProps } from "../types";
 
 const { Text } = Typography;
 
+type Severity = "error" | "warning" | "info";
+
+function getSeverityConfig(severity: Severity, token: ReturnType<typeof theme.useToken>["token"]) {
+  const color =
+    severity === "error"
+      ? token.colorError
+      : severity === "warning"
+        ? token.colorWarning
+        : token.colorInfo;
+  const tagColor =
+    severity === "error" ? "error" : severity === "warning" ? "warning" : "processing";
+  const Icon =
+    severity === "error"
+      ? AlertOutlined
+      : severity === "warning"
+        ? WarningOutlined
+        : InfoCircleOutlined;
+  return { color, tagColor, Icon };
+}
+
 export function ActionRow({ item, adminUrl }: ActionRowProps) {
   const { token } = theme.useToken();
   const [open, setOpen] = useState(item.severity === "error");
 
-  const severityColor =
-    item.severity === "error"
-      ? token.colorError
-      : item.severity === "warning"
-        ? token.colorWarning
-        : token.colorInfo;
-
-  const tagColor =
-    item.severity === "error" ? "error" : item.severity === "warning" ? "warning" : "processing";
-
-  const SevIcon =
-    item.severity === "error"
-      ? AlertOutlined
-      : item.severity === "warning"
-        ? WarningOutlined
-        : InfoCircleOutlined;
+  const { color: severityColor, tagColor, Icon: SevIcon } = getSeverityConfig(item.severity, token);
 
   const hasDetail = Boolean(item.impact || item.description);
 
