@@ -23,6 +23,7 @@ import {
   pushHistory,
   replaceHistory,
 } from "../../../utils/historyManager";
+import { isSameOrigin } from "../../../utils/security";
 import { matchesOpenInNewTabPattern } from "../../../utils/openInNewTab";
 import { sessionStore } from "../../session/store/sessionStore";
 
@@ -42,6 +43,7 @@ export interface NavigationState {
   pageUrl: string;
   pageTitle: string;
   status: "loading" | "ready";
+  iframeOverlayActive: boolean;
   breakoutPagenow: string[];
   openInNewTabPatterns: string[];
   pendingNavigationSource: "shell" | "history" | null;
@@ -75,12 +77,17 @@ export const navigationStore = createStore<NavigationState & NavigationActions>(
   pageUrl: "",
   pageTitle: "",
   status: "loading",
+  iframeOverlayActive: false,
   breakoutPagenow: [...DEFAULT_BREAKOUT_PAGENOW],
   openInNewTabPatterns: [],
   pendingNavigationSource: "shell",
 
   navigate(url: string) {
     if (isBreakoutUrl(url, get().breakoutPagenow)) {
+      if (!isSameOrigin(url)) {
+        console.error("[shell] Blocked cross-origin breakout navigation:", url);
+        return;
+      }
       window.location.href = url;
       return;
     }
@@ -103,6 +110,7 @@ export const navigationStore = createStore<NavigationState & NavigationActions>(
       iframeUrl: embedUrl,
       pageUrl: cleanUrl,
       status: "loading",
+      iframeOverlayActive: false,
       pendingNavigationSource: "shell",
     });
     pushHistory({ iframeUrl: embedUrl, pageUrl: cleanUrl }, "");
@@ -120,6 +128,7 @@ export const navigationStore = createStore<NavigationState & NavigationActions>(
         pageUrl: cleanUrl,
         pageTitle: title,
         status: "ready",
+        iframeOverlayActive: false,
         pendingNavigationSource: null,
       });
 
@@ -127,7 +136,7 @@ export const navigationStore = createStore<NavigationState & NavigationActions>(
         pushHistory({ iframeUrl: href, pageUrl: cleanUrl }, title);
       }
     } catch {
-      set({ status: "ready", pendingNavigationSource: null });
+      set({ status: "ready", iframeOverlayActive: false, pendingNavigationSource: null });
     }
   },
 
@@ -144,6 +153,7 @@ export const navigationStore = createStore<NavigationState & NavigationActions>(
         pageUrl: fromEmbedUrl(msg.url),
         pageTitle: msg.title,
         status: "ready",
+        iframeOverlayActive: false,
       });
       return;
     }
@@ -158,11 +168,22 @@ export const navigationStore = createStore<NavigationState & NavigationActions>(
       return;
     }
 
-    window.location.href = msg.url;
+    if (msg.type === "overlay-state") {
+      set({ iframeOverlayActive: msg.active });
+      return;
+    }
+
+    if (msg.type === "breakout") {
+      if (!isSameOrigin(msg.url)) {
+        console.error("[shell] Blocked cross-origin breakout navigation:", msg.url);
+        return;
+      }
+      window.location.href = msg.url;
+    }
   },
 
   markShellPageReady() {
-    set({ status: "ready", pendingNavigationSource: null });
+    set({ status: "ready", iframeOverlayActive: false, pendingNavigationSource: null });
   },
 }));
 
@@ -207,6 +228,7 @@ export function bootstrapNavigationStore(
       iframeUrl: entry.iframeUrl,
       pageUrl: entry.pageUrl,
       status: "loading",
+      iframeOverlayActive: false,
       pendingNavigationSource: "history",
     });
   });
@@ -231,6 +253,7 @@ export function resetNavigationStore(config: Partial<NavigationBootstrapOptions>
     pageUrl,
     pageTitle,
     status: "loading",
+    iframeOverlayActive: false,
     breakoutPagenow: [...breakoutPagenow],
     openInNewTabPatterns: [...openInNewTabPatterns],
     pendingNavigationSource: "shell",
