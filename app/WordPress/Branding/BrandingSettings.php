@@ -7,11 +7,6 @@
 
 defined( 'ABSPATH' ) || exit;
 
-require_once dirname( __DIR__, 2 ) . '/Branding/BrandingSettingsRepository.php';
-require_once dirname( __DIR__, 2 ) . '/Branding/BrandingMediaLibraryAdapter.php';
-require_once dirname( __DIR__, 2 ) . '/Branding/BrandingSanitizer.php';
-require_once dirname( __DIR__, 2 ) . '/Branding/BrandingPayloadService.php';
-require_once dirname( __DIR__, 2 ) . '/Branding/BrandingSettingsManager.php';
 
 /**
  * Handles logo upload settings and frontend branding data.

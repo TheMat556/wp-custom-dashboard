@@ -48,10 +48,41 @@ export const notificationStore = createStore<NotificationStoreState>((set, get) 
  */
 export function notifyApiError(response: Response, context: string): string {
   const isNonceExpired = response.status === 401 || response.status === 403;
-  const message = isNonceExpired
-    ? "Your session has expired"
-    : `${context} failed (${response.status})`;
+  const message = isNonceExpired ? "Your session has expired" : `${context} failed`;
   const description = isNonceExpired ? "Please reload the page to continue." : undefined;
+
+  notificationStore.getState().push({
+    type: "error",
+    message,
+    description,
+  });
+
+  return message;
+}
+
+/**
+ * Reads a failed fetch Response body, extracts a WordPress REST error message if present,
+ * and pushes a user-facing notification with that message as description.
+ * Returns a Promise resolving to the error message string.
+ */
+export async function notifyApiErrorWithBody(response: Response, context: string): Promise<string> {
+  const isNonceExpired = response.status === 401 || response.status === 403;
+  let description: string | undefined;
+
+  if (isNonceExpired) {
+    description = "Please reload the page to continue.";
+  } else {
+    try {
+      const body = await response.json();
+      if (body && typeof body === "object" && typeof body.message === "string" && body.message) {
+        description = body.message;
+      }
+    } catch {
+      // ignore JSON parse errors
+    }
+  }
+
+  const message = isNonceExpired ? "Your session has expired" : `${context} failed`;
 
   notificationStore.getState().push({
     type: "error",

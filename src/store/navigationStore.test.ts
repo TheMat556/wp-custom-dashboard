@@ -117,7 +117,9 @@ describe("navigate()", () => {
     const hrefSetter = vi.fn();
     (window as unknown as Record<string, unknown>).location = {
       origin: "http://localhost",
-      href: "http://localhost/wp-admin/admin.php",
+      get href() {
+        return "http://localhost/wp-admin/admin.php";
+      },
       set href(v: string) {
         hrefSetter(v);
       },
@@ -313,7 +315,9 @@ describe("handleIframeMessage()", () => {
     const hrefSetter = vi.fn();
     (window as unknown as Record<string, unknown>).location = {
       origin: "http://localhost",
-      href: "http://localhost/wp-admin/admin.php",
+      get href() {
+        return "http://localhost/wp-admin/admin.php";
+      },
       set href(v: string) {
         hrefSetter(v);
       },
@@ -341,7 +345,9 @@ describe("handleIframeMessage()", () => {
     const hrefSetter = vi.fn();
     (window as unknown as Record<string, unknown>).location = {
       origin: "http://localhost",
-      href: "http://localhost/wp-admin/admin.php",
+      get href() {
+        return "http://localhost/wp-admin/admin.php";
+      },
       set href(v: string) {
         hrefSetter(v);
       },

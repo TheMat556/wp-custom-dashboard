@@ -1,4 +1,6 @@
+import { isLicenseFeatureDisabledError } from "../../../shared/services/pluginApiError";
 import type { WpReactUiConfig } from "../../../types/wp";
+import { loadLicenseStatus } from "../../license/store/licenseActions";
 import { createDashboardService, type DashboardService } from "../services/dashboardApi";
 import { dashboardStore } from "./dashboardStore";
 
@@ -18,7 +20,13 @@ export async function loadDashboard() {
   try {
     const data = await _service.fetchDashboard();
     dashboardStore.setState({ data, loading: false });
-  } catch {
+  } catch (error) {
+    if (isLicenseFeatureDisabledError(error)) {
+      await loadLicenseStatus();
+      dashboardStore.setState({ data: null, loading: false });
+      return;
+    }
+
     dashboardStore.setState({ loading: false });
   }
 }

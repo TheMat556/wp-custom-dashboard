@@ -1,11 +1,14 @@
 <?php
+
+declare(strict_types=1);
+
 /**
  * AUTO-GENERATED from contracts/source. Do not edit.
  */
 
-declare(strict_types=1);
-
 namespace WpReactUi\Contracts\Generated;
+
+defined( 'ABSPATH' ) || exit;
 
 final class Routes {
 	public const REST_NAMESPACE = 'wp-react-ui/v1';
@@ -72,6 +75,79 @@ final class Routes {
 				'primaryColor',
 				'fontPreset',
 				'openInNewTabPatterns'
+			)
+		),
+		'/chat-settings' => array(
+			'name' => 'chatSettings',
+			'methods' => array(
+				'GET',
+				'POST'
+			),
+			'permission' => 'manage_options',
+			'featureFlag' => null,
+			'requestSchema' => 'dto/chat-settings.request',
+			'requestKeys' => array(),
+			'responseSchema' => 'dto/chat-settings.response',
+			'responseKeys' => array()
+		),
+		'/chat/bootstrap' => array(
+			'name' => 'chatBootstrap',
+			'methods' => array(
+				'POST'
+			),
+			'permission' => 'read',
+			'featureFlag' => null,
+			'requestSchema' => 'dto/chat.bootstrap.request',
+			'requestKeys' => array(
+				'selectedThreadId'
+			),
+			'responseSchema' => 'dto/chat.bootstrap.response',
+			'responseKeys' => array(
+				'role',
+				'threads',
+				'selectedThreadId',
+				'messages',
+				'pollIntervalSeconds'
+			)
+		),
+		'/chat/poll' => array(
+			'name' => 'chatPoll',
+			'methods' => array(
+				'POST'
+			),
+			'permission' => 'read',
+			'featureFlag' => null,
+			'requestSchema' => 'dto/chat.poll.request',
+			'requestKeys' => array(
+				'selectedThreadId',
+				'afterMessageId'
+			),
+			'responseSchema' => 'dto/chat.poll.response',
+			'responseKeys' => array(
+				'role',
+				'threads',
+				'selectedThreadId',
+				'messages',
+				'pollIntervalSeconds'
+			)
+		),
+		'/chat/send' => array(
+			'name' => 'chatSend',
+			'methods' => array(
+				'POST'
+			),
+			'permission' => 'read',
+			'featureFlag' => null,
+			'requestSchema' => 'dto/chat.send.request',
+			'requestKeys' => array(
+				'selectedThreadId',
+				'message'
+			),
+			'responseSchema' => 'dto/chat.send.response',
+			'responseKeys' => array(
+				'role',
+				'thread',
+				'message'
 			)
 		),
 		'/preferences' => array(
@@ -161,6 +237,108 @@ final class Routes {
 				'total',
 				'page',
 				'perPage'
+			)
+		),
+		'/license' => array(
+			'name' => 'license',
+			'methods' => array(
+				'GET'
+			),
+			'permission' => 'manage_options',
+			'featureFlag' => null,
+			'requestSchema' => null,
+			'requestKeys' => array(),
+			'responseSchema' => 'dto/license.response',
+			'responseKeys' => array(
+				'status',
+				'role',
+				'tier',
+				'expiresAt',
+				'features',
+				'graceDaysRemaining',
+				'hasKey',
+				'keyPrefix',
+				'serverConfigured'
+			)
+		),
+		'/license/settings' => array(
+			'name' => 'licenseSettings',
+			'methods' => array(
+				'GET',
+				'POST'
+			),
+			'permission' => 'manage_options',
+			'featureFlag' => null,
+			'requestSchema' => 'dto/license.settings.request',
+			'requestKeys' => array(
+				'serverUrl'
+			),
+			'responseSchema' => 'dto/license.settings.response',
+			'responseKeys' => array(
+				'serverUrl',
+				'serverConfigured',
+				'storedLicenseKey'
+			)
+		),
+		'/license/activate' => array(
+			'name' => 'licenseActivate',
+			'methods' => array(
+				'POST'
+			),
+			'permission' => 'manage_options',
+			'featureFlag' => null,
+			'requestSchema' => 'dto/license.activate.request',
+			'requestKeys' => array(
+				'licenseKey'
+			),
+			'responseSchema' => 'dto/license.response',
+			'responseKeys' => array(
+				'status',
+				'role',
+				'tier',
+				'expiresAt',
+				'features',
+				'graceDaysRemaining',
+				'hasKey',
+				'keyPrefix',
+				'serverConfigured'
+			)
+		),
+		'/license/deactivate' => array(
+			'name' => 'licenseDeactivate',
+			'methods' => array(
+				'POST'
+			),
+			'permission' => 'manage_options',
+			'featureFlag' => null,
+			'requestSchema' => null,
+			'requestKeys' => array(),
+			'responseSchema' => 'dto/license.response',
+			'responseKeys' => array(
+				'status',
+				'role',
+				'tier',
+				'expiresAt',
+				'features',
+				'graceDaysRemaining',
+				'hasKey',
+				'keyPrefix',
+				'serverConfigured'
+			)
+		),
+		'/license-webhook' => array(
+			'name' => 'licenseWebhook',
+			'methods' => array(
+				'POST'
+			),
+			'permission' => 'public',
+			'featureFlag' => null,
+			'requestSchema' => null,
+			'requestKeys' => array(),
+			'responseSchema' => 'dto/license-webhook.response',
+			'responseKeys' => array(
+				'status',
+				'event'
 			)
 		)
 	);

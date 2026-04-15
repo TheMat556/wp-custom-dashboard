@@ -1,5 +1,6 @@
 import { theme } from "antd";
 import { Component, type ErrorInfo, type ReactNode } from "react";
+import { logger } from "../../../utils/logger";
 
 interface Props {
   name: string;
@@ -41,7 +42,7 @@ export class ErrorBoundary extends Component<Props, State> {
   }
 
   componentDidCatch(error: Error, info: ErrorInfo) {
-    console.error(`[WP React UI] Error in ${this.props.name}:`, error, info);
+    logger.error(`[WP React UI] Error in ${this.props.name}:`, error, info);
   }
 
   render() {

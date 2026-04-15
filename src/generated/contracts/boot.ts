@@ -1,6 +1,6 @@
 // AUTO-GENERATED from contracts/source. Do not edit.
 
-import type { MenuItem } from "./dto";
+import type { LicenseResponse, MenuItem } from "./dto";
 
 export interface WpReactUiConfig {
   menu: Array<MenuItem>;
@@ -34,12 +34,24 @@ export interface WpReactUiConfig {
   user: {
     name: string;
     role: string;
+    canManageOptions?: boolean;
   };
+  license: LicenseResponse;
   shellRoutes: Array<{
     slug: string;
     label: string;
     entrypoint_url: string;
   }>;
+  chat?: {
+    provider: string;
+    effectiveProvider: string | null;
+    chatwootBaseUrl: string | null;
+    chatwootWebsiteToken: string | null;
+    tawkPropertyId: string | null;
+    tawkWidgetId: string | null;
+    enabled?: boolean;
+    serverUrl?: string;
+  };
 }
 
 export type WpReactUiBranding = WpReactUiConfig["branding"];
@@ -87,6 +99,7 @@ export const BOOT_PAYLOAD_TOP_LEVEL_KEYS = [
   "assetsUrl",
   "locale",
   "user",
+  "license",
   "shellRoutes",
 ] as const;
 export const BOOT_PAYLOAD_BRANDING_KEYS = [
@@ -108,7 +121,7 @@ export const BOOT_PAYLOAD_NAVIGATION_KEYS = [
   "breakoutPagenow",
   "openInNewTabPatterns",
 ] as const;
-export const BOOT_PAYLOAD_USER_KEYS = ["name", "role"] as const;
+export const BOOT_PAYLOAD_USER_KEYS = ["name", "role", "canManageOptions"] as const;
 export const SHELL_ROUTE_KEYS = ["slug", "label", "entrypoint_url"] as const;
 
 export const DEFAULT_WP_REACT_UI_BOOT_CONFIG: WpReactUiBootConfig = {

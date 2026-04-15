@@ -1,6 +1,10 @@
 // AUTO-GENERATED from contracts/source. Do not edit.
 
 export const PERMISSIONS = {
+  public: {
+    kind: "public",
+    description: "Accessible without authentication.",
+  },
   authenticated: {
     kind: "authenticated",
     description: "Any logged-in WordPress user.",

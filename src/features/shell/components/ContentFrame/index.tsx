@@ -9,10 +9,13 @@
 
 import { Spin } from "antd";
 import { Suspense } from "react";
+import { useStore } from "zustand";
+import { navigationStore } from "../../../navigation/store/navigationStore";
 import { useContentFrameController } from "./useContentFrameController";
 
 export default function ContentFrame() {
   const ctrl = useContentFrameController();
+  const iframeOverlayActive = useStore(navigationStore, (s) => s.iframeOverlayActive);
 
   if (ctrl.ShellPage) {
     const ShellPage = ctrl.ShellPage;
@@ -39,7 +42,9 @@ export default function ContentFrame() {
     <div
       id="wp-react-ui-content"
       tabIndex={-1}
-      className="wp-react-ui-shell-content-slot wp-react-ui-shell-content-slot--embed"
+      className={`wp-react-ui-shell-content-slot wp-react-ui-shell-content-slot--embed${
+        iframeOverlayActive ? " wp-react-ui-shell-content-slot--overlay" : ""
+      }`}
     >
       {ctrl.isLoading && <div className="wp-react-ui-content-loading-bar" aria-hidden="true" />}
       <iframe

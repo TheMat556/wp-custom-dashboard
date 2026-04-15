@@ -15,8 +15,20 @@ if ( file_exists( $wp_react_ui_autoload ) ) {
 	require_once $wp_react_ui_autoload;
 }
 
-require_once __DIR__ . '/app/Bootstrap/PluginBootstrap.php';
-require_once __DIR__ . '/app/Plugin.php';
+register_activation_hook(
+	__FILE__,
+	static function (): void {
+		( new \WpReactUi\License\LicenseHeartbeat() )->ensure_scheduled();
+	}
+);
+
+register_deactivation_hook(
+	__FILE__,
+	static function (): void {
+		( new \WpReactUi\License\LicenseHeartbeat() )->unschedule();
+	}
+);
+
 
 require_once __DIR__ . '/includes/class-wp-react-ui-asset-loader.php';
 require_once __DIR__ . '/includes/class-wp-react-ui-branding-settings.php';

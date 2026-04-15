@@ -1,11 +1,14 @@
 <?php
+
+declare(strict_types=1);
+
 /**
  * AUTO-GENERATED from contracts/source. Do not edit.
  */
 
-declare(strict_types=1);
-
 namespace WpReactUi\Contracts\Generated;
+
+defined( 'ABSPATH' ) || exit;
 
 final class FeatureFlags {
 	public const FLAGS = array(

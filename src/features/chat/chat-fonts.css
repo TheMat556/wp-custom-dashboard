@@ -1,0 +1,16 @@
+/* @import rules must appear before all other rules */
+/* Instrument Serif — editorial display font */
+@import url("https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&display=swap");
+
+/* JetBrains Mono — timestamps and code */
+@import url("https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&display=swap");
+
+/* Geist — variable weight sans-serif (from npm geist package) */
+@font-face {
+  font-family: "Geist";
+  src: url("../../../node_modules/geist/dist/fonts/geist-sans/Geist-Variable.woff2")
+    format("woff2-variations");
+  font-weight: 100 900;
+  font-style: normal;
+  font-display: swap;
+}

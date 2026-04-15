@@ -1,0 +1,16 @@
+{
+  "$id": "dto/license-webhook.response",
+  "title": "LicenseWebhookResponse",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["status", "event"],
+  "properties": {
+    "status": {
+      "type": "string",
+      "enum": ["accepted"]
+    },
+    "event": {
+      "type": "string"
+    }
+  }
+}

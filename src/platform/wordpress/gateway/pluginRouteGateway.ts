@@ -1,4 +1,16 @@
-import type { ActivityQuery, BrandingRequest } from "../../../generated/contracts/dto";
+import type {
+  ActivityQuery,
+  BrandingRequest,
+  ChatBootstrapRequest,
+  ChatBootstrapResponse,
+  ChatPollRequest,
+  ChatPollResponse,
+  ChatSendRequest,
+  ChatSendResponse,
+  LicenseActivateRequest,
+  LicenseSettingsRequest,
+  LicenseSettingsResponse,
+} from "../../../generated/contracts/dto";
 import { PLUGIN_ROUTE_PATHS } from "../../../generated/contracts/routes";
 import type { PersistedShellPreferences } from "../../../types/shellPreferences";
 import type { PluginRestConfig } from "../client/pluginRestClient";
@@ -7,6 +19,16 @@ import { createPluginRestClient } from "../client/pluginRestClient";
 export type { PluginRestConfig } from "../client/pluginRestClient";
 export type BrandingSavePayload = BrandingRequest;
 export type ActivityFilters = ActivityQuery;
+export type ChatBootstrapPayload = ChatBootstrapRequest;
+export type ChatBootstrapData = ChatBootstrapResponse;
+export type ChatPollPayload = ChatPollRequest;
+export type ChatPollData = ChatPollResponse;
+export type ChatLongPollPayload = ChatPollRequest & { timeoutSeconds?: number };
+export type ChatSendPayload = ChatSendRequest;
+export type ChatSendData = ChatSendResponse;
+export type LicenseActivatePayload = LicenseActivateRequest;
+export type LicenseSettingsPayload = LicenseSettingsRequest;
+export type LicenseSettingsData = LicenseSettingsResponse;
 
 function buildActivityQuery(filters: ActivityFilters = {}) {
   return {
@@ -23,6 +45,15 @@ export interface PluginRouteApi {
   saveTheme(theme: "light" | "dark"): Promise<Response>;
   fetchBranding(): Promise<Response>;
   saveBranding(data: BrandingSavePayload): Promise<Response>;
+  fetchChatBootstrap(data: ChatBootstrapPayload): Promise<Response>;
+  fetchChatPoll(data: ChatPollPayload): Promise<Response>;
+  longPollChat(data: ChatLongPollPayload, signal?: AbortSignal): Promise<Response>;
+  sendChatMessage(data: ChatSendPayload): Promise<Response>;
+  fetchLicense(): Promise<Response>;
+  fetchLicenseSettings(): Promise<Response>;
+  saveLicenseSettings(data: LicenseSettingsPayload): Promise<Response>;
+  activateLicense(data: LicenseActivatePayload): Promise<Response>;
+  deactivateLicense(): Promise<Response>;
   fetchPreferences(): Promise<Response>;
   savePreferences(prefs: Partial<PersistedShellPreferences>): Promise<Response>;
   fetchMenuCounts(): Promise<Response>;
@@ -52,6 +83,42 @@ export function createPluginRouteApi(config: PluginRestConfig): PluginRouteApi {
 
     async saveBranding(data) {
       return client.post(PLUGIN_ROUTE_PATHS.branding, data);
+    },
+
+    async fetchChatBootstrap(data) {
+      return client.post(PLUGIN_ROUTE_PATHS.chatBootstrap, data);
+    },
+
+    async fetchChatPoll(data) {
+      return client.post(PLUGIN_ROUTE_PATHS.chatPoll, data);
+    },
+
+    async longPollChat(data, signal) {
+      return client.post(PLUGIN_ROUTE_PATHS.chatPoll, data, undefined, signal);
+    },
+
+    async sendChatMessage(data) {
+      return client.post(PLUGIN_ROUTE_PATHS.chatSend, data);
+    },
+
+    async fetchLicense() {
+      return client.get(PLUGIN_ROUTE_PATHS.license);
+    },
+
+    async fetchLicenseSettings() {
+      return client.get(PLUGIN_ROUTE_PATHS.licenseSettings);
+    },
+
+    async saveLicenseSettings(data) {
+      return client.post(PLUGIN_ROUTE_PATHS.licenseSettings, data);
+    },
+
+    async activateLicense(data) {
+      return client.post(PLUGIN_ROUTE_PATHS.licenseActivate, data);
+    },
+
+    async deactivateLicense() {
+      return client.post(PLUGIN_ROUTE_PATHS.licenseDeactivate);
     },
 
     async fetchPreferences() {

@@ -154,16 +154,11 @@ describe("useTheme", () => {
       fireEvent.click(screen.getByTestId("toggle"));
     });
 
-    expect(fetchMock).toHaveBeenCalledWith(
-      "http://localhost/wp-json/wp-react-ui/v1/theme",
-      expect.objectContaining({
-        method: "POST",
-        headers: expect.objectContaining({
-          "X-WP-Nonce": "test-nonce",
-        }),
-        body: JSON.stringify({ theme: "dark" }),
-      })
-    );
+    const [themeUrl, themeInit] = fetchMock.mock.calls[0] as [string, RequestInit];
+    expect(themeUrl).toBe("http://localhost/wp-json/wp-react-ui/v1/theme");
+    expect(themeInit.method).toBe("POST");
+    expect(themeInit.body).toBe(JSON.stringify({ theme: "dark" }));
+    expect(new Headers(themeInit.headers).get("X-WP-Nonce")).toBe("test-nonce");
   });
 
   it("dispatches wp-react-ui-theme-change custom event on toggle", async () => {

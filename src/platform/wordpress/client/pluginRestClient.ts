@@ -1,4 +1,5 @@
 import type { WpReactUiConfig } from "../../../types/wp";
+import { shellFetch } from "../../../utils/shellFetch";
 
 export type PluginRestConfig = Pick<WpReactUiConfig, "restUrl" | "nonce">;
 
@@ -9,6 +10,7 @@ export interface PluginRestRequestOptions {
   path: string;
   query?: Record<string, PluginRestQueryValue>;
   body?: unknown;
+  signal?: AbortSignal;
 }
 
 function trimTrailingSlash(value: string): string {
@@ -52,16 +54,18 @@ export interface PluginRestClient {
   post(
     path: string,
     body?: unknown,
-    query?: Record<string, PluginRestQueryValue>
+    query?: Record<string, PluginRestQueryValue>,
+    signal?: AbortSignal
   ): Promise<Response>;
 }
 
 export function createPluginRestClient(config: PluginRestConfig): PluginRestClient {
   return {
-    async request({ method = "GET", path, query, body }) {
+    async request({ method = "GET", path, query, body, signal }) {
       const hasJsonBody = body !== undefined;
       const init: RequestInit = {
         headers: buildHeaders(config.nonce, hasJsonBody),
+        signal,
       };
 
       if (method !== "GET") {
@@ -72,15 +76,15 @@ export function createPluginRestClient(config: PluginRestConfig): PluginRestClie
         init.body = JSON.stringify(body);
       }
 
-      return fetch(buildPluginRestUrl(config.restUrl, path, query), init);
+      return shellFetch(buildPluginRestUrl(config.restUrl, path, query), init);
     },
 
     async get(path, query) {
       return this.request({ path, query });
     },
 
-    async post(path, body, query) {
-      return this.request({ method: "POST", path, query, body });
+    async post(path, body, query, signal) {
+      return this.request({ method: "POST", path, query, body, signal });
     },
   };
 }

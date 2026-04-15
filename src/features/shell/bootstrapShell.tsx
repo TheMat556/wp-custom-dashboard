@@ -13,6 +13,8 @@ import {
   resetBrandingStore,
 } from "../branding/store/brandingStore";
 import { bootstrapDashboardStore, resetDashboardStore } from "../dashboard/store/dashboardStore";
+import { LicenseProvider } from "../license/context/LicenseContext";
+import { bootstrapLicenseStore, resetLicenseStore } from "../license/store/licenseStore";
 import {
   bootstrapMenuCountsStore,
   resetMenuCountsStore,
@@ -124,11 +126,14 @@ function AntConfigProvider({ children }: { children: React.ReactNode }) {
 
   return (
     <ConfigProvider
+      getPopupContainer={() => document.body}
+      getTargetContainer={() => document.body}
       theme={{
         algorithm,
         token: {
           fontFamily,
           colorPrimary: primaryColor,
+          zIndexPopupBase: 100100,
           ...darkTokenOverrides,
         },
         components: {
@@ -160,14 +165,16 @@ function ShellRoot({ host, config }: { host: HTMLElement; config: Readonly<WpRea
   return (
     <ErrorBoundary name="react-shell-root">
       <ShellConfigProvider config={config}>
-        <AntConfigProvider>
-          <NotificationRenderer />
-          <SessionHeartbeatEffect />
-          <SessionExpiredModal />
-          <NativeCommandPaletteEnhancer />
-          <ShellMountEffects host={host} />
-          <App />
-        </AntConfigProvider>
+        <LicenseProvider>
+          <AntConfigProvider>
+            <NotificationRenderer />
+            <SessionHeartbeatEffect />
+            <SessionExpiredModal />
+            <NativeCommandPaletteEnhancer />
+            <ShellMountEffects host={host} />
+            <App />
+          </AntConfigProvider>
+        </LicenseProvider>
       </ShellConfigProvider>
     </ErrorBoundary>
   );
@@ -175,6 +182,7 @@ function ShellRoot({ host, config }: { host: HTMLElement; config: Readonly<WpRea
 
 export function bootstrapShell(host: HTMLElement, config: Readonly<WpReactUiConfig>) {
   bootstrapMenuStore(config);
+  bootstrapLicenseStore(config);
   const teardownTheme = bootstrapThemeStore(config);
   bootstrapBrandingStore(config);
   bootstrapActivityStore(config);
@@ -227,6 +235,7 @@ export function bootstrapShell(host: HTMLElement, config: Readonly<WpReactUiConf
     resetBrandingStore();
     resetActivityStore();
     resetDashboardStore();
+    resetLicenseStore();
     resetShellPreferencesStore();
     resetSessionStore();
     resetMenuCountsStore();

@@ -1,6 +1,8 @@
+import { createPluginApiError } from "../../../shared/services/pluginApiError";
 import { createPluginRouteApi } from "../../../shared/services/pluginRouteApi";
-import { notifyApiError } from "../../../store/notificationStore";
 import type { WpReactUiConfig } from "../../../types/wp";
+import { logger } from "../../../utils/logger";
+import { DashboardDataSchema } from "./dashboardSchema";
 
 export interface AtAGlanceData {
   posts: number;
@@ -249,10 +251,17 @@ export function createDashboardService(
       const response = await api.fetchDashboard();
 
       if (!response.ok) {
-        throw new Error(notifyApiError(response, "Dashboard data"));
+        throw await createPluginApiError(response, "Dashboard data");
       }
 
-      return response.json();
+      const raw = await response.json();
+      // Validate for monitoring purposes — use safeParse so minor shape deviations
+      // don't crash the dashboard page entirely.
+      const result = DashboardDataSchema.safeParse(raw);
+      if (!result.success) {
+        logger.error("[dashboard] Unexpected API shape:", result.error.flatten());
+      }
+      return raw as DashboardData;
     },
   };
 }

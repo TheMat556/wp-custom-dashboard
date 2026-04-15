@@ -1,0 +1,63 @@
+{
+  "$id": "dto/chat.bootstrap.response",
+  "title": "ChatBootstrapResponse",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["role", "threads", "selectedThreadId", "messages", "pollIntervalSeconds"],
+  "properties": {
+    "role": {
+      "type": "string",
+      "enum": ["owner", "customer"]
+    },
+    "threads": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "id",
+          "domain",
+          "customerName",
+          "customerEmail",
+          "status",
+          "lastMessagePreview",
+          "lastMessageAt",
+          "createdAt"
+        ],
+        "properties": {
+          "id": { "type": "integer", "minimum": 1 },
+          "domain": { "type": "string" },
+          "customerName": { "type": ["string", "null"] },
+          "customerEmail": { "type": ["string", "null"] },
+          "status": { "type": "string", "enum": ["open", "closed"] },
+          "lastMessagePreview": { "type": ["string", "null"] },
+          "lastMessageAt": { "type": "string" },
+          "createdAt": { "type": "string" }
+        }
+      }
+    },
+    "selectedThreadId": {
+      "type": ["integer", "null"],
+      "minimum": 1
+    },
+    "messages": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["id", "authorRole", "authorName", "message", "createdAt"],
+        "properties": {
+          "id": { "type": "integer", "minimum": 1 },
+          "authorRole": { "type": "string", "enum": ["owner", "customer", "system"] },
+          "authorName": { "type": "string" },
+          "message": { "type": "string" },
+          "createdAt": { "type": "string" }
+        }
+      }
+    },
+    "pollIntervalSeconds": {
+      "type": "integer",
+      "minimum": 1
+    }
+  }
+}

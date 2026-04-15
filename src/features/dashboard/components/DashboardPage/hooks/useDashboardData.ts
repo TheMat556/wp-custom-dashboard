@@ -8,7 +8,7 @@ import { dashboardStore } from "../../../store/dashboardStore";
 
 const CHECKLIST_CLOSED_KEY = "wp-react-ui-checklist-closed";
 
-export function useDashboardData() {
+export function useDashboardData(enabled = true) {
   const config = useShellConfig();
   const data = useStore(dashboardStore, (s) => s.data);
   const loading = useStore(dashboardStore, (s) => s.loading);
@@ -20,8 +20,12 @@ export function useDashboardData() {
   );
 
   useEffect(() => {
+    if (!enabled) {
+      return;
+    }
+
     void loadDashboard();
-  }, []);
+  }, [enabled]);
 
   const closeChecklist = () => {
     localStorage.setItem(CHECKLIST_CLOSED_KEY, "1");

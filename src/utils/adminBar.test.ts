@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { readAdminBarAction, triggerAdminBarAction } from "./adminBar";
+import { readAdminBarAction, sanitizeAdminBarHtml, triggerAdminBarAction } from "./adminBar";
 
 describe("adminBar utilities", () => {
   it("reads an admin bar action from the DOM", () => {
@@ -16,7 +16,7 @@ describe("adminBar utilities", () => {
     expect(readAdminBarAction("wp-admin-bar-snn-ai-chat")).toEqual({
       id: "wp-admin-bar-snn-ai-chat",
       title: "Open AI Assistant",
-      html: '<span style="font-size: 25px;">✦</span>',
+      html: "<span>✦</span>",
     });
   });
 
@@ -37,5 +37,45 @@ describe("adminBar utilities", () => {
 
     expect(triggerAdminBarAction("wp-admin-bar-snn-ai-chat")).toBe(true);
     expect(clicked).toBe(true);
+  });
+});
+
+describe("sanitizeAdminBarHtml", () => {
+  it("strips script tags", () => {
+    const malicious = '<span>OK</span><script>alert("xss")</script>';
+    expect(sanitizeAdminBarHtml(malicious)).toBe("<span>OK</span>");
+  });
+
+  it("strips event handler attributes", () => {
+    const malicious = '<img src="x" onerror="alert(1)" alt="icon">';
+    const result = sanitizeAdminBarHtml(malicious);
+    expect(result).not.toContain("onerror");
+    expect(result).toContain('alt="icon"');
+  });
+
+  it("strips style attributes", () => {
+    const html = '<span style="font-size:25px">✦</span>';
+    expect(sanitizeAdminBarHtml(html)).toBe("<span>✦</span>");
+  });
+
+  it("preserves allowed SVG markup", () => {
+    const svg = '<svg viewBox="0 0 24 24"><path d="M12 2L2 22h20z" fill="none"></path></svg>';
+    const result = sanitizeAdminBarHtml(svg);
+    expect(result).toContain("<svg");
+    expect(result).toContain("<path");
+    expect(result).toContain('viewBox="0 0 24 24"');
+  });
+
+  it("preserves allowed img tags", () => {
+    const img = '<img src="/avatar.png" alt="User" class="avatar">';
+    const result = sanitizeAdminBarHtml(img);
+    expect(result).toContain("src=");
+    expect(result).toContain('alt="User"');
+    expect(result).toContain('class="avatar"');
+  });
+
+  it("strips iframe tags", () => {
+    const malicious = '<iframe src="https://evil.com"></iframe><span>ok</span>';
+    expect(sanitizeAdminBarHtml(malicious)).toBe("<span>ok</span>");
   });
 });

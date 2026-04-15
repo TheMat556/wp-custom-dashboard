@@ -1,10 +1,11 @@
-import { Button, Flex, Grid, Spin, Switch, Typography, theme } from "antd";
+import { Alert, Button, Flex, Grid, Spin, Switch, Typography, theme } from "antd";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useStore } from "zustand";
 import { CUSTOM_PRESET_KEY, THEME_PRESETS } from "../../../../config/themePresets";
 import PageCanvas from "../../../../shared/ui/PageCanvas";
 import { FONT_PRESETS, type FontPresetKey } from "../../../../utils/fontPresets";
 import { createT } from "../../../../utils/i18n";
+import { useLicense } from "../../../license/context/LicenseContext";
 import { useShellConfig } from "../../../shell/context/ShellConfigContext";
 import { shellPreferencesStore } from "../../../shell/store/shellPreferencesStore";
 import {
@@ -32,8 +33,22 @@ function getThemePreferenceSnapshot() {
   };
 }
 
+function canAccessBranding(license: ReturnType<typeof useLicense>) {
+  if (!license.hasKey) {
+    return false;
+  }
+
+  if (license.status === "disabled") {
+    return false;
+  }
+
+  return license.status !== "expired" || license.graceDaysRemaining > 0;
+}
+
 export default function BrandingSettings() {
   const config = useShellConfig();
+  const license = useLicense();
+  const canUseBranding = canAccessBranding(license);
   const settings = useStore(brandingStore, (state) => state.settings);
   const loading = useStore(brandingStore, (state) => state.loading);
   const saving = useStore(brandingStore, (state) => state.saving);
@@ -62,8 +77,12 @@ export default function BrandingSettings() {
   );
 
   useEffect(() => {
+    if (!canUseBranding) {
+      return;
+    }
+
     void loadBranding();
-  }, []);
+  }, [canUseBranding]);
 
   useEffect(() => {
     if (!settings) {
@@ -106,8 +125,36 @@ export default function BrandingSettings() {
     );
   }
 
+  if (!canUseBranding) {
+    return (
+      <PageCanvas>
+        <Alert
+          type="warning"
+          showIcon
+          message={t("Branding is unavailable")}
+          description={
+            license.hasKey
+              ? t("The current site license must be active to edit branding settings.")
+              : t("Activate a license to edit branding settings.")
+          }
+        />
+      </PageCanvas>
+    );
+  }
+
   return (
     <PageCanvas>
+      {license.status === "grace" && (
+        <Alert
+          type="warning"
+          showIcon
+          style={{ marginBottom: 24 }}
+          message={t("License grace period active")}
+          description={t(
+            `Branding settings remain available for ${license.graceDaysRemaining} more day(s).`
+          )}
+        />
+      )}
       <div className="wp-react-ui-page-intro">
         <Flex
           className="wp-react-ui-page-intro__header"

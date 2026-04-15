@@ -375,7 +375,7 @@ export default function Navbar() {
             flexShrink: 0,
           }}
         />
-        {!ctrl.isMobile && (
+        {ctrl.showBreadcrumb && (
           <div
             className="wp-react-ui-navbar-breadcrumb"
             style={{ maxWidth: 240, minWidth: 0, overflow: "hidden", marginLeft: 16 }}

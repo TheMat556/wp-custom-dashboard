@@ -21,6 +21,8 @@ class WP_React_UI_Shell_Localization {
 		$user          = wp_get_current_user();
 		$theme         = get_user_meta( $user->ID, 'wp_react_ui_theme', true );
 		$branding      = WP_React_UI_Branding_Settings::get_frontend_branding();
+		$can_manage    = current_user_can( 'manage_options' );
+		$license       = self::get_public_license_payload( $can_manage );
 		$preferences   = WP_React_UI_Branding_Settings::get_navigation_preferences();
 		$special_pages = wp_react_ui_get_special_page_config();
 
@@ -47,9 +49,11 @@ class WP_React_UI_Shell_Localization {
 			'assetsUrl' => plugins_url( 'dist/', dirname( __DIR__, 3 ) . '/wp-custom-dashboard.php' ),
 			'locale'    => get_locale(),
 			'user'      => array(
-				'name' => $user->display_name,
-				'role' => implode( ', ', $user->roles ),
+				'name'             => $user->display_name,
+				'role'             => implode( ', ', $user->roles ),
+				'canManageOptions' => $can_manage,
 			),
+			'license'   => $license,
 			'shellRoutes' => self::get_shell_routes(),
 		);
 	}
@@ -68,7 +72,12 @@ class WP_React_UI_Shell_Localization {
 			$routes
 		);
 
-		$slugs[] = WP_React_UI_Branding_Settings::get_page_slug();
+		if ( current_user_can( 'manage_options' ) ) {
+			$slugs[] = WP_React_UI_Branding_Settings::get_page_slug();
+			$slugs[] = \WpReactUi\WordPress\License\LicenseSettings::get_page_slug();
+		}
+
+		$slugs[] = \WpReactUi\WordPress\Chat\ChatPage::get_page_slug();
 
 		return array_values( array_filter( array_unique( $slugs ) ) );
 	}
@@ -81,6 +90,7 @@ class WP_React_UI_Shell_Localization {
 	 *       $routes[] = array(
 	 *           'slug'           => 'my-plugin-page',
 	 *           'label'          => 'My Plugin',
+	 *           'capability'     => 'manage_options',
 	 *           'entrypoint_url' => plugins_url( 'dist/shell-page.js', __FILE__ ),
 	 *       );
 	 *       return $routes;
@@ -95,6 +105,7 @@ class WP_React_UI_Shell_Localization {
 		 * Each route is an associative array with:
 		 *   - slug           (string) The ?page= parameter value.
 		 *   - label          (string) Human-readable label (for UI or errors).
+		 *   - capability     (string, optional) Required capability to access the shell page. Defaults to manage_options.
 		 *   - entrypoint_url (string) Full URL to the JS module that exports a default React component.
 		 *
 		 * @param array $routes Default empty array.
@@ -106,6 +117,8 @@ class WP_React_UI_Shell_Localization {
 			return array();
 		}
 
+		$site_host = wp_parse_url( home_url(), PHP_URL_HOST );
+
 		$sanitized = array();
 		foreach ( $routes as $route ) {
 			if (
@@ -113,14 +126,56 @@ class WP_React_UI_Shell_Localization {
 				! empty( $route['slug'] ) &&
 				! empty( $route['entrypoint_url'] )
 			) {
+				$capability = sanitize_key( (string) ( $route['capability'] ?? 'manage_options' ) );
+
+				if ( '' === $capability || ! current_user_can( $capability ) ) {
+					continue;
+				}
+
+				$entrypoint_url = esc_url_raw( $route['entrypoint_url'] );
+				$parsed_host    = wp_parse_url( $entrypoint_url, PHP_URL_HOST );
+
+				// Block cross-origin entrypoints: only allow same-host or relative URLs.
+				if ( is_string( $parsed_host ) && strtolower( $parsed_host ) !== strtolower( (string) $site_host ) ) {
+					if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+						// phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log
+						error_log( 'WP React UI: blocked cross-origin shell route entrypoint_url from host ' . $parsed_host );
+					}
+					continue;
+				}
+
 				$sanitized[] = array(
 					'slug'           => sanitize_key( $route['slug'] ),
 					'label'          => sanitize_text_field( $route['label'] ?? $route['slug'] ),
-					'entrypoint_url' => esc_url_raw( $route['entrypoint_url'] ),
+					'entrypoint_url' => $entrypoint_url,
 				);
 			}
 		}
 
 		return $sanitized;
+	}
+
+	/**
+	 * Returns the license payload localized to the current user.
+	 *
+	 * Non-admin users receive only the site-level feature state needed to gate shell pages.
+	 *
+	 * @param bool $can_manage Whether the current user can manage plugin settings.
+	 * @return array{status: string, role: ?string, tier: ?string, expiresAt: ?string, features: array<int, string>, graceDaysRemaining: int, hasKey: bool, keyPrefix: ?string, serverConfigured: bool}
+	 */
+	private static function get_public_license_payload( bool $can_manage ): array {
+		$payload = ( new \WpReactUi\License\LicenseManager() )->get_status_payload();
+
+		if ( $can_manage ) {
+			return $payload;
+		}
+
+		$payload['tier']             = null;
+		$payload['expiresAt']        = null;
+		$payload['hasKey']           = false;
+		$payload['keyPrefix']        = null;
+		$payload['serverConfigured'] = false;
+
+		return $payload;
 	}
 }

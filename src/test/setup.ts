@@ -39,6 +39,17 @@ Object.defineProperty(window, "wpReactUi", {
     logoutUrl: "http://localhost/wp-login.php?action=logout",
     logoutNonce: "logout-nonce",
     menu: [],
+    license: {
+      status: "disabled",
+      role: null,
+      tier: null,
+      expiresAt: null,
+      features: [],
+      graceDaysRemaining: 0,
+      hasKey: false,
+      keyPrefix: null,
+      serverConfigured: true,
+    },
   },
 });
 
@@ -74,5 +85,16 @@ afterEach(() => {
   (window.wpReactUi as { menu: unknown[] }).menu = [];
   (window.wpReactUi as { navigation: typeof DEFAULT_NAVIGATION }).navigation = {
     ...DEFAULT_NAVIGATION,
+  };
+  (window.wpReactUi as { license: Record<string, unknown> }).license = {
+    status: "disabled",
+    role: null,
+    tier: null,
+    expiresAt: null,
+    features: [],
+    graceDaysRemaining: 0,
+    hasKey: false,
+    keyPrefix: null,
+    serverConfigured: true,
   };
 });

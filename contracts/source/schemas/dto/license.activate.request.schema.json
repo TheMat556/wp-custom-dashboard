@@ -1,0 +1,12 @@
+{
+  "$id": "dto/license.activate.request",
+  "title": "LicenseActivateRequest",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["licenseKey"],
+  "properties": {
+    "licenseKey": {
+      "type": "string"
+    }
+  }
+}

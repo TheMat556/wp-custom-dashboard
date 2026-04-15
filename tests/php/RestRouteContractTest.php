@@ -4,6 +4,8 @@
  */
 
 use WpReactUi\Contracts\RestRouteContract;
+use WpReactUi\License\LicenseCache;
+use WpReactUi\License\LicenseSettingsRepository;
 use Yoast\PHPUnitPolyfills\TestCases\TestCase;
 
 require_once dirname( __DIR__, 2 ) . '/contracts/php/RestRouteContract.php';
@@ -20,6 +22,7 @@ class RestRouteContractTest extends TestCase {
 		$submenu = array();
 
 		WP_React_UI_REST_API::register();
+		$this->seed_active_license( array( 'dashboard', 'white_label' ) );
 	}
 
 	public function test_rest_route_names_are_unchanged(): void {
@@ -55,6 +58,10 @@ class RestRouteContractTest extends TestCase {
 			wp_test_sorted_keys( $this->invoke_route( $routes['wp-react-ui/v1/branding'], 'GET' ) )
 		);
 		$this->assertSame(
+			wp_test_sorted_keys( array_fill_keys( RestRouteContract::ROUTES['/chat-settings']['responseKeys'], true ) ),
+			wp_test_sorted_keys( $this->invoke_route( $routes['wp-react-ui/v1/chat-settings'], 'GET' ) )
+		);
+		$this->assertSame(
 			wp_test_sorted_keys( array_fill_keys( RestRouteContract::ROUTES['/preferences']['responseKeys'], true ) ),
 			wp_test_sorted_keys( $this->invoke_route( $routes['wp-react-ui/v1/preferences'], 'GET' ) )
 		);
@@ -69,6 +76,10 @@ class RestRouteContractTest extends TestCase {
 		$this->assertSame(
 			wp_test_sorted_keys( array_fill_keys( RestRouteContract::ROUTES['/activity']['responseKeys'], true ) ),
 			wp_test_sorted_keys( $this->invoke_route( $routes['wp-react-ui/v1/activity'], 'GET' ) )
+		);
+		$this->assertSame(
+			wp_test_sorted_keys( array_fill_keys( RestRouteContract::ROUTES['/license/settings']['responseKeys'], true ) ),
+			wp_test_sorted_keys( $this->invoke_route( $routes['wp-react-ui/v1/license/settings'], 'GET' ) )
 		);
 	}
 
@@ -95,5 +106,28 @@ class RestRouteContractTest extends TestCase {
 		}
 
 		$this->fail( 'Route endpoint for method not found: ' . $method );
+	}
+
+	/**
+	 * Seeds an active cached license for protected route contract assertions.
+	 *
+	 * @param array<int, string> $features Allowed features.
+	 */
+	private function seed_active_license( array $features ): void {
+		$settings = new LicenseSettingsRepository();
+		$cache    = new LicenseCache();
+
+		$settings->save_license_key( 'abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789' );
+		$cache->set(
+			array(
+				'status'             => LicenseCache::STATUS_ACTIVE,
+				'tier'               => 'agency',
+				'expiresAt'          => gmdate( 'Y-m-d H:i:s', time() + DAY_IN_SECONDS ),
+				'features'           => $features,
+				'graceDaysRemaining' => 0,
+				'keyPrefix'          => $settings->get_key_prefix(),
+				'lastValidatedAt'    => gmdate( 'Y-m-d H:i:s' ),
+			)
+		);
 	}
 }

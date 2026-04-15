@@ -27,6 +27,8 @@ describe("themeStore", () => {
     resetThemeStore();
     teardown = undefined;
     localStorage.clear();
+    document.documentElement.removeAttribute("data-theme");
+    document.documentElement.className = "";
     document.body.removeAttribute("data-theme");
     document.body.className = "";
   });
@@ -48,7 +50,9 @@ describe("themeStore", () => {
 
   it("applies theme to DOM on bootstrap", () => {
     teardown = bootstrapThemeStore({ ...mockConfig, theme: "dark" as Theme }, mockService);
+    expect(document.documentElement.getAttribute("data-theme")).toBe("dark");
     expect(document.body.getAttribute("data-theme")).toBe("dark");
+    expect(document.documentElement.classList.contains("wp-react-dark")).toBe(true);
     expect(document.body.classList.contains("wp-react-dark")).toBe(true);
   });
 
@@ -61,7 +65,9 @@ describe("themeStore", () => {
   it("toggle applies new theme to DOM via subscriber", () => {
     teardown = bootstrapThemeStore(mockConfig, mockService);
     themeStore.getState().toggle();
+    expect(document.documentElement.getAttribute("data-theme")).toBe("dark");
     expect(document.body.getAttribute("data-theme")).toBe("dark");
+    expect(document.documentElement.classList.contains("wp-react-dark")).toBe(true);
     expect(document.body.classList.contains("wp-react-dark")).toBe(true);
   });
 
@@ -128,13 +134,33 @@ describe("themeStore", () => {
 
   it("applyThemeToDOM sets data-theme on body", () => {
     applyThemeToDOM("dark");
+    expect(document.documentElement.getAttribute("data-theme")).toBe("dark");
     expect(document.body.getAttribute("data-theme")).toBe("dark");
   });
 
   it("applyThemeToDOM toggles wp-react-dark class", () => {
     applyThemeToDOM("dark");
+    expect(document.documentElement.classList.contains("wp-react-dark")).toBe(true);
     expect(document.body.classList.contains("wp-react-dark")).toBe(true);
     applyThemeToDOM("light");
+    expect(document.documentElement.classList.contains("wp-react-dark")).toBe(false);
     expect(document.body.classList.contains("wp-react-dark")).toBe(false);
+  });
+
+  it("applyThemeToDOM notifies embedded iframes", () => {
+    const postMessage = vi.fn();
+    const iframe = document.createElement("iframe");
+    Object.defineProperty(iframe, "contentWindow", {
+      configurable: true,
+      value: { postMessage },
+    });
+    document.body.appendChild(iframe);
+
+    applyThemeToDOM("dark");
+
+    expect(postMessage).toHaveBeenCalledWith(
+      { type: THEME_CHANGE_EVENT, detail: { theme: "dark" } },
+      window.location.origin
+    );
   });
 });

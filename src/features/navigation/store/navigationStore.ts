@@ -1,3 +1,4 @@
+import { logger } from "../../../utils/logger";
 /**
  * Navigation store for the iframe shell architecture.
  *
@@ -8,7 +9,7 @@
  */
 
 import { createStore } from "zustand/vanilla";
-import { type EmbedMessage, isEmbedMessage } from "../../../types/embedMessages";
+import { assertNever, type EmbedMessage, isEmbedMessage } from "../../../types/embedMessages";
 import type { WpReactUiNavigationConfig } from "../../../types/wp";
 import {
   DEFAULT_BREAKOUT_PAGENOW,
@@ -23,8 +24,8 @@ import {
   pushHistory,
   replaceHistory,
 } from "../../../utils/historyManager";
-import { isSameOrigin } from "../../../utils/security";
 import { matchesOpenInNewTabPattern } from "../../../utils/openInNewTab";
+import { isSameOrigin } from "../../../utils/security";
 import { sessionStore } from "../../session/store/sessionStore";
 
 type Listener = () => void;
@@ -85,7 +86,7 @@ export const navigationStore = createStore<NavigationState & NavigationActions>(
   navigate(url: string) {
     if (isBreakoutUrl(url, get().breakoutPagenow)) {
       if (!isSameOrigin(url)) {
-        console.error("[shell] Blocked cross-origin breakout navigation:", url);
+        logger.error("[shell] Blocked cross-origin breakout navigation:", url);
         return;
       }
       window.location.href = url;
@@ -147,38 +148,50 @@ export const navigationStore = createStore<NavigationState & NavigationActions>(
 
     const msg = event.data as EmbedMessage;
 
-    if (msg.type === "page-ready") {
-      set({
-        iframeUrl: msg.url,
-        pageUrl: fromEmbedUrl(msg.url),
-        pageTitle: msg.title,
-        status: "ready",
-        iframeOverlayActive: false,
-      });
-      return;
-    }
-
-    if (msg.type === "title-change") {
-      set({ pageTitle: msg.title });
-      return;
-    }
-
-    if (msg.type === "session-expired") {
-      sessionStore.getState().markExpired();
-      return;
-    }
-
-    if (msg.type === "overlay-state") {
-      set({ iframeOverlayActive: msg.active });
-      return;
-    }
-
-    if (msg.type === "breakout") {
-      if (!isSameOrigin(msg.url)) {
-        console.error("[shell] Blocked cross-origin breakout navigation:", msg.url);
-        return;
+    switch (msg.type) {
+      case "page-ready": {
+        const url = msg.url;
+        if (!isSameOrigin(url)) {
+          logger.warn("[shell] Blocked page-ready with cross-origin URL:", url);
+          return;
+        }
+        const parsed = new URL(url, window.location.origin);
+        if (!parsed.searchParams.has("wp_shell_embed")) {
+          logger.warn("[shell] Blocked page-ready with non-embed URL:", url);
+          return;
+        }
+        set({
+          iframeUrl: url,
+          pageUrl: fromEmbedUrl(url),
+          pageTitle: msg.title,
+          status: "ready",
+          iframeOverlayActive: false,
+        });
+        break;
       }
-      window.location.href = msg.url;
+
+      case "title-change":
+        set({ pageTitle: msg.title });
+        break;
+
+      case "session-expired":
+        sessionStore.getState().markExpired();
+        break;
+
+      case "overlay-state":
+        set({ iframeOverlayActive: msg.active });
+        break;
+
+      case "breakout":
+        if (!isSameOrigin(msg.url)) {
+          logger.error("[shell] Blocked cross-origin breakout navigation:", msg.url);
+          return;
+        }
+        window.location.href = msg.url;
+        break;
+
+      default:
+        assertNever(msg);
     }
   },
 

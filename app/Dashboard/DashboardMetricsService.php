@@ -294,7 +294,6 @@ final class DashboardMetricsService {
 			home_url( '/' ),
 			array(
 				'timeout'    => 8,
-				'sslverify'  => false,
 				'headers'    => array( 'Cache-Control' => 'no-cache' ),
 				'user-agent' => 'WP-React-UI-Health/1.0',
 			)

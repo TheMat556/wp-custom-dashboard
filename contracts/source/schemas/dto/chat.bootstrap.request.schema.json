@@ -1,0 +1,12 @@
+{
+  "$id": "dto/chat.bootstrap.request",
+  "title": "ChatBootstrapRequest",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "selectedThreadId": {
+      "type": ["integer", "null"],
+      "minimum": 1
+    }
+  }
+}

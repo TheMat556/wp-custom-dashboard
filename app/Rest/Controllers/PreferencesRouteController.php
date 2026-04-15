@@ -11,6 +11,7 @@ namespace WpReactUi\Rest\Controllers;
 
 use WP_Error;
 use WP_REST_Request;
+use WpReactUi\Rest\RateLimiter;
 use WpReactUi\Rest\Services\ShellPreferencesService;
 
 defined( 'ABSPATH' ) || exit;
@@ -35,6 +36,11 @@ final class PreferencesRouteController {
 	}
 
 	public function update( WP_REST_Request $request ) {
+		$rate_check = RateLimiter::enforce( 'preferences_save', RateLimiter::LIMIT_PREFERENCES_SAVE );
+		if ( is_wp_error( $rate_check ) ) {
+			return $rate_check;
+		}
+
 		$input = $request->get_json_params();
 
 		if ( ! is_array( $input ) ) {

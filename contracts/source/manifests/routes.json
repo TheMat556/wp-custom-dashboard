@@ -22,6 +22,34 @@
       "requestSchema": "dto/branding.request",
       "responseSchema": "dto/branding.response"
     },
+    "/chat-settings": {
+      "name": "chatSettings",
+      "methods": ["GET", "POST"],
+      "permission": "manage_options",
+      "requestSchema": "dto/chat-settings.request",
+      "responseSchema": "dto/chat-settings.response"
+    },
+    "/chat/bootstrap": {
+      "name": "chatBootstrap",
+      "methods": ["POST"],
+      "permission": "read",
+      "requestSchema": "dto/chat.bootstrap.request",
+      "responseSchema": "dto/chat.bootstrap.response"
+    },
+    "/chat/poll": {
+      "name": "chatPoll",
+      "methods": ["POST"],
+      "permission": "read",
+      "requestSchema": "dto/chat.poll.request",
+      "responseSchema": "dto/chat.poll.response"
+    },
+    "/chat/send": {
+      "name": "chatSend",
+      "methods": ["POST"],
+      "permission": "read",
+      "requestSchema": "dto/chat.send.request",
+      "responseSchema": "dto/chat.send.response"
+    },
     "/preferences": {
       "name": "preferences",
       "methods": ["GET", "POST"],
@@ -51,6 +79,38 @@
       "featureFlag": "activityLog",
       "requestSchema": "dto/activity.query",
       "responseSchema": "dto/activity.response"
+    },
+    "/license": {
+      "name": "license",
+      "methods": ["GET"],
+      "permission": "manage_options",
+      "responseSchema": "dto/license.response"
+    },
+    "/license/settings": {
+      "name": "licenseSettings",
+      "methods": ["GET", "POST"],
+      "permission": "manage_options",
+      "requestSchema": "dto/license.settings.request",
+      "responseSchema": "dto/license.settings.response"
+    },
+    "/license/activate": {
+      "name": "licenseActivate",
+      "methods": ["POST"],
+      "permission": "manage_options",
+      "requestSchema": "dto/license.activate.request",
+      "responseSchema": "dto/license.response"
+    },
+    "/license/deactivate": {
+      "name": "licenseDeactivate",
+      "methods": ["POST"],
+      "permission": "manage_options",
+      "responseSchema": "dto/license.response"
+    },
+    "/license-webhook": {
+      "name": "licenseWebhook",
+      "methods": ["POST"],
+      "permission": "public",
+      "responseSchema": "dto/license-webhook.response"
     }
   }
 }

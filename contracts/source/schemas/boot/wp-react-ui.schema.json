@@ -17,6 +17,7 @@
     "assetsUrl",
     "locale",
     "user",
+    "license",
     "shellRoutes"
   ],
   "properties": {
@@ -138,8 +139,14 @@
         },
         "role": {
           "type": "string"
+        },
+        "canManageOptions": {
+          "type": "boolean"
         }
       }
+    },
+    "license": {
+      "$ref": "dto/license.response"
     },
     "shellRoutes": {
       "type": "array",

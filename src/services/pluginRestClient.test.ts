@@ -18,6 +18,11 @@ function jsonResponse(payload: unknown, init?: ResponseInit): Response {
   });
 }
 
+function getCalledHeaders(fetchMock: ReturnType<typeof vi.fn>): Headers {
+  const init = fetchMock.mock.calls[0][1] as RequestInit;
+  return new Headers(init.headers);
+}
+
 describe("plugin REST transport", () => {
   beforeEach(() => {
     vi.restoreAllMocks();
@@ -31,11 +36,12 @@ describe("plugin REST transport", () => {
     const client = createPluginRestClient(TEST_CONFIG);
     await client.get("/menu");
 
-    expect(fetchMock).toHaveBeenCalledWith("http://localhost/wp-json/wp-react-ui/v1/menu", {
-      headers: {
-        "X-WP-Nonce": "test-nonce",
-      },
-    });
+    expect(fetchMock).toHaveBeenCalledOnce();
+    expect(fetchMock.mock.calls[0][0]).toBe("http://localhost/wp-json/wp-react-ui/v1/menu");
+
+    const headers = getCalledHeaders(fetchMock);
+    expect(headers.get("X-WP-Nonce")).toBe("test-nonce");
+    expect(headers.get("X-WP-Shell-Managed")).toBe("1");
   });
 
   it("preserves activity query-string construction through the shared client", async () => {
@@ -57,14 +63,13 @@ describe("plugin REST transport", () => {
       action: "updated",
     });
 
-    expect(fetchMock).toHaveBeenCalledWith(
-      "http://localhost/wp-json/wp-react-ui/v1/activity?page=2&perPage=20&userId=7&action=updated",
-      {
-        headers: {
-          "X-WP-Nonce": "test-nonce",
-        },
-      }
+    expect(fetchMock.mock.calls[0][0]).toBe(
+      "http://localhost/wp-json/wp-react-ui/v1/activity?page=2&perPage=20&userId=7&action=updated"
     );
+
+    const headers = getCalledHeaders(fetchMock);
+    expect(headers.get("X-WP-Nonce")).toBe("test-nonce");
+    expect(headers.get("X-WP-Shell-Managed")).toBe("1");
   });
 
   it("keeps preferences fetch fallback behavior unchanged on failed responses", async () => {
@@ -117,13 +122,14 @@ describe("plugin REST transport", () => {
       openInNewTabPatterns: ["plugins.php"],
     });
 
-    expect(fetchMock).toHaveBeenCalledWith("http://localhost/wp-json/wp-react-ui/v1/branding", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "X-WP-Nonce": "test-nonce",
-      },
-      body: JSON.stringify(payload),
-    });
+    const [calledUrl, calledInit] = fetchMock.mock.calls[0] as [string, RequestInit];
+    expect(calledUrl).toBe("http://localhost/wp-json/wp-react-ui/v1/branding");
+    expect(calledInit.method).toBe("POST");
+    expect(calledInit.body).toBe(JSON.stringify(payload));
+
+    const headers = new Headers(calledInit.headers);
+    expect(headers.get("Content-Type")).toBe("application/json");
+    expect(headers.get("X-WP-Nonce")).toBe("test-nonce");
+    expect(headers.get("X-WP-Shell-Managed")).toBe("1");
   });
 });

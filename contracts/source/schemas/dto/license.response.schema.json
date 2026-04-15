@@ -1,0 +1,51 @@
+{
+  "$id": "dto/license.response",
+  "title": "LicenseResponse",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "status",
+    "role",
+    "tier",
+    "expiresAt",
+    "features",
+    "graceDaysRemaining",
+    "hasKey",
+    "keyPrefix",
+    "serverConfigured"
+  ],
+  "properties": {
+    "status": {
+      "type": "string",
+      "enum": ["active", "expired", "grace", "disabled"]
+    },
+    "role": {
+      "type": ["string", "null"]
+    },
+    "tier": {
+      "type": ["string", "null"]
+    },
+    "expiresAt": {
+      "type": ["string", "null"]
+    },
+    "features": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "graceDaysRemaining": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "hasKey": {
+      "type": "boolean"
+    },
+    "keyPrefix": {
+      "type": ["string", "null"]
+    },
+    "serverConfigured": {
+      "type": "boolean"
+    }
+  }
+}

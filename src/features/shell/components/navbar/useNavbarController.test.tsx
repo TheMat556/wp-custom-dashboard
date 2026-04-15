@@ -161,12 +161,13 @@ describe("useNavbarController", () => {
     });
 
     it.each<[number, boolean, boolean, boolean, boolean]>([
-      // [width, showExport(≥860), showHistory(≥720), showTheme(≥580), showSearchFull(≥600)]
+      // [width, showExport(≥860), showHistory(≥720), showTheme(≥580), showSearchFull(≥640)]
       [860, true, true, true, true],
       [859, false, true, true, true],
       [720, false, true, true, true],
       [719, false, false, true, true],
-      [600, false, false, true, true],
+      [640, false, false, true, true],
+      [639, false, false, true, false],
       [580, false, false, true, false],
       [400, false, false, false, false],
     ])("containerWidth=%i → showExport=%s showHistory=%s showTheme=%s showSearchFull=%s", (width, expExport, expHistory, expTheme, expSearchFull) => {

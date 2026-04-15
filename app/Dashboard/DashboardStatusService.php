@@ -216,18 +216,35 @@ final class DashboardStatusService {
 		);
 
 		$sitemap_url      = home_url( '/sitemap.xml' );
-		$sitemap_response = wp_remote_head( $sitemap_url, array( 'timeout' => 5, 'sslverify' => false ) );
-		$sitemap_ok       = ! is_wp_error( $sitemap_response ) && 200 === (int) wp_remote_retrieve_response_code( $sitemap_response );
+		$sitemap_response = wp_remote_head( $sitemap_url, array( 'timeout' => 5 ) );
+
+		if ( is_wp_error( $sitemap_response ) ) {
+			$error_msg     = $sitemap_response->get_error_message();
+			$sitemap_ok    = false;
+			$sitemap_label = ( false !== strpos( $error_msg, 'SSL' ) || false !== strpos( $error_msg, 'ssl' ) )
+				? 'SSL certificate error — sitemap unreachable due to an invalid or expired HTTPS certificate'
+				: 'No sitemap found at /sitemap.xml';
+		} else {
+			$sitemap_ok    = 200 === (int) wp_remote_retrieve_response_code( $sitemap_response );
+			$sitemap_label = $sitemap_ok ? 'Sitemap found at /sitemap.xml' : 'No sitemap found at /sitemap.xml';
+		}
 
 		$checks['sitemap'] = array(
 			'ok'    => $sitemap_ok,
-			'label' => $sitemap_ok ? 'Sitemap found at /sitemap.xml' : 'No sitemap found at /sitemap.xml',
+			'label' => $sitemap_label,
 			'url'   => $sitemap_url,
 		);
 
+		// Count published pages whose title is under 10 characters.
 		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery
 		$short = (int) $wpdb->get_var(
-			"SELECT COUNT(*) FROM {$wpdb->posts} WHERE post_type = 'page' AND post_status = 'publish' AND CHAR_LENGTH(post_title) < 10"
+			$wpdb->prepare(
+				'SELECT COUNT(*) FROM %i WHERE post_type = %s AND post_status = %s AND CHAR_LENGTH(post_title) < %d',
+				$wpdb->posts,
+				'page',
+				'publish',
+				10
+			)
 		);
 
 		$checks['pageTitles'] = array(
@@ -262,9 +279,15 @@ final class DashboardStatusService {
 	public function get_seo_overview(): array {
 		global $wpdb;
 
+		// Count all published pages to use as the score denominator.
 		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery
 		$total_pages = (int) $wpdb->get_var(
-			"SELECT COUNT(*) FROM {$wpdb->posts} WHERE post_type = 'page' AND post_status = 'publish'"
+			$wpdb->prepare(
+				'SELECT COUNT(*) FROM %i WHERE post_type = %s AND post_status = %s',
+				$wpdb->posts,
+				'page',
+				'publish'
+			)
 		);
 
 		$plugin = null;
@@ -280,12 +303,21 @@ final class DashboardStatusService {
 		$issues_count = 0;
 
 		if ( 'yoast' === $plugin && $total_pages > 0 ) {
+			// Count published pages that have no Yoast SEO meta description set.
 			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery
 			$missing_meta = (int) $wpdb->get_var(
-				"SELECT COUNT(p.ID) FROM {$wpdb->posts} p
-				 LEFT JOIN {$wpdb->postmeta} pm ON p.ID = pm.post_id AND pm.meta_key = '_yoast_wpseo_metadesc'
-				 WHERE p.post_type = 'page' AND p.post_status = 'publish'
-				   AND (pm.meta_value IS NULL OR pm.meta_value = '')"
+				$wpdb->prepare(
+					'SELECT COUNT(p.ID) FROM %i p
+					 LEFT JOIN %i pm ON p.ID = pm.post_id AND pm.meta_key = %s
+					 WHERE p.post_type = %s AND p.post_status = %s
+					   AND (pm.meta_value IS NULL OR pm.meta_value = %s)',
+					$wpdb->posts,
+					$wpdb->postmeta,
+					'_yoast_wpseo_metadesc',
+					'page',
+					'publish',
+					''
+				)
 			);
 
 			if ( $missing_meta > 0 ) {
@@ -298,11 +330,19 @@ final class DashboardStatusService {
 		}
 
 		if ( $total_pages > 0 ) {
+			// Fetch up to 5 published pages with very short titles to surface as individual issues.
 			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery
 			$short_pages = $wpdb->get_results(
-				"SELECT ID, post_title FROM {$wpdb->posts}
-				 WHERE post_type = 'page' AND post_status = 'publish' AND CHAR_LENGTH(post_title) < 10
-				 LIMIT 5"
+				$wpdb->prepare(
+					'SELECT ID, post_title FROM %i
+					 WHERE post_type = %s AND post_status = %s AND CHAR_LENGTH(post_title) < %d
+					 LIMIT %d',
+					$wpdb->posts,
+					'page',
+					'publish',
+					10,
+					5
+				)
 			);
 
 			foreach ( $short_pages as $page ) {
@@ -426,33 +466,47 @@ final class DashboardStatusService {
 	 * @return array|null
 	 */
 	private function find_legal_page( array $keywords ): ?array {
-		$pages = get_posts(
-			array(
-				'post_type'      => 'page',
-				'post_status'    => array( 'publish', 'draft', 'pending' ),
-				'posts_per_page' => 100,
+		global $wpdb;
+
+		if ( empty( $keywords ) ) {
+			return null;
+		}
+
+		// Build one LIKE condition per keyword, combined with OR
+		$conditions   = implode( ' OR ', array_fill( 0, count( $keywords ), 'LOWER(post_title) LIKE %s' ) );
+		$like_values  = array_map(
+			fn( string $k ) => '%' . $wpdb->esc_like( $k ) . '%',
+			$keywords
+		);
+
+		// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+		$row = $wpdb->get_row(
+			$wpdb->prepare(
+				"SELECT ID, post_title, post_status, post_modified_gmt
+				 FROM {$wpdb->posts}
+				 WHERE post_type = 'page'
+				   AND post_status IN ('publish', 'draft', 'pending')
+				   AND ({$conditions})
+				 ORDER BY FIELD(post_status, 'publish', 'draft', 'pending')
+				 LIMIT 1",
+				...$like_values
 			)
 		);
 
-		foreach ( $pages as $page ) {
-			$lower = strtolower( $page->post_title );
-			foreach ( $keywords as $keyword ) {
-				if ( false !== strpos( $lower, $keyword ) ) {
-					$days_old = (int) ceil( ( time() - strtotime( $page->post_modified_gmt ) ) / DAY_IN_SECONDS );
-
-					return array(
-						'exists'    => true,
-						'published' => 'publish' === $page->post_status,
-						'status'    => $page->post_status,
-						'title'     => $page->post_title,
-						'daysOld'   => $days_old,
-						'editUrl'   => admin_url( 'post.php?post=' . $page->ID . '&action=edit' ),
-						'viewUrl'   => 'publish' === $page->post_status ? get_permalink( $page->ID ) : null,
-					);
-				}
-			}
+		if ( ! $row ) {
+			return null;
 		}
 
-		return null;
+		$days_old = (int) ceil( ( time() - strtotime( $row->post_modified_gmt ) ) / DAY_IN_SECONDS );
+
+		return array(
+			'exists'    => true,
+			'published' => 'publish' === $row->post_status,
+			'status'    => $row->post_status,
+			'title'     => $row->post_title,
+			'daysOld'   => $days_old,
+			'editUrl'   => admin_url( 'post.php?post=' . $row->ID . '&action=edit' ),
+			'viewUrl'   => 'publish' === $row->post_status ? get_permalink( $row->ID ) : null,
+		);
 	}
 }

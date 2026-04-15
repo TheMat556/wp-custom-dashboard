@@ -10,6 +10,7 @@ declare(strict_types=1);
 namespace WpReactUi\Rest\Controllers;
 
 use WP_REST_Request;
+use WpReactUi\License\LicenseGate;
 use WpReactUi\Rest\Services\BrandingSettingsService;
 
 defined( 'ABSPATH' ) || exit;
@@ -30,10 +31,32 @@ final class BrandingRouteController {
 	}
 
 	public function show() {
+		if ( ! LicenseGate::has_valid_license() ) {
+			return new \WP_Error(
+				'license_feature_disabled',
+				'Branding settings require an active license.',
+				array(
+					'status'  => 403,
+					'feature' => 'branding',
+				)
+			);
+		}
+
 		return rest_ensure_response( $this->service->get_branding_payload() );
 	}
 
 	public function update( WP_REST_Request $request ) {
+		if ( ! LicenseGate::has_valid_license() ) {
+			return new \WP_Error(
+				'license_feature_disabled',
+				'Branding settings require an active license.',
+				array(
+					'status'  => 403,
+					'feature' => 'branding',
+				)
+			);
+		}
+
 		$input  = array(
 			'light_logo_id'           => $request->get_param( 'lightLogoId' ),
 			'dark_logo_id'            => $request->get_param( 'darkLogoId' ),

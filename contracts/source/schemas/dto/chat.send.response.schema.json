@@ -1,0 +1,49 @@
+{
+  "$id": "dto/chat.send.response",
+  "title": "ChatSendResponse",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["role", "thread", "message"],
+  "properties": {
+    "role": {
+      "type": "string",
+      "enum": ["owner", "customer"]
+    },
+    "thread": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "domain",
+        "customerName",
+        "customerEmail",
+        "status",
+        "lastMessagePreview",
+        "lastMessageAt",
+        "createdAt"
+      ],
+      "properties": {
+        "id": { "type": "integer", "minimum": 1 },
+        "domain": { "type": "string" },
+        "customerName": { "type": ["string", "null"] },
+        "customerEmail": { "type": ["string", "null"] },
+        "status": { "type": "string", "enum": ["open", "closed"] },
+        "lastMessagePreview": { "type": ["string", "null"] },
+        "lastMessageAt": { "type": "string" },
+        "createdAt": { "type": "string" }
+      }
+    },
+    "message": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "authorRole", "authorName", "message", "createdAt"],
+      "properties": {
+        "id": { "type": "integer", "minimum": 1 },
+        "authorRole": { "type": "string", "enum": ["owner", "customer", "system"] },
+        "authorName": { "type": "string" },
+        "message": { "type": "string" },
+        "createdAt": { "type": "string" }
+      }
+    }
+  }
+}

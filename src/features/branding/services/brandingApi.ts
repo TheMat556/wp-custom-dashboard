@@ -1,5 +1,5 @@
+import { createPluginApiError } from "../../../shared/services/pluginApiError";
 import { createPluginRouteApi } from "../../../shared/services/pluginRouteApi";
-import { notifyApiError } from "../../../store/notificationStore";
 import type { WpReactUiConfig } from "../../../types/wp";
 
 export interface BrandingData {
@@ -41,7 +41,7 @@ export function createBrandingService(
       const res = await api.fetchBranding();
 
       if (!res.ok) {
-        throw new Error(notifyApiError(res, "Branding fetch"));
+        throw await createPluginApiError(res, "Branding fetch");
       }
 
       return res.json();
@@ -51,7 +51,7 @@ export function createBrandingService(
       const res = await api.saveBranding(data);
 
       if (!res.ok) {
-        throw new Error(notifyApiError(res, "Branding save"));
+        throw await createPluginApiError(res, "Branding save");
       }
 
       return res.json();

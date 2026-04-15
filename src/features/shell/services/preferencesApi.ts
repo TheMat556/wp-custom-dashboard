@@ -2,6 +2,8 @@ import { createPluginRouteApi } from "../../../shared/services/pluginRouteApi";
 import { notifyApiError } from "../../../store/notificationStore";
 import type { PersistedShellPreferences } from "../../../types/shellPreferences";
 import type { WpReactUiConfig } from "../../../types/wp";
+import { logger } from "../../../utils/logger";
+import { PreferencesResponseSchema } from "./preferencesSchema";
 
 export interface PreferencesService {
   fetchPreferences(): Promise<Partial<PersistedShellPreferences>>;
@@ -22,8 +24,13 @@ export function createPreferencesService(
         return {};
       }
 
-      const data = await response.json();
-      return data.preferences ?? {};
+      const raw = await response.json();
+      const result = PreferencesResponseSchema.safeParse(raw);
+      if (!result.success) {
+        logger.error("[preferences] Unexpected API shape:", result.error.flatten());
+        return {};
+      }
+      return result.data.preferences ?? {};
     },
 
     async savePreferences(prefs) {

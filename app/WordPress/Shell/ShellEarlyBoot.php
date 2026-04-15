@@ -13,12 +13,83 @@ defined( 'ABSPATH' ) || exit;
 class WP_React_UI_Shell_Early_Boot {
 
 	/**
+	 * Base64-encoded CSP nonce for the current request.
+	 *
+	 * @var string
+	 */
+	private static string $csp_nonce = '';
+
+	/**
 	 * Registers early-boot hooks.
 	 *
 	 * @return void
 	 */
 	public static function init(): void {
+		add_action( 'admin_init', array( self::class, 'send_csp_header' ), 1 );
 		add_action( 'admin_head', array( self::class, 'render_admin_head' ), 1 );
+	}
+
+	/**
+	 * Returns the CSP nonce for this request, generating one if needed.
+	 *
+	 * @return string
+	 */
+	public static function get_csp_nonce(): string {
+		if ( '' === self::$csp_nonce ) {
+			self::$csp_nonce = base64_encode( random_bytes( 16 ) );
+		}
+		return self::$csp_nonce;
+	}
+
+	/**
+	 * Sends a Content-Security-Policy header with directives for scripts, styles, frames, and other resources.
+	 *
+	 * All directives use nonces for inline scripts and styles. External resources are restricted
+	 * to same-origin (self) with limited exceptions for data URIs (fonts, images).
+	 *
+	 * No third-party script hosts are included — the chat system is native and communicates
+	 * server-side only.
+	 *
+	 * @return void
+	 */
+	public static function send_csp_header(): void {
+		global $pagenow;
+		if ( ! wp_react_ui_should_boot_shell( $pagenow ) ) {
+			return;
+		}
+
+		if ( headers_sent() ) {
+			return;
+		}
+
+		$nonce = self::get_csp_nonce();
+
+		$directives = array(
+			// Inline scripts must have the matching nonce. External scripts restricted to same-origin.
+			"script-src 'self' 'nonce-{$nonce}'",
+			// Inline styles must have the matching nonce. External stylesheets from same-origin only.
+			"style-src 'self' 'nonce-{$nonce}'",
+			// Frames restricted to same-origin WP admin pages only.
+			"frame-src 'self'",
+			// XHR/fetch calls only to same-origin WP REST API (no license server calls from browser).
+			"connect-src 'self'",
+			// Images can be same-origin, data URIs, or HTTPS (for external branding uploads).
+			"img-src 'self' data: https:",
+			// Fonts from same-origin or data URIs (for Ant Design and system fonts).
+			"font-src 'self' data:",
+			// Prevent plugins/Flash/PDF execution.
+			"object-src 'none'",
+			// Restrict base URL to same-origin only.
+			"base-uri 'self'",
+			// Restrict form submissions to same-origin only.
+			"form-action 'self'",
+			// Upgrade HTTP requests to HTTPS if possible.
+			"upgrade-insecure-requests",
+			// Block mixed (HTTP/HTTPS) content.
+			"block-all-mixed-content",
+		);
+
+		header( 'Content-Security-Policy: ' . implode( '; ', $directives ) );
 	}
 
 	/**
@@ -69,8 +140,10 @@ class WP_React_UI_Shell_Early_Boot {
 	private static function render_boot_config_script(): void {
 		$boot_config_json = wp_json_encode( self::get_boot_config() );
 
+		$nonce = self::get_csp_nonce();
+
 		// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
-		echo '<script id="wp-react-ui-boot-config">window.wpReactUiBoot=' . $boot_config_json . ';</script>';
+		echo '<script id="wp-react-ui-boot-config" nonce="' . esc_attr( $nonce ) . '">window.wpReactUiBoot=' . $boot_config_json . ';</script>';
 	}
 
 	/**
@@ -115,8 +188,10 @@ class WP_React_UI_Shell_Early_Boot {
 			}
 		}
 
+		$nonce = self::get_csp_nonce();
+
 		// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
-		echo '<style id="wp-react-ui-critical">' . $critical_css . '</style>';
+		echo '<style id="wp-react-ui-critical" nonce="' . esc_attr( $nonce ) . '">' . $critical_css . '</style>';
 	}
 
 	/**
@@ -127,8 +202,10 @@ class WP_React_UI_Shell_Early_Boot {
 	private static function render_early_state_script(): void {
 		$theme_json = wp_json_encode( self::get_user_theme() );
 
+		$nonce = self::get_csp_nonce();
+
 		// phpcs:disable WordPress.Security.EscapeOutput.OutputNotEscaped
-		echo '<script id="wp-react-ui-early-state">';
+		echo '<script id="wp-react-ui-early-state" nonce="' . esc_attr( $nonce ) . '">';
 		printf( self::get_early_state_script_template(), $theme_json );
 		echo '</script>';
 		// phpcs:enable
@@ -180,6 +257,12 @@ class WP_React_UI_Shell_Early_Boot {
 			theme=storedTheme;
 		}
 	} catch (e) {}
+
+	// Set data-theme on <html> immediately — document.documentElement is always
+	// available in <head> scripts, unlike document.body which is null here.
+	// This prevents a flash of unstyled content (FOUC) before the module script runs.
+	docEl.setAttribute("data-theme",theme);
+	docEl.classList.toggle("wp-react-dark",theme==="dark");
 
 	if(body){
 		body.setAttribute("data-theme",theme);

@@ -1,4 +1,6 @@
+import { isLicenseFeatureDisabledError } from "../../../shared/services/pluginApiError";
 import { notificationStore } from "../../../store/notificationStore";
+import { loadLicenseStatus } from "../../license/store/licenseActions";
 import {
   type BrandingSaveInput,
   type BrandingService,
@@ -22,7 +24,13 @@ export async function loadBranding() {
   try {
     const settings = await _service.fetchBranding();
     brandingStore.setState({ settings, loading: false });
-  } catch {
+  } catch (error) {
+    if (isLicenseFeatureDisabledError(error)) {
+      await loadLicenseStatus();
+      brandingStore.setState({ settings: null, loading: false });
+      return;
+    }
+
     brandingStore.setState({ loading: false });
   }
 }
@@ -35,7 +43,13 @@ export async function saveBranding(data: BrandingSaveInput): Promise<boolean> {
     brandingStore.setState({ settings, saving: false });
     notificationStore.getState().push({ type: "info", message: "Settings saved" });
     return true;
-  } catch {
+  } catch (error) {
+    if (isLicenseFeatureDisabledError(error)) {
+      await loadLicenseStatus();
+      brandingStore.setState({ saving: false });
+      return false;
+    }
+
     brandingStore.setState({ saving: false });
     return false;
   }

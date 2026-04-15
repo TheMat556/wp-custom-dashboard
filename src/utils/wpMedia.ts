@@ -1,3 +1,5 @@
+import { logger } from "./logger";
+
 /**
  * Thin wrapper around the WordPress media library picker (wp.media).
  *
@@ -43,7 +45,7 @@ export function openMediaPicker(options?: {
 }): Promise<MediaSelection | null> {
   return new Promise((resolve) => {
     if (!window.wp?.media) {
-      console.warn("[WP React UI] wp.media is not available");
+      logger.warn("[WP React UI] wp.media is not available");
       resolve(null);
       return;
     }

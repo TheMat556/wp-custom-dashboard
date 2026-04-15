@@ -190,20 +190,6 @@ document.addEventListener(
   true
 );
 
-// Intercept fetch 401/403 responses to notify parent of session expiry.
-const originalFetch = window.fetch;
-window.fetch = async function (...args) {
-  const response = await originalFetch.apply(this, args);
-  if (response.status === 401 || response.status === 403) {
-    postToParent({
-      source: EMBED_MESSAGE_SOURCE,
-      version: EMBED_MESSAGE_VERSION,
-      type: "session-expired",
-    });
-  }
-  return response;
-};
-
 if (isShellRouteUrl(window.location.href, window.wpReactUiEmbed?.shellRouteSlugs)) {
   breakoutToParent(fromEmbedUrl(window.location.href));
 } else {

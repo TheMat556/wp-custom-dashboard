@@ -309,7 +309,7 @@ function emitFiles(context) {
 
   files.set(
     "app/Contracts/Generated/Permissions.php",
-    `<?php\n/**\n * AUTO-GENERATED from contracts/source. Do not edit.\n */\n\ndeclare(strict_types=1);\n\nnamespace WpReactUi\\Contracts\\Generated;\n\nfinal class Permissions {\n\tpublic const MAP = ${phpScalar(
+    `<?php\n\ndeclare(strict_types=1);\n\n/**\n * AUTO-GENERATED from contracts/source. Do not edit.\n */\n\nnamespace WpReactUi\\Contracts\\Generated;\n\ndefined( 'ABSPATH' ) || exit;\n\nfinal class Permissions {\n\tpublic const MAP = ${phpScalar(
       context.permissionsManifest.permissions,
       1
     )};\n}\n`
@@ -317,7 +317,7 @@ function emitFiles(context) {
 
   files.set(
     "app/Contracts/Generated/FeatureFlags.php",
-    `<?php\n/**\n * AUTO-GENERATED from contracts/source. Do not edit.\n */\n\ndeclare(strict_types=1);\n\nnamespace WpReactUi\\Contracts\\Generated;\n\nfinal class FeatureFlags {\n\tpublic const FLAGS = ${phpScalar(
+    `<?php\n\ndeclare(strict_types=1);\n\n/**\n * AUTO-GENERATED from contracts/source. Do not edit.\n */\n\nnamespace WpReactUi\\Contracts\\Generated;\n\ndefined( 'ABSPATH' ) || exit;\n\nfinal class FeatureFlags {\n\tpublic const FLAGS = ${phpScalar(
       context.featureFlagsManifest.flags,
       1
     )};\n\n\tpublic const DEFAULTS = ${phpScalar(featureDefaults, 1)};\n}\n`
@@ -325,14 +325,14 @@ function emitFiles(context) {
 
   files.set(
     "app/Contracts/Generated/Routes.php",
-    `<?php\n/**\n * AUTO-GENERATED from contracts/source. Do not edit.\n */\n\ndeclare(strict_types=1);\n\nnamespace WpReactUi\\Contracts\\Generated;\n\nfinal class Routes {\n\tpublic const REST_NAMESPACE = ${phpScalar(
+    `<?php\n\ndeclare(strict_types=1);\n\n/**\n * AUTO-GENERATED from contracts/source. Do not edit.\n */\n\nnamespace WpReactUi\\Contracts\\Generated;\n\ndefined( 'ABSPATH' ) || exit;\n\nfinal class Routes {\n\tpublic const REST_NAMESPACE = ${phpScalar(
       context.routesManifest.namespace
     )};\n\n\tpublic const DEFINITIONS = ${phpScalar(context.routeContracts, 1)};\n\n\tpublic static function route_paths(): array {\n\t\treturn array_keys( self::DEFINITIONS );\n\t}\n}\n`
   );
 
   files.set(
     "app/Contracts/Generated/Dtos.php",
-    `<?php\n/**\n * AUTO-GENERATED from contracts/source. Do not edit.\n */\n\ndeclare(strict_types=1);\n\nnamespace WpReactUi\\Contracts\\Generated;\n\nfinal class Dtos {\n\tpublic const SCHEMAS = ${phpScalar(
+    `<?php\n\ndeclare(strict_types=1);\n\n/**\n * AUTO-GENERATED from contracts/source. Do not edit.\n */\n\nnamespace WpReactUi\\Contracts\\Generated;\n\ndefined( 'ABSPATH' ) || exit;\n\nfinal class Dtos {\n\tpublic const SCHEMAS = ${phpScalar(
       Object.fromEntries(
         dtoSchemas.map((schema) => [
           schema.$id,
@@ -348,7 +348,7 @@ function emitFiles(context) {
 
   files.set(
     "app/Contracts/Generated/BootPayload.php",
-    `<?php\n/**\n * AUTO-GENERATED from contracts/source. Do not edit.\n */\n\ndeclare(strict_types=1);\n\nnamespace WpReactUi\\Contracts\\Generated;\n\nfinal class BootPayload {\n\tpublic const TOP_LEVEL_KEYS = ${phpScalar(schemaPropertyKeys(bootSchema), 1)};\n\tpublic const BRANDING_KEYS = ${phpScalar(
+    `<?php\n\ndeclare(strict_types=1);\n\n/**\n * AUTO-GENERATED from contracts/source. Do not edit.\n */\n\nnamespace WpReactUi\\Contracts\\Generated;\n\ndefined( 'ABSPATH' ) || exit;\n\nfinal class BootPayload {\n\tpublic const TOP_LEVEL_KEYS = ${phpScalar(schemaPropertyKeys(bootSchema), 1)};\n\tpublic const BRANDING_KEYS = ${phpScalar(
       schemaPropertyKeys(bootSchema.properties.branding),
       1
     )};\n\tpublic const BRANDING_LOGO_KEYS = ${phpScalar(
@@ -365,7 +365,7 @@ function emitFiles(context) {
 
   files.set(
     "app/Contracts/Generated/EarlyBootConfig.php",
-    `<?php\n/**\n * AUTO-GENERATED from contracts/source. Do not edit.\n */\n\ndeclare(strict_types=1);\n\nnamespace WpReactUi\\Contracts\\Generated;\n\nfinal class EarlyBootConfig {\n\tpublic const DEFAULTS = ${phpScalar(
+    `<?php\n\ndeclare(strict_types=1);\n\n/**\n * AUTO-GENERATED from contracts/source. Do not edit.\n */\n\nnamespace WpReactUi\\Contracts\\Generated;\n\ndefined( 'ABSPATH' ) || exit;\n\nfinal class EarlyBootConfig {\n\tpublic const DEFAULTS = ${phpScalar(
       collectDefaults(earlyBootSchema, context.registry),
       1
     )};\n}\n`

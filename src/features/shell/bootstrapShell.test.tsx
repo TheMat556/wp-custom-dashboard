@@ -49,6 +49,17 @@ const minimalConfig = {
   menu: [],
   publicUrl: "/",
   locale: "en_US",
+  license: {
+    status: "disabled" as const,
+    role: null,
+    tier: null,
+    expiresAt: null,
+    features: [],
+    graceDaysRemaining: 0,
+    hasKey: false,
+    keyPrefix: null,
+    serverConfigured: true,
+  },
   shellRoutes: [],
 };
 

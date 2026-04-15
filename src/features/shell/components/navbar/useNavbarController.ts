@@ -31,6 +31,7 @@ export interface NavbarController {
   showHistory: boolean;
   showTheme: boolean;
   showSearchFull: boolean;
+  showBreadcrumb: boolean;
   activeKey: string | null | undefined;
   menuItems: ReturnType<typeof useMenu>["menuItems"];
   navigate: typeof navigate;
@@ -108,7 +109,8 @@ export function useNavbarController(): NavbarController {
   const showExport = containerWidth >= 860;
   const showHistory = containerWidth >= 720;
   const showTheme = containerWidth >= 580;
-  const showSearchFull = containerWidth >= 600;
+  const showSearchFull = containerWidth >= 640;
+  const showBreadcrumb = !isMobile && containerWidth >= 900;
 
   const openActivity = () => {
     setActivityEverOpened(true);
@@ -133,6 +135,7 @@ export function useNavbarController(): NavbarController {
     showHistory,
     showTheme,
     showSearchFull,
+    showBreadcrumb,
     activeKey,
     menuItems,
     navigate,
