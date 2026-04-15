@@ -106,9 +106,17 @@ final class LicenseClient {
 		$route_path = self::ROUTE_NAMESPACE . '/' . sanitize_key( $action );
 		$url        = $this->build_remote_rest_url( $server_url, $route_path );
 		$key_prefix = substr( $normalized_key, 0, 8 );
-		$timestamp  = (string) time();
-		$nonce      = bin2hex( random_bytes( 16 ) ); // 128-bit replay-prevention nonce
 		$domain     = $this->resolve_domain();
+
+		$this->emit_debug(
+			'request_started',
+			array(
+				'action'    => $action,
+				'keyPrefix' => $key_prefix,
+				'domain'    => $domain,
+			)
+		);
+
 		$body       = array(
 			'plugin_version' => $this->get_plugin_version(),
 			'wp_version'     => get_bloginfo( 'version' ),
@@ -126,42 +134,48 @@ final class LicenseClient {
 			);
 		}
 
-		$signature = hash_hmac(
-			'sha256',
-			implode(
-				"\n",
-				array(
-					'POST',
-					$nonce,
-					$route_path,
-					$domain,
-					$timestamp,
-					$json_body,
-				)
-			),
-			// Derive a purpose-scoped signing key — the raw license key is never sent or used as an HMAC secret.
-			hash_hkdf( 'sha256', $normalized_key, 32, 'wplicense-hmac-signing-v1' )
-		);
-
-		$args = array(
-			'timeout'     => (int) apply_filters( 'wp_react_ui_license_http_timeout', 10 ),
-			'headers'     => array(
-				'Content-Type'        => 'application/json',
-				'X-License-Key-Id'    => $key_prefix,
-				'X-License-Signature' => $signature,
-				'X-License-Timestamp' => $timestamp,
-				'X-License-Domain'    => $domain,
-				'X-Request-Nonce'     => $nonce,
-			),
-			'body'        => $json_body,
-			'data_format' => 'body',
-		);
-
+		$signing_key   = hash_hkdf( 'sha256', $normalized_key, 32, 'wplicense-hmac-signing-v1' );
+		$timeout       = (int) apply_filters( 'wp_react_ui_license_http_timeout', 10 );
 		$retries       = max( 0, (int) apply_filters( 'wp_react_ui_license_http_retries', 1 ) );
 		$attempts      = $retries + 1;
 		$last_response = null;
 
 		for ( $attempt = 1; $attempt <= $attempts; $attempt++ ) {
+			// Regenerate nonce and timestamp per attempt so retries are not rejected as replays.
+			$timestamp = (string) time();
+			$nonce     = bin2hex( random_bytes( 16 ) ); // 128-bit replay-prevention nonce
+
+			$signature = hash_hmac(
+				'sha256',
+				implode(
+					"\n",
+					array(
+						'POST',
+						$nonce,
+						$route_path,
+						$domain,
+						$timestamp,
+						$json_body,
+					)
+				),
+				// Derive a purpose-scoped signing key — the raw license key is never sent or used as an HMAC secret.
+				$signing_key
+			);
+
+			$args = array(
+				'timeout'     => $timeout,
+				'headers'     => array(
+					'Content-Type'        => 'application/json',
+					'X-License-Key-Id'    => $key_prefix,
+					'X-License-Signature' => $signature,
+					'X-License-Timestamp' => $timestamp,
+					'X-License-Domain'    => $domain,
+					'X-Request-Nonce'     => $nonce,
+				),
+				'body'        => $json_body,
+				'data_format' => 'body',
+			);
+
 			$last_response = call_user_func( $this->remote_post, $url, $args );
 
 			if ( is_wp_error( $last_response ) ) {
@@ -283,7 +297,22 @@ final class LicenseClient {
 		$message    = is_array( $decoded ) && isset( $decoded['message'] ) ? sanitize_text_field( (string) $decoded['message'] ) : 'The license server rejected the request.';
 		$data       = is_array( $decoded ) && isset( $decoded['data'] ) && is_array( $decoded['data'] ) ? $decoded['data'] : array();
 
-		$data['status']    = $status_code;
+		$this->emit_debug(
+			'remote_response',
+			array(
+				'action'     => $action,
+				'keyPrefix'  => $key_prefix,
+				'status'     => $status_code,
+				'code'       => $error_code,
+				'message'    => $message,
+				'rawBody'    => $raw_body,
+			)
+		);
+
+		// Remap 401/403 from the remote server to 422 — the shell treats
+		// 401/403 on plugin REST endpoints as a WordPress session expiry,
+		// which would show a false "session expired" overlay to the user.
+		$data['status']    = in_array( $status_code, array( 401, 403 ), true ) ? 422 : $status_code;
 		$data['endpoint']  = $action;
 		$data['keyPrefix'] = $key_prefix;
 

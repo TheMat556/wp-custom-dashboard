@@ -9,7 +9,7 @@ import { logger } from "../../../utils/logger";
  */
 
 import { createStore } from "zustand/vanilla";
-import { assertNever, type EmbedMessage, isEmbedMessage } from "../../../types/embedMessages";
+import { assertNever, isEmbedMessage } from "../../../types/embedMessages";
 import type { WpReactUiNavigationConfig } from "../../../types/wp";
 import {
   DEFAULT_BREAKOUT_PAGENOW,
@@ -146,7 +146,7 @@ export const navigationStore = createStore<NavigationState & NavigationActions>(
       return;
     }
 
-    const msg = event.data as EmbedMessage;
+    const msg = event.data;
 
     switch (msg.type) {
       case "page-ready": {

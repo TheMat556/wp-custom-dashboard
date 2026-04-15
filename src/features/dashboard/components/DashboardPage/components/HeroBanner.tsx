@@ -78,14 +78,9 @@ export function HeroBanner({
             </Text>
           )}
           {stats && (
-            <Flex gap={12} style={{ marginTop: 6 }}>
-              <Text type="secondary" style={{ fontSize: 12 }}>
-                WordPress {stats.wpVersion}
-              </Text>
-              <Text type="secondary" style={{ fontSize: 12 }}>
-                PHP {stats.phpVersion}
-              </Text>
-            </Flex>
+            <Text type="secondary" style={{ fontSize: 12 }}>
+              WordPress {stats.wpVersion}
+            </Text>
           )}
         </Flex>
         <Flex className="wp-react-ui-page-intro__actions" align="center" gap={8} wrap>

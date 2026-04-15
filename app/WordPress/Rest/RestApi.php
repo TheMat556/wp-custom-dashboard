@@ -195,6 +195,65 @@ class WP_React_UI_REST_API {
 					'methods'             => 'POST',
 					'callback'            => array( $preferences_controller, 'update' ),
 					'permission_callback' => array( $preferences_controller, 'is_authenticated' ),
+					'args'                => array(
+						'density'              => array(
+							'required'          => false,
+							'type'              => 'string',
+							'sanitize_callback' => 'sanitize_text_field',
+							'validate_callback' => function ( $value ) {
+								return RestValidator::validate_optional_string( $value, 32 );
+							},
+						),
+						'themePreset'          => array(
+							'required'          => false,
+							'type'              => 'string',
+							'sanitize_callback' => 'sanitize_text_field',
+							'validate_callback' => function ( $value ) {
+								return RestValidator::validate_optional_string( $value, 64 );
+							},
+						),
+						'customPresetColor'    => array(
+							'required'          => false,
+							'type'              => 'string',
+							'sanitize_callback' => 'sanitize_text_field',
+							'validate_callback' => function ( $value ) {
+								return RestValidator::validate_optional_string( $value, 32 );
+							},
+						),
+						'sidebarCollapsed'     => array(
+							'required'          => false,
+							'type'              => 'boolean',
+							'validate_callback' => function ( $value ) {
+								return RestValidator::validate_boolean( $value );
+							},
+						),
+						'highContrast'         => array(
+							'required'          => false,
+							'type'              => 'boolean',
+							'validate_callback' => function ( $value ) {
+								return RestValidator::validate_boolean( $value );
+							},
+						),
+						'favorites'            => array(
+							'required' => false,
+							'type'     => 'array',
+							'items'    => array( 'type' => 'string' ),
+						),
+						'recentPages'          => array(
+							'required' => false,
+							'type'     => 'array',
+						),
+						'dashboardWidgetOrder' => array(
+							'required' => false,
+							'type'     => 'array',
+							'items'    => array( 'type' => 'string' ),
+						),
+						'hiddenWidgets'        => array(
+							'required' => false,
+							'type'     => 'array',
+							'items'    => array( 'type' => 'string' ),
+						),
+					),
 				),
 			)
 		);

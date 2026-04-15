@@ -2,6 +2,7 @@ import { MenuFoldOutlined, MenuUnfoldOutlined } from "@ant-design/icons";
 import { Avatar, Button, ConfigProvider, Typography } from "antd";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import PageCanvas from "../../../../shared/ui/PageCanvas";
+import { createT } from "../../../../utils/i18n";
 import { useFeature, useLicense, useLicenseServerSettings } from "../../../license";
 import { useShellConfig } from "../../../shell/context/ShellConfigContext";
 import { useTheme } from "../../../shell/context/ThemeContext";
@@ -86,10 +87,9 @@ export default function ChatPage() {
   const { theme: currentTheme } = useTheme();
   const isDark = currentTheme === "dark";
   const chatThemeConfig = useMemo(() => createChatTheme(isDark), [isDark]);
+  const t = useMemo(() => createT(config.locale ?? "en_US"), [config.locale]);
 
-  const [sidebarCollapsed, setSidebarCollapsed] = useState(
-    () => window.innerWidth < 768
-  );
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(() => window.innerWidth < 768);
   const [isMobile, setIsMobile] = useState(() => window.innerWidth < 768);
 
   useEffect(() => {
@@ -345,6 +345,7 @@ export default function ChatPage() {
                   serverConfigured={Boolean(savedServerUrl)}
                   hasUnsavedSettings={serverDirty}
                   settingsOpen={showSettings}
+                  t={t}
                 />
               </div>
             </aside>
@@ -358,7 +359,7 @@ export default function ChatPage() {
                   icon={sidebarCollapsed ? <MenuUnfoldOutlined /> : <MenuFoldOutlined />}
                   onClick={handleToggleSidebar}
                   aria-label={
-                    sidebarCollapsed ? "Open conversation list" : "Close conversation list"
+                    sidebarCollapsed ? t("Open conversation list") : t("Close conversation list")
                   }
                   aria-controls={sidebarId}
                   aria-expanded={!sidebarCollapsed}
@@ -389,7 +390,7 @@ export default function ChatPage() {
                   </div>
                 ) : (
                   <Typography.Text strong className={styles.navbarPlaceholder}>
-                    Support Chat
+                    {t("Support Chat")}
                   </Typography.Text>
                 )}
               </header>

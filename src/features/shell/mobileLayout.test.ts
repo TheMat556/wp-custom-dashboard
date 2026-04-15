@@ -73,44 +73,52 @@ describe("critical.css mobile layout rules", () => {
 
     it("uses position: fixed to pin the shell to the visual viewport", () => {
       expect(block).not.toBeNull();
-      expect(hasProp(block!, "position", "fixed")).toBe(true);
+      if (!block) throw new Error("Expected #wpwrap block in critical.css");
+      expect(hasProp(block, "position", "fixed")).toBe(true);
     });
 
     it("sets top: 0 so it anchors at the viewport top edge", () => {
       expect(block).not.toBeNull();
-      expect(hasProp(block!, "top", "0")).toBe(true);
+      if (!block) throw new Error("Expected #wpwrap block in critical.css");
+      expect(hasProp(block, "top", "0")).toBe(true);
     });
 
     it("sets left: 0 so it anchors at the viewport left edge", () => {
       expect(block).not.toBeNull();
-      expect(hasProp(block!, "left", "0")).toBe(true);
+      if (!block) throw new Error("Expected #wpwrap block in critical.css");
+      expect(hasProp(block, "left", "0")).toBe(true);
     });
 
     it("sets right: 0 so it spans the full viewport width", () => {
       expect(block).not.toBeNull();
-      expect(hasProp(block!, "right", "0")).toBe(true);
+      if (!block) throw new Error("Expected #wpwrap block in critical.css");
+      expect(hasProp(block, "right", "0")).toBe(true);
     });
 
     it("sets bottom: 0 so it spans to the viewport bottom (excludes virtual keyboard)", () => {
       expect(block).not.toBeNull();
-      expect(hasProp(block!, "bottom", "0")).toBe(true);
+      if (!block) throw new Error("Expected #wpwrap block in critical.css");
+      expect(hasProp(block, "bottom", "0")).toBe(true);
     });
 
     it("does NOT use height: 100vh (conflicts with dynamic viewport on iOS)", () => {
       expect(block).not.toBeNull();
+      if (!block) throw new Error("Expected #wpwrap block in critical.css");
       // height: auto or height: 100% are fine; height: 100vh is not
-      const heightVal = prop(block!, "height");
+      const heightVal = prop(block, "height");
       expect(heightVal).not.toMatch(/100vh/i);
     });
 
     it("uses overflow: hidden to clip content that would otherwise scroll", () => {
       expect(block).not.toBeNull();
-      expect(hasProp(block!, "overflow", "hidden")).toBe(true);
+      if (!block) throw new Error("Expected #wpwrap block in critical.css");
+      expect(hasProp(block, "overflow", "hidden")).toBe(true);
     });
 
     it("defines a grid with first row of 64px for the shell navbar", () => {
       expect(block).not.toBeNull();
-      expect(hasProp(block!, "grid-template-rows", "64px")).toBe(true);
+      if (!block) throw new Error("Expected #wpwrap block in critical.css");
+      expect(hasProp(block, "grid-template-rows", "64px")).toBe(true);
     });
   });
 
@@ -132,13 +140,15 @@ describe("critical.css mobile layout rules", () => {
 
     it("does NOT use height: 100vh (causes overflow on iOS Safari)", () => {
       expect(firstBlock).not.toBeNull();
-      const heightVal = prop(firstBlock!, "height");
+      if (!firstBlock) throw new Error("Expected #react-shell-root block in critical.css");
+      const heightVal = prop(firstBlock, "height");
       expect(heightVal).not.toMatch(/100vh/i);
     });
 
     it("does NOT use min-height: 100vh (same iOS overflow issue)", () => {
       expect(firstBlock).not.toBeNull();
-      const minHeightVal = prop(firstBlock!, "min-height");
+      if (!firstBlock) throw new Error("Expected #react-shell-root block in critical.css");
+      const minHeightVal = prop(firstBlock, "min-height");
       // min-height: 0 or unset are fine
       if (minHeightVal) {
         expect(minHeightVal).not.toMatch(/100vh/i);
@@ -147,7 +157,8 @@ describe("critical.css mobile layout rules", () => {
 
     it("does NOT use position: sticky (meaningless inside overflow:hidden, can break layout)", () => {
       expect(firstBlock).not.toBeNull();
-      const posVal = prop(firstBlock!, "position");
+      if (!firstBlock) throw new Error("Expected #react-shell-root block in critical.css");
+      const posVal = prop(firstBlock, "position");
       if (posVal) {
         expect(posVal).not.toMatch(/sticky/i);
       }
@@ -163,10 +174,7 @@ describe("critical.css mobile layout rules", () => {
 
   describe("ChatPage.module.css mobile sidebar overlay", () => {
     const chatCss = readFileSync(
-      resolve(
-        __dirname,
-        "../chat/components/ChatPage/ChatPage.module.css"
-      ),
+      resolve(__dirname, "../chat/components/ChatPage/ChatPage.module.css"),
       "utf-8"
     );
 

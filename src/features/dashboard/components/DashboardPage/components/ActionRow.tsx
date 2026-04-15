@@ -1,5 +1,5 @@
 import { AlertOutlined, InfoCircleOutlined, WarningOutlined } from "@ant-design/icons";
-import { Flex, Tag, Typography, theme } from "antd";
+import { Button, Flex, Typography, theme } from "antd";
 import { useState } from "react";
 import { navigate } from "../../../../../utils/wp";
 import type { ActionRowProps } from "../types";
@@ -15,22 +15,25 @@ function getSeverityConfig(severity: Severity, token: ReturnType<typeof theme.us
       : severity === "warning"
         ? token.colorWarning
         : token.colorInfo;
-  const tagColor =
-    severity === "error" ? "error" : severity === "warning" ? "warning" : "processing";
+  const buttonDanger = severity === "error";
   const Icon =
     severity === "error"
       ? AlertOutlined
       : severity === "warning"
         ? WarningOutlined
         : InfoCircleOutlined;
-  return { color, tagColor, Icon };
+  return { color, buttonDanger, Icon };
 }
 
-export function ActionRow({ item, adminUrl }: ActionRowProps) {
+export function ActionRow({ item, adminUrl, t }: ActionRowProps & { t: (key: string) => string }) {
   const { token } = theme.useToken();
   const [open, setOpen] = useState(item.severity === "error");
 
-  const { color: severityColor, tagColor, Icon: SevIcon } = getSeverityConfig(item.severity, token);
+  const {
+    color: severityColor,
+    buttonDanger,
+    Icon: SevIcon,
+  } = getSeverityConfig(item.severity, token);
 
   const hasDetail = Boolean(item.impact || item.description);
 
@@ -79,13 +82,14 @@ export function ActionRow({ item, adminUrl }: ActionRowProps) {
                 </span>
               )}
             </button>
-            <Tag
-              color={tagColor}
-              style={{ margin: 0, cursor: "pointer", flexShrink: 0, fontSize: 12 }}
+            <Button
+              danger={buttonDanger}
+              size="small"
               onClick={() => navigate(item.url, adminUrl)}
+              style={{ flexShrink: 0 }}
             >
               {item.action}
-            </Tag>
+            </Button>
           </Flex>
           {open && hasDetail && (
             <div
@@ -106,7 +110,7 @@ export function ActionRow({ item, adminUrl }: ActionRowProps) {
                     color: severityColor,
                   }}
                 >
-                  Impact: {item.impact}
+                  {t("Impact:")} {item.impact}
                 </Text>
               )}
               {item.description && (

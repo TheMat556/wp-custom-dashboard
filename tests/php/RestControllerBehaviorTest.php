@@ -78,6 +78,31 @@ class RestControllerBehaviorTest extends TestCase {
 		);
 	}
 
+	public function test_preferences_controller_strips_html_from_array_values(): void {
+		$controller = new PreferencesRouteController();
+		$request    = new WP_REST_Request(
+			array(),
+			array(
+				'favorites'         => array( '<script>alert(1)</script>', 'plugins.php' ),
+				'hiddenWidgets'     => array( '<img src=x onerror=alert(1)>', 'dashboard_primary' ),
+				'recentPages'       => array(
+					array(
+						'pageUrl'   => 'http://localhost/wp-admin/plugins.php',
+						'title'     => '<b>Plugins</b>',
+						'visitedAt' => 1,
+					),
+				),
+			)
+		);
+
+		$response = $controller->update( $request );
+
+		$prefs = $response['preferences'];
+		$this->assertSame( array( '', 'plugins.php' ), $prefs['favorites'] );
+		$this->assertSame( array( '', 'dashboard_primary' ), $prefs['hiddenWidgets'] );
+		$this->assertSame( 'Plugins', $prefs['recentPages'][0]['title'] );
+	}
+
 	public function test_branding_controller_returns_existing_rest_shape(): void {
 		$controller = new BrandingRouteController();
 

@@ -258,9 +258,8 @@ export function createDashboardService(
       // Validate for monitoring purposes — use safeParse so minor shape deviations
       // don't crash the dashboard page entirely.
       const result = DashboardDataSchema.safeParse(raw);
-      if (!result.success) {
-        logger.error("[dashboard] Unexpected API shape:", result.error.flatten());
-      }
+      if (result.success) return result.data as unknown as DashboardData;
+      logger.warn("[dashboard] DashboardData validation failed", result.error);
       return raw as DashboardData;
     },
   };

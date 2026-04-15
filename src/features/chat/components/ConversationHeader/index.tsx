@@ -43,7 +43,7 @@ export function ConversationHeader({
           </Typography.Text>
           <Typography.Text className={styles.subtitle}>
             {thread
-              ? thread.customerEmail ?? thread.domain
+              ? (thread.customerEmail ?? thread.domain)
               : "Select a thread from the left rail to begin"}
           </Typography.Text>
           {thread && (
@@ -66,7 +66,12 @@ export function ConversationHeader({
 
       <div className={styles.right}>
         <Tooltip title="Search">
-          <Button type="text" size="large" icon={<SearchOutlined />} aria-label="Search conversation" />
+          <Button
+            type="text"
+            size="large"
+            icon={<SearchOutlined />}
+            aria-label="Search conversation"
+          />
         </Tooltip>
         {showRefresh && (
           <Button

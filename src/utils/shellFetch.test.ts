@@ -19,7 +19,7 @@ describe("shellFetch", () => {
 
   beforeEach(() => {
     vi.unstubAllGlobals();
-    dispatchEventSpy = vi.spyOn(window, "dispatchEvent");
+    dispatchEventSpy = vi.spyOn(window, "dispatchEvent") as unknown as ReturnType<typeof vi.spyOn>;
   });
 
   afterEach(() => {

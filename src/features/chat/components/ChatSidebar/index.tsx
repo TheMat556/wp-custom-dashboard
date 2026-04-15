@@ -1,8 +1,4 @@
-import {
-  MessageOutlined,
-  SearchOutlined,
-  SettingOutlined,
-} from "@ant-design/icons";
+import { MessageOutlined, SearchOutlined, SettingOutlined } from "@ant-design/icons";
 import { Avatar, Button, Empty, Input, Tooltip, Typography } from "antd";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { ChatBootstrapData } from "../../services/chatConversationApi";
@@ -22,6 +18,7 @@ interface ChatSidebarProps {
   serverConfigured: boolean;
   hasUnsavedSettings: boolean;
   settingsOpen: boolean;
+  t: (key: string) => string;
 }
 
 export function ChatSidebar({
@@ -34,6 +31,7 @@ export function ChatSidebar({
   canManage,
   hasUnsavedSettings,
   settingsOpen,
+  t,
 }: ChatSidebarProps) {
   const listRef = useRef<HTMLDivElement>(null);
   const [query, setQuery] = useState("");
@@ -76,14 +74,16 @@ export function ChatSidebar({
   return (
     <div className={`${styles.sidebar} ${collapsed ? styles.collapsed : ""}`}>
       <div className={styles.header}>
-        <div className={styles.sLogo} aria-hidden="true">S</div>
+        <div className={styles.sLogo} aria-hidden="true">
+          S
+        </div>
         {!collapsed && (
           <div className={styles.headerCopy}>
             <Typography.Text strong className={styles.sidebarTitle}>
-              Support Chat
+              {t("Support Chat")}
             </Typography.Text>
             <Typography.Text className={styles.headerSubtitle}>
-              {role === "owner" ? "All active chat threads" : "Your site support thread"}
+              {role === "owner" ? t("All active chat threads") : t("Your site support thread")}
             </Typography.Text>
           </div>
         )}
@@ -96,8 +96,8 @@ export function ChatSidebar({
             prefix={<SearchOutlined />}
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            placeholder="Find a conversation"
-            aria-label="Search conversations"
+            placeholder={t("Find a conversation")}
+            aria-label={t("Search conversations")}
           />
         </div>
       )}
@@ -110,11 +110,11 @@ export function ChatSidebar({
         tabIndex={filtered.length > 0 ? 0 : -1}
         onKeyDown={handleKeyDown}
       >
-        {filtered.length === 0 ? (
+        {!collapsed && filtered.length === 0 ? (
           <div className={styles.emptyState} role="status">
             <Empty
               image={Empty.PRESENTED_IMAGE_SIMPLE}
-              description={query ? "No matching conversations" : "No conversations yet"}
+              description={query ? t("No matching conversations") : t("No conversations yet")}
             />
           </div>
         ) : (
@@ -125,40 +125,41 @@ export function ChatSidebar({
               collapsed={collapsed}
               isSelected={thread.id === selectedId}
               onClick={() => onSelect(thread.id)}
+              t={t}
             />
           ))
         )}
       </div>
 
       <div className={styles.footer}>
-        <Tooltip title={collapsed ? "Chat" : undefined} placement="right">
+        <Tooltip title={collapsed ? t("Chat") : undefined} placement="right">
           <Button
             block
             type={!settingsOpen ? "primary" : collapsed ? "text" : "default"}
             icon={<MessageOutlined />}
             onClick={() => onNavigate("chat")}
             className={`${styles.navButton} ${!settingsOpen ? styles.navButtonActive : ""}`}
-            aria-label="View chat"
+            aria-label={t("View chat")}
             aria-pressed={!settingsOpen}
           >
-            {!collapsed ? "Chat" : null}
+            {!collapsed ? t("Chat") : null}
           </Button>
         </Tooltip>
 
         {canManage && (
           <div className={styles.settingsBtnWrap}>
             {hasUnsavedSettings && <span className={styles.badgeDot} />}
-            <Tooltip title={collapsed ? "Settings" : undefined} placement="right">
+            <Tooltip title={collapsed ? t("Settings") : undefined} placement="right">
               <Button
                 block
                 type={settingsOpen ? "primary" : collapsed ? "text" : "default"}
                 icon={<SettingOutlined />}
                 onClick={() => onNavigate("settings")}
                 className={`${styles.navButton} ${settingsOpen ? styles.navButtonActive : ""}`}
-                aria-label="Open chat settings"
+                aria-label={t("Open chat settings")}
                 aria-pressed={settingsOpen}
               >
-                {!collapsed ? "Settings" : null}
+                {!collapsed ? t("Settings") : null}
               </Button>
             </Tooltip>
           </div>
@@ -173,13 +174,14 @@ interface ThreadRowProps {
   collapsed: boolean;
   isSelected: boolean;
   onClick: () => void;
+  t: (key: string) => string;
 }
 
-function ThreadRow({ thread, collapsed, isSelected, onClick }: ThreadRowProps) {
+function ThreadRow({ thread, collapsed, isSelected, onClick, t }: ThreadRowProps) {
   const initials = getInitials(thread.customerName ?? thread.domain);
   const avatarColor = hashDomainColor(thread.domain);
   const displayName = thread.customerName ?? thread.domain;
-  const preview = thread.lastMessagePreview ?? "No messages yet";
+  const preview = thread.lastMessagePreview ?? t("No messages yet");
   const relativeTime = formatRelativeTime(thread.lastMessageAt);
   const isOpen = thread.status === "open";
 
@@ -228,7 +230,7 @@ function ThreadRow({ thread, collapsed, isSelected, onClick }: ThreadRowProps) {
             <Typography.Text ellipsis className={styles.threadPreview}>
               {preview}
             </Typography.Text>
-            {isOpen && <span className={styles.threadStatus}>Live</span>}
+            {isOpen && <span className={styles.threadStatus}>{t("Live")}</span>}
           </div>
         </div>
       )}

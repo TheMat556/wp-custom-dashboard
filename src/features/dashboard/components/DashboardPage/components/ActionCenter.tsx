@@ -88,7 +88,7 @@ export function ActionCenter({
                 </Typography.Text>
               </Flex>
               {criticalActions.map((item) => (
-                <ActionRow key={item.title} item={item} adminUrl={adminUrl} />
+                <ActionRow key={item.title} item={item} adminUrl={adminUrl} t={t} />
               ))}
             </div>
           )}
@@ -110,7 +110,7 @@ export function ActionCenter({
                 </Typography.Text>
               </Flex>
               {warningActions.map((item) => (
-                <ActionRow key={item.title} item={item} adminUrl={adminUrl} />
+                <ActionRow key={item.title} item={item} adminUrl={adminUrl} t={t} />
               ))}
             </div>
           )}
@@ -136,7 +136,7 @@ export function ActionCenter({
                     </Flex>
                   ),
                   children: infoActions.map((item) => (
-                    <ActionRow key={item.title} item={item} adminUrl={adminUrl} />
+                    <ActionRow key={item.title} item={item} adminUrl={adminUrl} t={t} />
                   )),
                 },
               ]}

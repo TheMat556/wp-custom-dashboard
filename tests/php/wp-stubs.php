@@ -298,6 +298,8 @@ if ( ! function_exists( 'wp_parse_args' ) ) {
 
 if ( ! function_exists( 'sanitize_text_field' ) ) {
 	function sanitize_text_field( string $str ): string {
+		// Strip script/style tag content (matches wp_strip_all_tags behavior).
+		$str = preg_replace( '@<(script|style)[^>]*?>.*?</\\1>@si', '', $str );
 		return trim( strip_tags( $str ) );
 	}
 }

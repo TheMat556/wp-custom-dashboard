@@ -153,7 +153,7 @@ function getUpdatesProps(
         )}
         {(updates?.core ?? 0) > 0 && (
           <Tag color="red" style={{ margin: 0, fontSize: 11 }}>
-            core
+            {t("WordPress")}
           </Tag>
         )}
       </Flex>
@@ -184,10 +184,13 @@ function getSpeedProps(
   t: TFunc,
   token: TokenType
 ) {
-  let value: string;
-  if (isSiteDown) value = t("Error");
-  else if (speed?.ms != null) value = `${speed.ms} ms`;
-  else value = "—";
+  let speedLabel = "";
+  if (speed?.status === "good") speedLabel = t("Fast");
+  else if (speed?.status === "fair") speedLabel = t("Acceptable");
+  else if (speed?.status) speedLabel = t("Slow");
+
+  // Primary value is the speed label
+  const value = isSiteDown ? t("Error") : speedLabel || "—";
 
   let color: string;
   if (isSiteDown) color = token.colorError;
@@ -195,19 +198,13 @@ function getSpeedProps(
   else if (speed?.status === "fair") color = token.colorWarning;
   else color = token.colorError;
 
-  let speedLabel = "";
-  if (speed?.status === "good") speedLabel = t("Fast");
-  else if (speed?.status === "fair") speedLabel = t("Acceptable");
-  else if (speed?.status) speedLabel = t("Slow");
-
+  // Secondary shows the milliseconds
   const sub: React.ReactNode =
-    !isSiteDown && speed?.status ? (
-      <Typography.Text style={{ fontSize: 12, color }}>{speedLabel}</Typography.Text>
-    ) : (
-      <Typography.Text style={{ fontSize: 12, color: token.colorError }}>
-        {t("Unreachable")}
+    !isSiteDown && speed?.ms != null ? (
+      <Typography.Text type="secondary" style={{ fontSize: 12 }}>
+        {speed.ms} ms
       </Typography.Text>
-    );
+    ) : null;
 
   return { value, sub, color };
 }
@@ -256,7 +253,7 @@ function getSeoProps(
     const basicColor = seoBasics.score >= 75 ? token.colorSuccess : token.colorWarning;
     sub = (
       <Typography.Text style={{ fontSize: 12, color: basicColor }}>
-        {t("Basic check")}
+        {t("Basic check — tap to improve")}
       </Typography.Text>
     );
   } else {
@@ -319,7 +316,7 @@ export function SummaryTiles({
 
       <StatTile
         icon={<LineChartOutlined />}
-        label={t("Visitors 30d")}
+        label={t("Visitors (last 30 days)")}
         value={total30Views > 0 ? total30Views.toLocaleString(intlLocale) : "\u2014"}
         sub={visitorsProps.sub}
         color={token.colorPrimary}
@@ -348,6 +345,7 @@ export function SummaryTiles({
       <StatTile
         icon={<SearchOutlined />}
         label={t("SEO")}
+        description={t("Your search engine visibility")}
         value={seoProps.value}
         sub={seoProps.sub}
         color={seoProps.color}

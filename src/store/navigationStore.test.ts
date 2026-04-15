@@ -5,14 +5,14 @@
  */
 
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { EMBED_MESSAGE_SOURCE, EMBED_MESSAGE_VERSION } from "../types/embedMessages";
-import { toEmbedUrl } from "../utils/embedUrl";
 import {
   activeKeyStore,
   bootstrapNavigationStore,
   navigationStore,
   resetNavigationStore,
-} from "./navigationStore";
+} from "../features/navigation/store/navigationStore";
+import { EMBED_MESSAGE_SOURCE, EMBED_MESSAGE_VERSION } from "../types/embedMessages";
+import { toEmbedUrl } from "../utils/embedUrl";
 
 beforeEach(() => {
   resetNavigationStore();

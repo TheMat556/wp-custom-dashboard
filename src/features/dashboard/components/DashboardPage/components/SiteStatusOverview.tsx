@@ -58,7 +58,7 @@ export function SiteStatusOverview({
                 <Text style={{ fontSize: 14 }}>{t("Business Functions")}</Text>
                 {!bizData.contactForms.available || !bizData.emailDelivery.smtpPlugin ? (
                   <Tag color="warning" style={{ margin: 0, fontSize: 12 }}>
-                    Review
+                    {t("Review")}
                   </Tag>
                 ) : (
                   <Tag color="success" style={{ margin: 0, fontSize: 12 }}>
@@ -67,7 +67,7 @@ export function SiteStatusOverview({
                 )}
               </Flex>
             ),
-            children: <BusinessSection biz={bizData} adminUrl={adminUrl} />,
+            children: <BusinessSection biz={bizData} adminUrl={adminUrl} t={t} />,
           },
         ]
       : []),
@@ -87,7 +87,7 @@ export function SiteStatusOverview({
                 </Tag>
               </Flex>
             ),
-            children: <SeoBasicsSection seoBasics={seoBasics} adminUrl={adminUrl} />,
+            children: <SeoBasicsSection seoBasics={seoBasics} adminUrl={adminUrl} t={t} />,
           },
         ]
       : []),

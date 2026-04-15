@@ -4,6 +4,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { ShellConfigProvider } from "../../../shell/context/ShellConfigContext";
 import { LicenseProvider } from "../../context/LicenseContext";
 import { licenseStore, resetLicenseStore } from "../../store/licenseStore";
+import { maskLicenseKey } from "../../utils/licenseKeyUtils";
 import LicenseSettings from "./index";
 
 const loadLicenseStatusMock = vi.fn();
@@ -12,13 +13,6 @@ const saveLicenseServerSettingsMock = vi.fn();
 const activateLicenseMock = vi.fn();
 const deactivateLicenseMock = vi.fn();
 const storedLicenseKey = "1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef";
-
-function maskLicenseKey(value: string, visibleCount = 8) {
-  const safeVisibleCount = Math.min(visibleCount, value.length);
-  const hiddenCount = Math.max(0, value.length - safeVisibleCount);
-
-  return `${"•".repeat(hiddenCount)}${value.slice(-safeVisibleCount)}`;
-}
 
 vi.mock("../../store/licenseActions", async (importOriginal) => {
   const actual = await importOriginal<typeof import("../../store/licenseActions")>();
@@ -147,25 +141,75 @@ describe("LicenseSettings", () => {
     resetLicenseStore();
   });
 
-  it("renders the saved license server field", async () => {
+  it("renders the status badge and shows the KPI section", async () => {
     render(<LicenseSettings />, { wrapper: Wrapper });
 
-    expect(await screen.findByLabelText(/license server/i)).toHaveValue(
-      "https://licenses.example.test"
-    );
-    const keyField = screen.getByLabelText(/license key/i) as HTMLInputElement;
-    await waitFor(() => expect(keyField).toHaveValue(maskLicenseKey(storedLicenseKey)));
-    expect(keyField.value).not.toBe(storedLicenseKey);
-    expect(screen.getByText(/license connection/i)).toBeInTheDocument();
+    // Status badge visible in KPI tile
+    expect(await screen.findByText("Active")).toBeInTheDocument();
+    expect(screen.getByText("License Status")).toBeInTheDocument();
   });
 
-  it("refreshes the license snapshot on demand", async () => {
+  it("shows the license key input and license server section when status is not active", async () => {
+    licenseStore.setState({ status: "disabled", hasKey: false, serverConfigured: true });
     render(<LicenseSettings />, { wrapper: Wrapper });
 
-    await screen.findByLabelText(/license server/i);
+    // Key form always visible
+    await screen.findByLabelText(/license key/i);
+    // License Server collapse header always visible
+    expect(screen.getByText("Advanced Settings")).toBeInTheDocument();
+  });
+
+  it("always shows the license key input when active", async () => {
+    render(<LicenseSettings />, { wrapper: Wrapper });
+
+    // Key form is visible without any interaction
+    expect(await screen.findByLabelText(/license key/i)).toBeInTheDocument();
+    expect(screen.getByText("Advanced Settings")).toBeInTheDocument();
+  });
+
+  it("shows the server URL field when server is not configured (section auto-expanded)", async () => {
+    licenseStore.setState({ status: "disabled", hasKey: false, serverConfigured: false });
+    loadLicenseServerSettingsMock.mockReset().mockResolvedValue({
+      serverUrl: "",
+      serverConfigured: false,
+      storedLicenseKey: "",
+    });
+    render(<LicenseSettings />, { wrapper: Wrapper });
+
+    // Section opens automatically when server is not configured
+    expect(await screen.findByLabelText(/server url/i)).toBeInTheDocument();
+    expect(screen.getByLabelText(/license key/i)).toBeInTheDocument();
+  });
+
+  it("shows the server URL field inside the license server section when expanded", async () => {
+    render(<LicenseSettings />, { wrapper: Wrapper });
+
+    // Expand the License Server section
+    fireEvent.click(await screen.findByText("Advanced Settings"));
+
+    expect(await screen.findByLabelText(/server url/i)).toHaveValue(
+      "https://licenses.example.test"
+    );
+  });
+
+  it("shows the masked license key in the field after loading", async () => {
+    render(<LicenseSettings />, { wrapper: Wrapper });
+
+    const keyField = (await screen.findByLabelText(/license key/i)) as HTMLInputElement;
+    await waitFor(() => expect(keyField).toHaveValue(maskLicenseKey(storedLicenseKey)));
+    expect(keyField.value).not.toBe(storedLicenseKey);
+  });
+
+  it("tests connection on demand via the license server section", async () => {
+    render(<LicenseSettings />, { wrapper: Wrapper });
+
+    // loadLicenseStatus called once on mount
+    await screen.findByText("Active");
     expect(loadLicenseStatusMock).toHaveBeenCalledTimes(1);
 
-    fireEvent.click(screen.getByRole("button", { name: /refresh/i }));
+    // Open license server section and click Test Connection
+    fireEvent.click(screen.getByText("Advanced Settings"));
+    fireEvent.click(await screen.findByRole("button", { name: /test connection/i }));
 
     await waitFor(() => expect(loadLicenseStatusMock).toHaveBeenCalledTimes(2));
   });
@@ -173,6 +217,7 @@ describe("LicenseSettings", () => {
   it("keeps the stored key masked while supporting backspace edits", async () => {
     render(<LicenseSettings />, { wrapper: Wrapper });
 
+    // Key form is always visible — wait for masked value to load
     const keyField = (await screen.findByDisplayValue(
       maskLicenseKey(storedLicenseKey)
     )) as HTMLInputElement;
@@ -185,6 +230,7 @@ describe("LicenseSettings", () => {
   });
 
   it("saves the server URL before activating with a new key", async () => {
+    licenseStore.setState({ status: "disabled", hasKey: false, serverConfigured: true });
     loadLicenseServerSettingsMock.mockReset().mockResolvedValue({
       serverUrl: "https://licenses.example.test",
       serverConfigured: true,
@@ -197,14 +243,16 @@ describe("LicenseSettings", () => {
     });
     render(<LicenseSettings />, { wrapper: Wrapper });
 
-    const serverField = await screen.findByDisplayValue("https://licenses.example.test");
-    const keyField = screen.getByPlaceholderText(/64-character license key/i) as HTMLInputElement;
-
+    // Open license server section to change the URL
+    fireEvent.click(await screen.findByText("Advanced Settings"));
+    const serverField = await screen.findByLabelText(/server url/i);
     fireEvent.change(serverField, { target: { value: "https://licenses.changed.test" } });
+
+    const keyField = screen.getByPlaceholderText(/64-character license key/i) as HTMLInputElement;
     fireEvent.change(keyField, {
       target: { value: "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef" },
     });
-    fireEvent.click(screen.getByRole("button", { name: /^connect$/i }));
+    fireEvent.click(screen.getByRole("button", { name: /^activate$/i }));
 
     await waitFor(() =>
       expect(saveLicenseServerSettingsMock).toHaveBeenCalledWith({
@@ -221,8 +269,13 @@ describe("LicenseSettings", () => {
   it("allows activation when only the server url changed for an existing key", async () => {
     render(<LicenseSettings />, { wrapper: Wrapper });
 
-    const serverField = (await screen.findByLabelText(/license server/i)) as HTMLInputElement;
-    const activateButton = screen.getByRole("button", { name: /^connect$/i });
+    // Key form is always visible
+    await screen.findByLabelText(/license key/i);
+
+    // Open license server section to change the URL
+    fireEvent.click(screen.getByText("Advanced Settings"));
+    const serverField = await screen.findByLabelText(/server url/i);
+    const activateButton = screen.getByRole("button", { name: /^activate$/i });
 
     expect(activateButton).toBeDisabled();
 
@@ -233,6 +286,7 @@ describe("LicenseSettings", () => {
 
   it("keeps the activated key in the field on successful activation", async () => {
     const nextLicenseKey = "abcdefabcdefabcdefabcdefabcdefabcdefabcdefabcdefabcdefabcdefabcd";
+    licenseStore.setState({ status: "disabled", hasKey: false, serverConfigured: true });
     loadLicenseServerSettingsMock
       .mockReset()
       .mockResolvedValueOnce({
@@ -248,18 +302,18 @@ describe("LicenseSettings", () => {
     activateLicenseMock.mockResolvedValue(true);
     render(<LicenseSettings />, { wrapper: Wrapper });
 
-    // Wait for settings to load (server URL must be present before canActivate is true)
-    await screen.findByDisplayValue("https://licenses.example.test");
+    await screen.findByLabelText(/license key/i);
 
     const keyField = screen.getByPlaceholderText(/64-character license key/i) as HTMLInputElement;
     fireEvent.change(keyField, { target: { value: nextLicenseKey } });
-    fireEvent.click(screen.getByRole("button", { name: /^connect$/i }));
+    fireEvent.click(screen.getByRole("button", { name: /^activate$/i }));
 
     await waitFor(() => expect(activateLicenseMock).toHaveBeenCalled());
     await waitFor(() => expect(keyField).toHaveValue(maskLicenseKey(nextLicenseKey)));
   });
 
   it("keeps the license key field on failed activation", async () => {
+    licenseStore.setState({ status: "disabled", hasKey: false, serverConfigured: true });
     loadLicenseServerSettingsMock.mockReset().mockResolvedValue({
       serverUrl: "https://licenses.example.test",
       serverConfigured: true,
@@ -268,13 +322,12 @@ describe("LicenseSettings", () => {
     activateLicenseMock.mockResolvedValue(false);
     render(<LicenseSettings />, { wrapper: Wrapper });
 
-    // Wait for settings to load before activating
-    await screen.findByDisplayValue("https://licenses.example.test");
+    await screen.findByLabelText(/license key/i);
 
     const keyField = screen.getByPlaceholderText(/64-character license key/i) as HTMLInputElement;
     const licenseKey = "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef";
     fireEvent.change(keyField, { target: { value: licenseKey } });
-    fireEvent.click(screen.getByRole("button", { name: /^connect$/i }));
+    fireEvent.click(screen.getByRole("button", { name: /^activate$/i }));
 
     await waitFor(() => expect(activateLicenseMock).toHaveBeenCalled());
     expect(keyField).toHaveValue(maskLicenseKey(licenseKey));

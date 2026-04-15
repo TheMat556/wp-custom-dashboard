@@ -18,9 +18,7 @@ export function MessageBubble({ message, viewerRole, authorName }: MessageBubble
   if (isSystem) {
     return (
       <div className={styles.system} role="note">
-        <Typography.Text className={styles.systemText}>
-          {message.message}
-        </Typography.Text>
+        <Typography.Text className={styles.systemText}>{message.message}</Typography.Text>
       </div>
     );
   }
@@ -42,13 +40,9 @@ export function MessageBubble({ message, viewerRole, authorName }: MessageBubble
       )}
 
       <div className={styles.bubbleGroup}>
-        {!isOwn && (
-          <Typography.Text className={styles.author}>{authorName}</Typography.Text>
-        )}
+        {!isOwn && <Typography.Text className={styles.author}>{authorName}</Typography.Text>}
         <div className={`${styles.bubble} ${isOwn ? styles.ownBubble : styles.otherBubble}`}>
-          <Typography.Text className={styles.messageText}>
-            {message.message}
-          </Typography.Text>
+          <Typography.Text className={styles.messageText}>{message.message}</Typography.Text>
           <div className={styles.bubbleMeta}>
             <time dateTime={message.createdAt} className={styles.timestamp}>
               {formattedTime}

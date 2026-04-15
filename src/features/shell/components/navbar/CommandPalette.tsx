@@ -1,13 +1,6 @@
 import { HistoryOutlined, SearchOutlined, StarFilled, StarOutlined } from "@ant-design/icons";
 import { Button, Drawer, Empty, Flex, Input, type InputRef, Modal, Typography, theme } from "antd";
-import {
-  type FormEvent,
-  startTransition,
-  useDeferredValue,
-  useEffect,
-  useMemo,
-  useRef,
-} from "react";
+import { type FormEvent, startTransition, useDeferredValue, useMemo, useRef } from "react";
 import { useStore } from "zustand";
 import {
   buildMenuPaletteItems,
@@ -222,20 +215,6 @@ function PaletteBody() {
   const hasQuery = deferredQuery.trim().length > 0;
   const suggestedItems = useMemo(() => menuPaletteItems.slice(0, 8), [menuPaletteItems]);
 
-  useEffect(() => {
-    if (!paletteOpen) {
-      return;
-    }
-
-    const frame = window.requestAnimationFrame(() => {
-      inputRef.current?.focus({
-        cursor: "all",
-      });
-    });
-
-    return () => window.cancelAnimationFrame(frame);
-  }, [paletteOpen]);
-
   const handleSelect = (item: PaletteItem) => {
     closePalette();
     navigationStore.getState().navigate(item.url);
@@ -300,10 +279,7 @@ function PaletteBody() {
             }}
           />
         </form>
-        <Flex
-          align="center"
-          style={{ marginTop: 10, minHeight: 20 }}
-        >
+        <Flex align="center" style={{ marginTop: 10, minHeight: 20 }}>
           <Text style={{ fontSize: 11, color: token.colorTextQuaternary }}>
             Jump to pages, reopen recent screens, and pin favorites.
           </Text>
@@ -356,12 +332,7 @@ function PaletteBody() {
                 onToggleFavorite={toggleFavorite}
               />
             ) : (
-              <Flex
-                vertical
-                align="center"
-                justify="center"
-                style={{ padding: "32px 0" }}
-              >
+              <Flex vertical align="center" justify="center" style={{ padding: "32px 0" }}>
                 <Empty
                   image={Empty.PRESENTED_IMAGE_SIMPLE}
                   description={
@@ -502,6 +473,7 @@ export function CommandPaletteTrigger({ compact: forceCompact = false }: { compa
           <Input
             className="wp-react-ui-navbar-search-input"
             readOnly
+            tabIndex={-1}
             size="large"
             value=""
             placeholder="Search pages, plugins, settings..."
@@ -547,4 +519,3 @@ export function CommandPaletteTrigger({ compact: forceCompact = false }: { compa
     </>
   );
 }
-

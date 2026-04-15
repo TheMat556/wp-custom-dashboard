@@ -77,6 +77,17 @@ final class ChatConversationRouteController {
 	}
 
 	public function send( WP_REST_Request $request ) {
+		if ( ! LicenseGate::can( 'chat' ) ) {
+			return new \WP_Error(
+				'license_feature_disabled',
+				'Chat access requires an active license.',
+				array(
+					'status'  => 402,
+					'feature' => 'chat',
+				)
+			);
+		}
+
 		$rate_check = RateLimiter::enforce( 'chat_send', RateLimiter::LIMIT_CHAT_SEND );
 		if ( is_wp_error( $rate_check ) ) {
 			return $rate_check;
@@ -100,17 +111,6 @@ final class ChatConversationRouteController {
 
 		if ( '' === $message ) {
 			return new WP_Error( 'empty_message', 'Message cannot be empty.', array( 'status' => 400 ) );
-		}
-
-		if ( ! LicenseGate::can( 'chat' ) ) {
-			return new \WP_Error(
-				'license_feature_disabled',
-				'Chat access requires an active license.',
-				array(
-					'status'  => 403,
-					'feature' => 'chat',
-				)
-			);
 		}
 
 		$result = $this->service->send_message(

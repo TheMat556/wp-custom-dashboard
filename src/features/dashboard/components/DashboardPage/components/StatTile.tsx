@@ -5,7 +5,16 @@ import type { StatTileProps } from "../types";
 
 const { Text } = Typography;
 
-export function StatTile({ icon, label, value, sub, color, tooltip, onClick }: StatTileProps) {
+export function StatTile({
+  icon,
+  label,
+  value,
+  sub,
+  description,
+  color,
+  tooltip,
+  onClick,
+}: StatTileProps) {
   const { token } = theme.useToken();
   const tileStyle = {
     "--metric-accent": color,
@@ -28,6 +37,11 @@ export function StatTile({ icon, label, value, sub, color, tooltip, onClick }: S
 
       <div className="wp-react-ui-metric-tile__body">
         <Text className="wp-react-ui-metric-tile__label">{label}</Text>
+        {description && (
+          <Text type="secondary" style={{ fontSize: 11, display: "block", marginBottom: 4 }}>
+            {description}
+          </Text>
+        )}
         <div className="wp-react-ui-metric-tile__value">{value}</div>
       </div>
 

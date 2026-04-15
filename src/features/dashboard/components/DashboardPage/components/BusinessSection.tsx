@@ -6,13 +6,17 @@ import { Section } from "./Section";
 
 const { Text } = Typography;
 
-export function BusinessSection({ biz, adminUrl }: BusinessSectionProps) {
+export function BusinessSection({
+  biz,
+  adminUrl,
+  t,
+}: BusinessSectionProps & { t: (key: string) => string }) {
   const { token } = theme.useToken();
   return (
     <Section
       icon={<BankOutlined />}
-      title="Business & Contact Functions"
-      description="Key tools your customers use to reach you"
+      title={t("Business & Contact Functions")}
+      description={t("Key tools your customers use to reach you")}
     >
       <Flex
         align="center"
@@ -29,7 +33,7 @@ export function BusinessSection({ biz, adminUrl }: BusinessSectionProps) {
             }}
           />
           <div>
-            <Text style={{ fontSize: 14 }}>Booking System</Text>
+            <Text style={{ fontSize: 14 }}>{t("Booking System")}</Text>
             {biz.bookings.note && (
               <Text type="secondary" style={{ fontSize: 12, display: "block" }}>
                 {biz.bookings.note}
@@ -40,14 +44,17 @@ export function BusinessSection({ biz, adminUrl }: BusinessSectionProps) {
         <Flex align="center" gap={8} style={{ flexShrink: 0 }}>
           {biz.bookings.available && biz.bookings.totalUpcoming != null && (
             <Tag color="blue" style={{ margin: 0, fontSize: 12 }}>
-              {biz.bookings.totalUpcoming} upcoming
+              {biz.bookings.totalUpcoming}{" "}
+              {t("{n} upcoming").split(" ")[0] === "{n}"
+                ? t("{n} upcoming").replace("{n}", "")
+                : "upcoming"}
             </Tag>
           )}
           <Tag
             color={biz.bookings.available ? "success" : "default"}
             style={{ margin: 0, fontSize: 12 }}
           >
-            {biz.bookings.available ? "Active" : "Not installed"}
+            {biz.bookings.available ? t("Active") : t("Not installed")}
           </Tag>
         </Flex>
       </Flex>
@@ -67,7 +74,7 @@ export function BusinessSection({ biz, adminUrl }: BusinessSectionProps) {
             }}
           />
           <div>
-            <Text style={{ fontSize: 14 }}>Contact Forms</Text>
+            <Text style={{ fontSize: 14 }}>{t("Contact Forms")}</Text>
             {biz.contactForms.note && (
               <Text type="secondary" style={{ fontSize: 12, display: "block" }}>
                 {biz.contactForms.note}
@@ -79,7 +86,9 @@ export function BusinessSection({ biz, adminUrl }: BusinessSectionProps) {
           color={biz.contactForms.available ? "success" : "warning"}
           style={{ margin: 0, fontSize: 12 }}
         >
-          {biz.contactForms.available ? (biz.contactForms.plugin ?? "Active") : "Not installed"}
+          {biz.contactForms.available
+            ? (biz.contactForms.plugin ?? t("Active"))
+            : t("Not installed")}
         </Tag>
       </Flex>
 
@@ -93,7 +102,7 @@ export function BusinessSection({ biz, adminUrl }: BusinessSectionProps) {
             }}
           />
           <div>
-            <Text style={{ fontSize: 14 }}>Email Delivery</Text>
+            <Text style={{ fontSize: 14 }}>{t("Email Delivery")}</Text>
             {biz.emailDelivery.note && (
               <Text type="secondary" style={{ fontSize: 12, display: "block", maxWidth: 280 }}>
                 {biz.emailDelivery.note}
@@ -105,7 +114,7 @@ export function BusinessSection({ biz, adminUrl }: BusinessSectionProps) {
           color={biz.emailDelivery.smtpPlugin ? "success" : "warning"}
           style={{ margin: 0, fontSize: 12, flexShrink: 0 }}
         >
-          {biz.emailDelivery.smtpPlugin ? "Configured" : "Default (unreliable)"}
+          {biz.emailDelivery.smtpPlugin ? t("Configured") : t("Default (unreliable)")}
         </Tag>
       </Flex>
       {!biz.emailDelivery.smtpPlugin && (
@@ -114,8 +123,9 @@ export function BusinessSection({ biz, adminUrl }: BusinessSectionProps) {
           showIcon
           message={
             <Text style={{ fontSize: 12 }}>
-              Without an SMTP plugin, contact form emails may end up in spam. Install WP Mail SMTP
-              (free) to fix this.
+              {t(
+                "Without an SMTP plugin, contact form emails may end up in spam. Install WP Mail SMTP (free) to fix this."
+              )}
             </Text>
           }
           style={{ marginTop: 12, borderRadius: token.borderRadius }}
@@ -126,7 +136,7 @@ export function BusinessSection({ biz, adminUrl }: BusinessSectionProps) {
                 navigate("plugin-install.php?s=wp+mail+smtp&tab=search&type=term", adminUrl)
               }
             >
-              Install free
+              {t("Install free")}
             </Button>
           }
         />

@@ -110,6 +110,51 @@ final class LicenseManager {
 		$result = $this->client->activate( $normalized_key );
 
 		if ( is_wp_error( $result ) ) {
+			$error_code = $result->get_error_code();
+			$error_msg  = strtolower( $result->get_error_message() );
+
+			if ( 'already_activated' === $error_code
+				|| false !== strpos( $error_msg, 'already activated' )
+				|| false !== strpos( $error_msg, 'already active' )
+			) {
+				$this->emit_debug(
+					'already_activated_retry',
+					array(
+						'keyPrefix' => substr( $normalized_key, 0, 8 ),
+						'errorCode' => $error_code,
+					)
+				);
+
+				$deactivate_result = $this->client->deactivate( $normalized_key );
+
+				$this->emit_debug(
+					'deactivate_for_retry',
+					array(
+						'keyPrefix'  => substr( $normalized_key, 0, 8 ),
+						'success'    => ! is_wp_error( $deactivate_result ),
+						'errorCode'  => is_wp_error( $deactivate_result ) ? $deactivate_result->get_error_code() : null,
+					)
+				);
+
+				if ( ! is_wp_error( $deactivate_result ) ) {
+					$result = $this->client->activate( $normalized_key );
+
+					if ( is_wp_error( $result ) ) {
+						$this->emit_debug(
+							'retry_failed',
+							array(
+								'keyPrefix' => substr( $normalized_key, 0, 8 ),
+								'errorCode' => $result->get_error_code(),
+							)
+						);
+					}
+				} else {
+					$result = $deactivate_result;
+				}
+			}
+		}
+
+		if ( is_wp_error( $result ) ) {
 			if ( is_string( $replaced_key ) && '' !== $replaced_key ) {
 				$this->restore_previous_activation( $replaced_key );
 			}

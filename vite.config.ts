@@ -29,7 +29,7 @@ export default defineConfig(({ mode }) => ({
         embedBridge: resolve(__dirname, "src/embedBridge.ts"),
         main: resolve(__dirname, "src/main.tsx"),
         outside: resolve(__dirname, "src/outside.css"),
-        sessionStore: resolve(__dirname, "src/store/sessionStore.ts"),
+        sessionStore: resolve(__dirname, "src/features/session/store/sessionStore.ts"),
       },
 
       output: {

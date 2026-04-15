@@ -1,4 +1,5 @@
 import { useEffect, useRef } from "react";
+import { logger } from "../../../utils/logger";
 
 interface UseChatPollingOptions {
   pollIntervalSeconds: number;
@@ -28,7 +29,7 @@ export function useChatPolling({
         void onPoll().catch((err) => {
           // Request already cancelled by newer poll
           if (requestId !== requestIdRef.current) return;
-          console.error("Chat poll error:", err);
+          logger.error("Chat poll error:", err);
         });
       },
       (pollIntervalSeconds || 15) * 1000

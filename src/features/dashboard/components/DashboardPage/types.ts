@@ -33,6 +33,7 @@ export interface StatTileProps {
   label: string;
   value: React.ReactNode;
   sub?: React.ReactNode;
+  description?: string;
   color: string;
   tooltip?: string;
   onClick?: () => void;
