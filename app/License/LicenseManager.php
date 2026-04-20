@@ -459,17 +459,36 @@ final class LicenseManager {
 			return true;
 		}
 
-		if ( in_array( $result->get_error_code(), array( 'not_activated', 'license_not_found' ), true ) ) {
+		// Any of these codes mean the server has no valid activation to remove — safe to proceed.
+		$ignorable_codes = array(
+			'not_activated',
+			'license_not_found',
+			'decryption_failed',
+			'invalid_key',
+			'invalid_signature',
+			'missing_auth_headers',
+			'request_expired',
+			'replay_detected',
+		);
+
+		if ( in_array( $result->get_error_code(), $ignorable_codes, true ) ) {
 			return true;
 		}
 
-		$data = $result->get_error_data();
+		// A 4xx HTTP status means the server rejected the key (not found, forbidden, etc.).
+		// The activation slot is effectively already free — let the new activation proceed.
+		$data        = $result->get_error_data();
+		$http_status = is_array( $data ) && isset( $data['status'] ) ? (int) $data['status'] : 0;
+
+		if ( $http_status >= 400 && $http_status < 500 ) {
+			return true;
+		}
 
 		return new WP_Error(
 			'license_replace_failed',
 			'The current site key could not be released before activating a new one.',
 			array(
-				'status'              => is_array( $data ) && isset( $data['status'] ) ? (int) $data['status'] : 409,
+				'status'              => $http_status ?: 409,
 				'previous_key_prefix' => substr( $license_key, 0, 8 ),
 			)
 		);

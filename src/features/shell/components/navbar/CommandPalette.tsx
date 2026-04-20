@@ -506,6 +506,7 @@ export function CommandPaletteTrigger({ compact: forceCompact = false }: { compa
               input: {
                 cursor: "pointer",
                 fontSize: 13,
+                top: "-2px",
               },
               prefix: {
                 marginInlineEnd: 8,

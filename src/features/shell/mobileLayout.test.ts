@@ -115,10 +115,10 @@ describe("critical.css mobile layout rules", () => {
       expect(hasProp(block, "overflow", "hidden")).toBe(true);
     });
 
-    it("defines a grid with first row of 64px for the shell navbar", () => {
+    it("defines a grid with first row of 65px for the shell navbar", () => {
       expect(block).not.toBeNull();
       if (!block) throw new Error("Expected #wpwrap block in critical.css");
-      expect(hasProp(block, "grid-template-rows", "64px")).toBe(true);
+      expect(hasProp(block, "grid-template-rows", "65px")).toBe(true);
     });
   });
 

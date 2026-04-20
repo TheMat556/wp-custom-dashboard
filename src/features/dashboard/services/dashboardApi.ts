@@ -12,6 +12,7 @@ export interface AtAGlanceData {
   users: number;
   wpVersion: string;
   phpVersion: string;
+  lastBackupDate?: string | null;
 }
 
 export interface SiteHealthData {
@@ -219,6 +220,12 @@ export interface BusinessFunctions {
   emailDelivery: BusinessEmail;
 }
 
+export interface SubmissionStats {
+  formSubmissions30d: number | null;
+  bookings30d: number | null;
+  formPlugin: string | null;
+}
+
 export interface DashboardData {
   atAGlance: AtAGlanceData;
   siteHealth: SiteHealthData;
@@ -235,6 +242,7 @@ export interface DashboardData {
   onboardingChecklist?: OnboardingItem[];
   siteReadinessScore?: number;
   calendarPreview?: CalendarPreview | null;
+  submissionStats?: SubmissionStats;
 }
 
 export interface DashboardService {

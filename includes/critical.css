@@ -47,7 +47,7 @@ html, body {
 #wpwrap {
     display: grid !important;
     grid-template-columns: var(--sidebar-width, 240px) 1fr !important;
-    grid-template-rows: 64px 1fr !important;
+    grid-template-rows: 65px minmax(0, 1fr) !important;
     grid-template-areas:
         "sidebar navbar"
         "sidebar content" !important;
@@ -126,7 +126,7 @@ html, body {
  */
 #wpwrap:not(.has-react-shell)::after {
     grid-area: navbar;
-    height: 64px;
+    height: 65px;
     background:
         /* burger icon */
         linear-gradient(90deg, #d8e3ed 25%, #e5eef7 50%, #d8e3ed 75%) 22px 23px / 20px 18px no-repeat,
@@ -201,7 +201,7 @@ body[data-theme="dark"] #wpwrap:not(.has-react-shell)::after {
 /* ── Content area (iframe shell) ──────────────────────────────────────────────
    Content is served by the iframe inside #react-shell-root.
    The native WordPress #wpcontent / #wpfooter remain in the DOM (PHP renders
-   them) but are hidden — users never interact with them directly.
+   them) but must not size the fixed viewport grid once the shell takes over.
    ─────────────────────────────────────────────────────────────────────────── */
 #wpcontent,
 #wpfooter {
@@ -209,6 +209,11 @@ body[data-theme="dark"] #wpwrap:not(.has-react-shell)::after {
     margin-left: 0 !important;
     visibility: hidden !important;
     pointer-events: none !important;
+}
+
+#wpwrap.has-react-shell > #wpcontent,
+#wpwrap.has-react-shell > #wpfooter {
+    display: none !important;
 }
 
 /* ── Skeleton shimmer ── */
@@ -224,7 +229,7 @@ body[data-theme="dark"] #wpwrap:not(.has-react-shell)::after {
     top: 0;
     left: var(--sidebar-width, 240px);
     right: 0;
-    height: 64px;
+    height: 65px;
     background:
         /* burger icon */
         linear-gradient(90deg, #d8e3ed 25%, #e5eef7 50%, #d8e3ed 75%) 22px 23px / 20px 18px no-repeat,

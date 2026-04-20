@@ -13,6 +13,8 @@ interface ConversationPanelProps {
   onSend: (message: string) => Promise<void>;
   isSending: boolean;
   chatEnabled: boolean;
+  composerDisabled?: boolean;
+  composerPlaceholder?: string;
 }
 
 export function ConversationPanel({
@@ -22,11 +24,18 @@ export function ConversationPanel({
   onSend,
   isSending,
   chatEnabled,
+  composerDisabled = false,
+  composerPlaceholder,
 }: ConversationPanelProps) {
   return (
     <div className={styles.conversationPanel}>
       <MessageList messages={messages} thread={thread} viewerRole={role} />
-      <MessageComposer onSend={onSend} isSending={isSending} disabled={!thread || !chatEnabled} />
+      <MessageComposer
+        onSend={onSend}
+        isSending={isSending}
+        disabled={!thread || !chatEnabled || composerDisabled || thread.status === "closed"}
+        placeholder={composerPlaceholder}
+      />
     </div>
   );
 }

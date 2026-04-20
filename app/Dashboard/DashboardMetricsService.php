@@ -27,14 +27,39 @@ final class DashboardMetricsService {
 		$users = count_users();
 
 		return array(
-			'posts'      => (int) ( $posts->publish ?? 0 ),
-			'postsDraft' => (int) ( $posts->draft ?? 0 ),
-			'pages'      => (int) ( $pages->publish ?? 0 ),
-			'pagesDraft' => (int) ( $pages->draft ?? 0 ),
-			'users'      => (int) ( $users['total_users'] ?? 0 ),
-			'wpVersion'  => get_bloginfo( 'version' ),
-			'phpVersion' => PHP_VERSION,
+			'posts'          => (int) ( $posts->publish ?? 0 ),
+			'postsDraft'     => (int) ( $posts->draft ?? 0 ),
+			'pages'          => (int) ( $pages->publish ?? 0 ),
+			'pagesDraft'     => (int) ( $pages->draft ?? 0 ),
+			'users'          => (int) ( $users['total_users'] ?? 0 ),
+			'wpVersion'      => get_bloginfo( 'version' ),
+			'phpVersion'     => PHP_VERSION,
+			'lastBackupDate' => $this->get_last_backup_date(),
 		);
+	}
+
+	/**
+	 * Returns the date of the most recent WPVivid backup, or null if unavailable.
+	 *
+	 * @return string|null Formatted date string (Y-m-d H:i) or null.
+	 */
+	private function get_last_backup_date(): ?string {
+		$list = get_option( 'wpvivid_backup_list', array() );
+		if ( empty( $list ) || ! is_array( $list ) ) {
+			return null;
+		}
+
+		$latest = 0;
+		foreach ( $list as $backup ) {
+			if ( isset( $backup['create_time'] ) && is_numeric( $backup['create_time'] ) ) {
+				$ts = (int) $backup['create_time'];
+				if ( $ts > $latest ) {
+					$latest = $ts;
+				}
+			}
+		}
+
+		return $latest > 0 ? wp_date( 'Y-m-d H:i', $latest ) : null;
 	}
 
 	/**

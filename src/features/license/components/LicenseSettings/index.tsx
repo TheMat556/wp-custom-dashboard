@@ -4,6 +4,7 @@ import {
   CheckCircleOutlined,
   CloseCircleOutlined,
   CrownOutlined,
+  DisconnectOutlined,
   EyeInvisibleOutlined,
   EyeOutlined,
   KeyOutlined,
@@ -300,6 +301,8 @@ export default function LicenseSettings() {
     licenseKey.trim().length > 0 &&
     (licenseKeyDirty || serverDirty || !license.hasKey || license.status !== "active");
 
+  const canDeactivate = !isBusy && license.hasKey && !licenseKeyDirty;
+
   const isGrace =
     license.status === "grace" || (license.status === "expired" && license.graceDaysRemaining > 0);
 
@@ -455,8 +458,31 @@ export default function LicenseSettings() {
             />
           </div>
 
-          {/* Right-aligned Activate button */}
-          <Flex justify="flex-end">
+          {/* Right-aligned Activate + Refresh buttons */}
+          <Flex justify="flex-end" gap="small">
+            {license.hasKey && !licenseKeyDirty && (
+              <Button
+                size="large"
+                icon={<SyncOutlined />}
+                loading={loading}
+                onClick={() => void loadLicenseStatus(true)}
+                title={t("Re-fetch license status from the server")}
+              >
+                {t("Refresh")}
+              </Button>
+            )}
+            {canDeactivate && (
+              <Button
+                size="large"
+                danger
+                icon={<DisconnectOutlined />}
+                loading={saving}
+                onClick={() => void handleDeactivate()}
+                title={t("Deactivate this license on the current site")}
+              >
+                {t("Deactivate")}
+              </Button>
+            )}
             <Button
               type={license.status !== "active" || licenseKeyDirty ? "primary" : "default"}
               size="large"

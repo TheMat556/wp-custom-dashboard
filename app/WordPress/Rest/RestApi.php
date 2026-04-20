@@ -32,15 +32,15 @@ class WP_React_UI_REST_API {
 	 * @return void
 	 */
 	public static function register(): void {
-		$menu_controller        = new MenuRouteController();
-		$theme_controller       = new ThemeRouteController();
-		$branding_controller    = new BrandingRouteController();
-		$chat_controller       = new ChatConversationRouteController();
-		$preferences_controller = new PreferencesRouteController();
-		$menu_counts_controller = new MenuCountsRouteController();
-		$dashboard_controller   = new DashboardRouteController();
-		$activity_controller    = new ActivityRouteController();
-		$license_controller     = new LicenseRouteController();
+		$menu_controller            = new MenuRouteController();
+		$theme_controller           = new ThemeRouteController();
+		$branding_controller        = new BrandingRouteController();
+		$chat_controller            = new ChatConversationRouteController();
+		$preferences_controller     = new PreferencesRouteController();
+		$menu_counts_controller     = new MenuCountsRouteController();
+		$dashboard_controller       = new DashboardRouteController();
+		$activity_controller        = new ActivityRouteController();
+		$license_controller         = new LicenseRouteController();
 		$license_webhook_controller = new LicenseWebhookRouteController();
 
 		// Menu endpoint — enables client-side refresh without full page reload.
@@ -76,7 +76,7 @@ class WP_React_UI_REST_API {
 							'type'              => 'string',
 							'enum'              => array( 'light', 'dark', 'system' ),
 							'sanitize_callback' => 'sanitize_text_field',
-							'validate_callback' => function( $value ) {
+							'validate_callback' => function ( $value ) {
 								return RestValidator::validate_enum( $value, array( 'light', 'dark', 'system' ) );
 							},
 						),
@@ -116,7 +116,7 @@ class WP_React_UI_REST_API {
 						'required'          => false,
 						'type'              => 'integer',
 						'sanitize_callback' => 'absint',
-						'validate_callback' => function( $value ) {
+						'validate_callback' => function ( $value ) {
 							return RestValidator::validate_optional_integer( $value, 0, PHP_INT_MAX );
 						},
 					),
@@ -136,7 +136,7 @@ class WP_React_UI_REST_API {
 						'required'          => true,
 						'type'              => 'integer',
 						'sanitize_callback' => 'absint',
-						'validate_callback' => function( $value ) {
+						'validate_callback' => function ( $value ) {
 							return RestValidator::validate_integer( $value, 0, PHP_INT_MAX );
 						},
 					),
@@ -144,7 +144,7 @@ class WP_React_UI_REST_API {
 						'required'          => true,
 						'type'              => 'integer',
 						'sanitize_callback' => 'absint',
-						'validate_callback' => function( $value ) {
+						'validate_callback' => function ( $value ) {
 							return RestValidator::validate_integer( $value, 0, PHP_INT_MAX );
 						},
 					),
@@ -164,7 +164,7 @@ class WP_React_UI_REST_API {
 						'required'          => true,
 						'type'              => 'integer',
 						'sanitize_callback' => 'absint',
-						'validate_callback' => function( $value ) {
+						'validate_callback' => function ( $value ) {
 							return RestValidator::validate_integer( $value, 0, PHP_INT_MAX );
 						},
 					),
@@ -172,8 +172,68 @@ class WP_React_UI_REST_API {
 						'required'          => true,
 						'type'              => 'string',
 						'sanitize_callback' => 'sanitize_textarea_field',
-						'validate_callback' => function( $value ) {
+						'validate_callback' => function ( $value ) {
 							return RestValidator::validate_mb_string( $value, 1, ChatConfig::MAX_MESSAGE_LENGTH );
+						},
+					),
+				),
+			)
+		);
+
+		register_rest_route(
+			'wp-react-ui/v1',
+			'/chat/archive',
+			array(
+				'methods'             => 'POST',
+				'callback'            => array( $chat_controller, 'archive' ),
+				'permission_callback' => array( $chat_controller, 'can_manage_options' ),
+				'args'                => array(
+					'selectedThreadId' => array(
+						'required'          => true,
+						'type'              => 'integer',
+						'sanitize_callback' => 'absint',
+						'validate_callback' => function ( $value ) {
+							return RestValidator::validate_integer( $value, 1, PHP_INT_MAX );
+						},
+					),
+				),
+			)
+		);
+
+		register_rest_route(
+			'wp-react-ui/v1',
+			'/chat/delete',
+			array(
+				'methods'             => 'POST',
+				'callback'            => array( $chat_controller, 'delete_thread' ),
+				'permission_callback' => array( $chat_controller, 'can_manage_options' ),
+				'args'                => array(
+					'selectedThreadId' => array(
+						'required'          => true,
+						'type'              => 'integer',
+						'sanitize_callback' => 'absint',
+						'validate_callback' => function ( $value ) {
+							return RestValidator::validate_integer( $value, 1, PHP_INT_MAX );
+						},
+					),
+				),
+			)
+		);
+
+		register_rest_route(
+			'wp-react-ui/v1',
+			'/chat/unarchive',
+			array(
+				'methods'             => 'POST',
+				'callback'            => array( $chat_controller, 'unarchive' ),
+				'permission_callback' => array( $chat_controller, 'can_manage_options' ),
+				'args'                => array(
+					'selectedThreadId' => array(
+						'required'          => true,
+						'type'              => 'integer',
+						'sanitize_callback' => 'absint',
+						'validate_callback' => function ( $value ) {
+							return RestValidator::validate_integer( $value, 1, PHP_INT_MAX );
 						},
 					),
 				),
@@ -294,7 +354,7 @@ class WP_React_UI_REST_API {
 						'type'              => 'integer',
 						'default'           => 1,
 						'sanitize_callback' => 'absint',
-						'validate_callback' => function( $value ) {
+						'validate_callback' => function ( $value ) {
 							return RestValidator::validate_integer( $value, 1, PHP_INT_MAX );
 						},
 					),
@@ -303,7 +363,7 @@ class WP_React_UI_REST_API {
 						'type'              => 'integer',
 						'default'           => 20,
 						'sanitize_callback' => 'absint',
-						'validate_callback' => function( $value ) {
+						'validate_callback' => function ( $value ) {
 							return RestValidator::validate_integer( $value, 1, 50 );
 						},
 					),
@@ -311,7 +371,7 @@ class WP_React_UI_REST_API {
 						'required'          => false,
 						'type'              => 'integer',
 						'sanitize_callback' => 'absint',
-						'validate_callback' => function( $value ) {
+						'validate_callback' => function ( $value ) {
 							return RestValidator::validate_optional_integer( $value, 0, PHP_INT_MAX );
 						},
 					),
@@ -319,7 +379,7 @@ class WP_React_UI_REST_API {
 						'required'          => false,
 						'type'              => 'string',
 						'sanitize_callback' => 'sanitize_text_field',
-						'validate_callback' => function( $value ) {
+						'validate_callback' => function ( $value ) {
 							return RestValidator::validate_optional_string( $value, 255 );
 						},
 					),
@@ -357,7 +417,7 @@ class WP_React_UI_REST_API {
 							'type'              => 'string',
 							'format'            => 'uri',
 							'sanitize_callback' => 'esc_url_raw',
-							'validate_callback' => function( $value ) {
+							'validate_callback' => function ( $value ) {
 								return RestValidator::validate_optional_url( $value );
 							},
 						),
@@ -380,7 +440,7 @@ class WP_React_UI_REST_API {
 						'minLength'         => 8,
 						'maxLength'         => 512,
 						'sanitize_callback' => 'sanitize_text_field',
-						'validate_callback' => function( $value ) {
+						'validate_callback' => function ( $value ) {
 							return RestValidator::validate_license_key( $value );
 						},
 					),

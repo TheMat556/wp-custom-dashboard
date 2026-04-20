@@ -34,9 +34,11 @@ class WP_React_UI_Shell_Embed_Mode {
 		}
 
 		echo '<style id="wp-react-ui-embed-reset">
-html, body { margin: 0 !important; padding: 0 !important; height: 100% !important; min-height: 100% !important; overflow: auto !important; }
+html { margin: 0 !important; padding: 0 !important; min-height: 100% !important; overflow: auto !important; }
 html.wp-toolbar { padding-top: 0 !important; }
-#wpwrap, #wpbody, #wpcontent, #wpbody-content { height: 100% !important; min-height: 100% !important; }
+body { margin: 0 !important; padding: 0 !important; min-height: 100% !important; overflow: visible !important; scrollbar-gutter: stable !important; }
+#wpwrap { min-height: 100% !important; height: auto !important; }
+#wpbody, #wpcontent, #wpbody-content { min-height: 100% !important; height: auto !important; }
 #adminmenuback, #adminmenuwrap, #adminmenumain, #wpadminbar, #wpfooter { display: none !important; }
 #wpbody { padding-top: 0 !important; }
 #wpcontent { margin-left: 0 !important; float: none !important; }

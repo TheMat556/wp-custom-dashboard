@@ -105,6 +105,12 @@ final class Dtos {
 				'message'
 			)
 		),
+		'dto/chat.thread-action.request' => array(
+			'title' => 'ChatThreadActionRequest',
+			'property_keys' => array(
+				'selectedThreadId'
+			)
+		),
 		'dto/dashboard.response' => array(
 			'title' => 'DashboardResponse',
 			'property_keys' => array(

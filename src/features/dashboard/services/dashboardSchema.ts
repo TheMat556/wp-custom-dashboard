@@ -79,5 +79,6 @@ export const DashboardDataSchema = z
     onboardingChecklist: z.array(z.unknown()).optional(),
     siteReadinessScore: z.number().optional(),
     calendarPreview: z.unknown().nullable().optional(),
+    submissionStats: z.unknown().optional(),
   })
   .passthrough();

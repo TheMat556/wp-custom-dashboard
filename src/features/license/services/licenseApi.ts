@@ -16,7 +16,7 @@ export type LicenseSettingsData = LicenseSettingsResponse;
 export type LicenseSettingsInput = LicenseSettingsRequest;
 
 export interface LicenseService {
-  fetchLicense(): Promise<LicenseData>;
+  fetchLicense(force?: boolean): Promise<LicenseData>;
   fetchLicenseSettings(): Promise<LicenseSettingsData>;
   saveLicenseSettings(data: LicenseSettingsInput): Promise<LicenseSettingsData>;
   activateLicense(data: LicenseActivateInput): Promise<LicenseData>;
@@ -29,8 +29,8 @@ export function createLicenseService(
   const api = createPluginRouteApi(config);
 
   return {
-    async fetchLicense() {
-      const res = await api.fetchLicense();
+    async fetchLicense(force?: boolean) {
+      const res = await api.fetchLicense(force);
 
       if (!res.ok) {
         throw new Error(notifyApiError(res, "License fetch"));
@@ -95,6 +95,11 @@ export function createLicenseService(
 
     async deactivateLicense() {
       const res = await api.deactivateLicense();
+
+      // 404 means the server has no record of this key/domain — treat as already deactivated.
+      if (res.status === 404) {
+        throw new Error("License key not recognized on server — cleared locally.");
+      }
 
       if (!res.ok) {
         throw new Error(await notifyApiErrorWithBody(res, "License deactivation"));

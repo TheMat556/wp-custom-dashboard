@@ -26,9 +26,24 @@ final class LicenseSettingsService {
 	/**
 	 * Returns the current public license payload.
 	 *
-	 * @return array{status: string, role: ?string, tier: ?string, expiresAt: ?string, features: array<int, string>, graceDaysRemaining: int, hasKey: bool, keyPrefix: ?string, serverConfigured: bool}
+	 * When $force is true the local cache is bypassed and a live validate call
+	 * is made to the license server so changes made in the license manager are
+	 * reflected immediately.
+	 *
+	 * @param bool $force Skip cache and re-validate against the server.
+	 * @return array{status: string, role: ?string, tier: ?string, expiresAt: ?string, features: array<int, string>, graceDaysRemaining: int, hasKey: bool, keyPrefix: ?string, serverConfigured: bool}|\WP_Error
 	 */
-	public function get_license_payload(): array {
+	public function get_license_payload( bool $force = false ) {
+		if ( $force ) {
+			$result = $this->manager->validate();
+			// validate() returns WP_Error when there is no key or the server rejects it.
+			// Fall back to the cached payload so the UI still shows something sensible.
+			if ( is_wp_error( $result ) ) {
+				return $this->manager->get_status_payload();
+			}
+			return $result;
+		}
+
 		return $this->manager->get_status_payload();
 	}
 

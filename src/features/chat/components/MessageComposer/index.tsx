@@ -5,44 +5,58 @@ import { CHAT_MAX_MESSAGE_LENGTH } from "../../constants";
 import styles from "./MessageComposer.module.css";
 
 interface MessageComposerProps {
-  onSend: (message: string) => void;
+  onSend: (message: string) => void | Promise<void>;
   isSending: boolean;
   disabled: boolean;
+  placeholder?: string;
 }
 
-export function MessageComposer({ onSend, isSending, disabled }: MessageComposerProps) {
+export function MessageComposer({
+  onSend,
+  isSending,
+  disabled,
+  placeholder,
+}: MessageComposerProps) {
   const [value, setValue] = useState("");
+  const isInputDisabled = disabled || isSending;
 
-  const canSend = !disabled && !isSending && value.trim().length > 0;
+  const canSend = !isInputDisabled && value.trim().length > 0;
   const charCount = value.length;
   const overLimit = charCount > CHAT_MAX_MESSAGE_LENGTH;
 
-  const handleSend = useCallback(() => {
+  const handleSend = useCallback(async () => {
     if (!canSend || overLimit) return;
-    onSend(value.trim());
-    setValue("");
+    try {
+      await onSend(value.trim());
+      setValue("");
+    } catch {
+      // The parent surface already renders the error state; keep the draft intact here.
+    }
   }, [canSend, overLimit, value, onSend]);
 
   const handleKeyDown = useCallback(
     (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
       if (e.key === "Enter" && !e.shiftKey) {
         e.preventDefault();
-        handleSend();
+        void handleSend();
       }
     },
     [handleSend]
   );
 
   return (
-    <div className={`${styles.composer} ${disabled ? styles.composerDisabled : ""}`}>
+    <div className={`${styles.composer} ${isInputDisabled ? styles.composerDisabled : ""}`}>
       <div className={styles.inputWrap}>
         <div className={styles.textareaWrap}>
           <Input.TextArea
             value={value}
             onChange={(e) => setValue(e.target.value)}
             onKeyDown={handleKeyDown}
-            placeholder={disabled ? "Select a conversation to send a message" : "Write a message"}
-            disabled={disabled}
+            placeholder={
+              placeholder ??
+              (isInputDisabled ? "Select a conversation to send a message" : "Write a message")
+            }
+            disabled={isInputDisabled}
             maxLength={CHAT_MAX_MESSAGE_LENGTH}
             className={styles.textarea}
             aria-label="Message input"
@@ -61,7 +75,7 @@ export function MessageComposer({ onSend, isSending, disabled }: MessageComposer
           type="primary"
           icon={<SendOutlined />}
           size="large"
-          onClick={handleSend}
+          onClick={() => void handleSend()}
           disabled={!canSend || overLimit}
           loading={isSending}
           className={styles.sendBtn}

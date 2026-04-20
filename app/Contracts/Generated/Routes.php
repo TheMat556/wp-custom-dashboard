@@ -150,6 +150,66 @@ final class Routes {
 				'message'
 			)
 		),
+		'/chat/archive' => array(
+			'name' => 'chatArchive',
+			'methods' => array(
+				'POST'
+			),
+			'permission' => 'manage_options',
+			'featureFlag' => null,
+			'requestSchema' => 'dto/chat.thread-action.request',
+			'requestKeys' => array(
+				'selectedThreadId'
+			),
+			'responseSchema' => 'dto/chat.bootstrap.response',
+			'responseKeys' => array(
+				'role',
+				'threads',
+				'selectedThreadId',
+				'messages',
+				'pollIntervalSeconds'
+			)
+		),
+		'/chat/unarchive' => array(
+			'name' => 'chatUnarchive',
+			'methods' => array(
+				'POST'
+			),
+			'permission' => 'manage_options',
+			'featureFlag' => null,
+			'requestSchema' => 'dto/chat.thread-action.request',
+			'requestKeys' => array(
+				'selectedThreadId'
+			),
+			'responseSchema' => 'dto/chat.bootstrap.response',
+			'responseKeys' => array(
+				'role',
+				'threads',
+				'selectedThreadId',
+				'messages',
+				'pollIntervalSeconds'
+			)
+		),
+		'/chat/delete' => array(
+			'name' => 'chatDelete',
+			'methods' => array(
+				'POST'
+			),
+			'permission' => 'manage_options',
+			'featureFlag' => null,
+			'requestSchema' => 'dto/chat.thread-action.request',
+			'requestKeys' => array(
+				'selectedThreadId'
+			),
+			'responseSchema' => 'dto/chat.bootstrap.response',
+			'responseKeys' => array(
+				'role',
+				'threads',
+				'selectedThreadId',
+				'messages',
+				'pollIntervalSeconds'
+			)
+		),
 		'/preferences' => array(
 			'name' => 'preferences',
 			'methods' => array(

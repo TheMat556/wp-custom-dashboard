@@ -179,6 +179,96 @@ final class DashboardStatusService {
 	}
 
 	/**
+	 * Returns form submission count and booking count for the last 30 days.
+	 *
+	 * @return array
+	 */
+	public function get_submission_stats(): array {
+		global $wpdb;
+
+		if ( ! function_exists( 'is_plugin_active' ) ) {
+			require_once ABSPATH . 'wp-admin/includes/plugin.php';
+		}
+
+		$since = gmdate( 'Y-m-d H:i:s', strtotime( '-30 days', current_time( 'timestamp' ) ) );
+
+		$form_count  = null;
+		$form_plugin = null;
+
+		// Gravity Forms — gf_entry table.
+		if ( class_exists( 'GFAPI' ) ) {
+			$table = $wpdb->prefix . 'gf_entry';
+			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.NoCaching
+			if ( $wpdb->get_var( $wpdb->prepare( 'SHOW TABLES LIKE %s', $table ) ) === $table ) {
+				// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching
+				$form_count  = (int) $wpdb->get_var( $wpdb->prepare( 'SELECT COUNT(*) FROM %i WHERE date_created >= %s AND status = %s', $table, $since, 'active' ) );
+				$form_plugin = 'Gravity Forms';
+			}
+		}
+
+		// WPForms — wpforms_entries table (Pro only).
+		if ( null === $form_count && is_plugin_active( 'wpforms/wpforms.php' ) ) {
+			$table = $wpdb->prefix . 'wpforms_entries';
+			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.NoCaching
+			if ( $wpdb->get_var( $wpdb->prepare( 'SHOW TABLES LIKE %s', $table ) ) === $table ) {
+				// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching
+				$form_count  = (int) $wpdb->get_var( $wpdb->prepare( 'SELECT COUNT(*) FROM %i WHERE date >= %s', $table, $since ) );
+				$form_plugin = 'WPForms';
+			}
+		}
+
+		// FluentForms — fluentform_submissions table.
+		if ( null === $form_count && ( is_plugin_active( 'fluentform/fluentform.php' ) || defined( 'FLUENTFORM_VERSION' ) ) ) {
+			$table = $wpdb->prefix . 'fluentform_submissions';
+			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.NoCaching
+			if ( $wpdb->get_var( $wpdb->prepare( 'SHOW TABLES LIKE %s', $table ) ) === $table ) {
+				// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching
+				$form_count  = (int) $wpdb->get_var( $wpdb->prepare( 'SELECT COUNT(*) FROM %i WHERE created_at >= %s', $table, $since ) );
+				$form_plugin = 'FluentForms';
+			}
+		}
+
+		// Ninja Forms — nf_sub table.
+		if ( null === $form_count && is_plugin_active( 'ninja-forms/ninja-forms.php' ) ) {
+			$table = $wpdb->prefix . 'nf_sub';
+			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.NoCaching
+			if ( $wpdb->get_var( $wpdb->prepare( 'SHOW TABLES LIKE %s', $table ) ) === $table ) {
+				// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching
+				$form_count  = (int) $wpdb->get_var( $wpdb->prepare( 'SELECT COUNT(*) FROM %i WHERE sub_date >= %s', $table, $since ) );
+				$form_plugin = 'Ninja Forms';
+			}
+		}
+
+		// Formidable Forms — frm_items table.
+		if ( null === $form_count && is_plugin_active( 'formidable/formidable.php' ) ) {
+			$table = $wpdb->prefix . 'frm_items';
+			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.NoCaching
+			if ( $wpdb->get_var( $wpdb->prepare( 'SHOW TABLES LIKE %s', $table ) ) === $table ) {
+				// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching
+				$form_count  = (int) $wpdb->get_var( $wpdb->prepare( 'SELECT COUNT(*) FROM %i WHERE created_at >= %s', $table, $since ) );
+				$form_plugin = 'Formidable';
+			}
+		}
+
+		// Contact Form 7 + Flamingo — flamingo_inbound post type.
+		if ( null === $form_count && is_plugin_active( 'contact-form-7/wp-contact-form-7.php' ) ) {
+			$table = $wpdb->prefix . 'posts';
+			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching
+			$result = $wpdb->get_var( $wpdb->prepare( 'SELECT COUNT(*) FROM %i WHERE post_type = %s AND post_date >= %s', $table, 'flamingo_inbound', $since ) );
+			if ( null !== $result ) {
+				$form_count  = (int) $result;
+				$form_plugin = 'Contact Form 7';
+			}
+		}
+
+		return array(
+			'formSubmissions30d' => $form_count,
+			'bookings30d'        => $this->calendar->get_bookings_30d_count(),
+			'formPlugin'         => $form_plugin,
+		);
+	}
+
+	/**
 	 * Returns basic SEO checks.
 	 *
 	 * @return array
@@ -472,14 +562,14 @@ final class DashboardStatusService {
 			return null;
 		}
 
-		// Build one LIKE condition per keyword, combined with OR
+		// Build one LIKE condition per keyword, combined with OR.
 		$conditions   = implode( ' OR ', array_fill( 0, count( $keywords ), 'LOWER(post_title) LIKE %s' ) );
 		$like_values  = array_map(
 			fn( string $k ) => '%' . $wpdb->esc_like( $k ) . '%',
 			$keywords
 		);
 
-		// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+		// phpcs:disable WordPress.DB.PreparedSQL.InterpolatedNotPrepared,WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching
 		$row = $wpdb->get_row(
 			$wpdb->prepare(
 				"SELECT ID, post_title, post_status, post_modified_gmt
@@ -492,6 +582,7 @@ final class DashboardStatusService {
 				...$like_values
 			)
 		);
+		// phpcs:enable WordPress.DB.PreparedSQL.InterpolatedNotPrepared,WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching
 
 		if ( ! $row ) {
 			return null;

@@ -47,7 +47,7 @@ export const notificationStore = createStore<NotificationStoreState>((set, get) 
  * Returns the error message for callers that also want to log it.
  */
 export function notifyApiError(response: Response, context: string): string {
-  const isNonceExpired = response.status === 401 || response.status === 403;
+  const isNonceExpired = response.status === 401;
   const message = isNonceExpired ? "Your session has expired" : `${context} failed`;
   const description = isNonceExpired ? "Please reload the page to continue." : undefined;
 
@@ -66,7 +66,7 @@ export function notifyApiError(response: Response, context: string): string {
  * Returns a Promise resolving to the error message string.
  */
 export async function notifyApiErrorWithBody(response: Response, context: string): Promise<string> {
-  const isNonceExpired = response.status === 401 || response.status === 403;
+  const isNonceExpired = response.status === 401;
   let description: string | undefined;
 
   if (isNonceExpired) {

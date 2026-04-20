@@ -51,4 +51,28 @@ class ChatConversationService {
 	public function send_message( int $selected_thread_id, string $message ) {
 		return $this->client->send( $selected_thread_id, $message );
 	}
+
+	/**
+	 * @param int $selected_thread_id Thread identifier to archive.
+	 * @return array<string, mixed>|\WP_Error
+	 */
+	public function archive_thread( int $selected_thread_id ) {
+		return $this->client->archive( $selected_thread_id );
+	}
+
+	/**
+	 * @param int $selected_thread_id Thread identifier to unarchive.
+	 * @return array<string, mixed>|\WP_Error
+	 */
+	public function unarchive_thread( int $selected_thread_id ) {
+		return $this->client->unarchive( $selected_thread_id );
+	}
+
+	/**
+	 * @param int $selected_thread_id Thread identifier to delete permanently.
+	 * @return array<string, mixed>|\WP_Error
+	 */
+	public function delete_thread( int $selected_thread_id ) {
+		return $this->client->delete_thread( $selected_thread_id );
+	}
 }

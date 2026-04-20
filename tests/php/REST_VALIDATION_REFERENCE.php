@@ -31,6 +31,15 @@
  *   - selectedThreadId (required, integer): >= 0
  *   - message (required, string): 1-2000 multibyte characters
  *
+ * POST /wp-react-ui/v1/chat/archive
+ *   - selectedThreadId (required, integer): >= 1
+ *
+ * POST /wp-react-ui/v1/chat/unarchive
+ *   - selectedThreadId (required, integer): >= 1
+ *
+ * POST /wp-react-ui/v1/chat/delete
+ *   - selectedThreadId (required, integer): >= 1
+ *
  * GET /wp-react-ui/v1/activity
  *   - page (optional, integer, default=1): >= 1
  *   - perPage (optional, integer, default=20): 1-50

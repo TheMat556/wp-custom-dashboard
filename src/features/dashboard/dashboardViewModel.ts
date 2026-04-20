@@ -12,6 +12,7 @@ import type {
   SeoOverview,
   SiteHealthData,
   SiteSpeedData,
+  SubmissionStats,
   VisitorTrendEntry,
 } from "./services/dashboardApi";
 
@@ -57,6 +58,7 @@ function extractDataFields(data: DashboardData | null) {
     checklist: data?.onboardingChecklist ?? [],
     readiness: data?.siteReadinessScore ?? null,
     calendar: data?.calendarPreview ?? null,
+    submissionStats: data?.submissionStats ?? null,
   };
 }
 
@@ -84,6 +86,7 @@ export interface DashboardViewModel {
   checklist: OnboardingItem[];
   readiness: number | null;
   calendar: CalendarPreview | null;
+  submissionStats: SubmissionStats | null;
   total30Views: number;
   sparkline: VisitorTrendEntry[];
   viewTrend: number;
@@ -117,6 +120,7 @@ export function createDashboardViewModel(
     checklist,
     readiness,
     calendar,
+    submissionStats,
   } = extractDataFields(data);
   const total30Views = trendData?.total ?? trend.reduce((sum, day) => sum + day.views, 0);
   const sparkline = trend.slice(-7);
@@ -146,6 +150,7 @@ export function createDashboardViewModel(
     checklist,
     readiness,
     calendar,
+    submissionStats,
     total30Views,
     sparkline,
     viewTrend,

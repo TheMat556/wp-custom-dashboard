@@ -77,6 +77,45 @@ final class NativeChatClient {
 	}
 
 	/**
+	 * @param int $selected_thread_id Thread identifier to archive.
+	 * @return array<string, mixed>|WP_Error
+	 */
+	public function archive( int $selected_thread_id ) {
+		return $this->send_signed_request(
+			'archive',
+			array(
+				'selectedThreadId' => $selected_thread_id,
+			)
+		);
+	}
+
+	/**
+	 * @param int $selected_thread_id Thread identifier to unarchive.
+	 * @return array<string, mixed>|WP_Error
+	 */
+	public function unarchive( int $selected_thread_id ) {
+		return $this->send_signed_request(
+			'unarchive',
+			array(
+				'selectedThreadId' => $selected_thread_id,
+			)
+		);
+	}
+
+	/**
+	 * @param int $selected_thread_id Thread identifier to delete permanently.
+	 * @return array<string, mixed>|WP_Error
+	 */
+	public function delete_thread( int $selected_thread_id ) {
+		return $this->send_signed_request(
+			'delete',
+			array(
+				'selectedThreadId' => $selected_thread_id,
+			)
+		);
+	}
+
+	/**
 	 * @param string               $action  Chat route action segment.
 	 * @param array<string, mixed> $payload Chat request payload.
 	 * @return array<string, mixed>|WP_Error

@@ -7,6 +7,7 @@ import type {
   ChatPollResponse,
   ChatSendRequest,
   ChatSendResponse,
+  ChatThreadActionRequest,
   LicenseActivateRequest,
   LicenseSettingsRequest,
   LicenseSettingsResponse,
@@ -26,6 +27,8 @@ export type ChatPollData = ChatPollResponse;
 export type ChatLongPollPayload = ChatPollRequest & { timeoutSeconds?: number };
 export type ChatSendPayload = ChatSendRequest;
 export type ChatSendData = ChatSendResponse;
+export type ChatThreadActionPayload = ChatThreadActionRequest;
+export type ChatThreadActionData = ChatBootstrapResponse;
 export type LicenseActivatePayload = LicenseActivateRequest;
 export type LicenseSettingsPayload = LicenseSettingsRequest;
 export type LicenseSettingsData = LicenseSettingsResponse;
@@ -49,7 +52,10 @@ export interface PluginRouteApi {
   fetchChatPoll(data: ChatPollPayload): Promise<Response>;
   longPollChat(data: ChatLongPollPayload, signal?: AbortSignal): Promise<Response>;
   sendChatMessage(data: ChatSendPayload): Promise<Response>;
-  fetchLicense(): Promise<Response>;
+  archiveChatThread(data: ChatThreadActionPayload): Promise<Response>;
+  unarchiveChatThread(data: ChatThreadActionPayload): Promise<Response>;
+  deleteChatThread(data: ChatThreadActionPayload): Promise<Response>;
+  fetchLicense(force?: boolean): Promise<Response>;
   fetchLicenseSettings(): Promise<Response>;
   saveLicenseSettings(data: LicenseSettingsPayload): Promise<Response>;
   activateLicense(data: LicenseActivatePayload): Promise<Response>;
@@ -101,8 +107,21 @@ export function createPluginRouteApi(config: PluginRestConfig): PluginRouteApi {
       return client.post(PLUGIN_ROUTE_PATHS.chatSend, data);
     },
 
-    async fetchLicense() {
-      return client.get(PLUGIN_ROUTE_PATHS.license);
+    async archiveChatThread(data) {
+      return client.post(PLUGIN_ROUTE_PATHS.chatArchive, data);
+    },
+
+    async unarchiveChatThread(data) {
+      return client.post(PLUGIN_ROUTE_PATHS.chatUnarchive, data);
+    },
+
+    async deleteChatThread(data) {
+      return client.post(PLUGIN_ROUTE_PATHS.chatDelete, data);
+    },
+
+    async fetchLicense(force?: boolean) {
+      const path = force ? `${PLUGIN_ROUTE_PATHS.license}?force=1` : PLUGIN_ROUTE_PATHS.license;
+      return client.get(path);
     },
 
     async fetchLicenseSettings() {

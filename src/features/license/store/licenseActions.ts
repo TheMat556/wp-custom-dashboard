@@ -24,7 +24,7 @@ export function clearLicenseService() {
   service = null;
 }
 
-export async function loadLicenseStatus(): Promise<boolean> {
+export async function loadLicenseStatus(force = false): Promise<boolean> {
   if (!service) {
     return false;
   }
@@ -32,7 +32,7 @@ export async function loadLicenseStatus(): Promise<boolean> {
   licenseStore.setState({ loading: true });
 
   try {
-    const status = await service.fetchLicense();
+    const status = await service.fetchLicense(force);
     licenseStore.setState({ ...status, loading: false });
     return true;
   } catch {
@@ -122,7 +122,14 @@ export async function deactivateLicense(): Promise<boolean> {
     });
     return true;
   } catch {
-    licenseStore.setState({ saving: false });
-    return false;
+    // The key was not recognised by the server (already removed, wrong server, etc.).
+    // Clear local state anyway — there is nothing to protect on our end.
+    licenseStore.setState({ ...DEFAULT_LICENSE_STATE, saving: false });
+    notificationStore.getState().push({
+      type: "info",
+      message: "License cleared",
+      description: "The key was not found on the server but has been removed locally.",
+    });
+    return true;
   }
 }

@@ -50,6 +50,27 @@
       "requestSchema": "dto/chat.send.request",
       "responseSchema": "dto/chat.send.response"
     },
+    "/chat/archive": {
+      "name": "chatArchive",
+      "methods": ["POST"],
+      "permission": "manage_options",
+      "requestSchema": "dto/chat.thread-action.request",
+      "responseSchema": "dto/chat.bootstrap.response"
+    },
+    "/chat/unarchive": {
+      "name": "chatUnarchive",
+      "methods": ["POST"],
+      "permission": "manage_options",
+      "requestSchema": "dto/chat.thread-action.request",
+      "responseSchema": "dto/chat.bootstrap.response"
+    },
+    "/chat/delete": {
+      "name": "chatDelete",
+      "methods": ["POST"],
+      "permission": "manage_options",
+      "requestSchema": "dto/chat.thread-action.request",
+      "responseSchema": "dto/chat.bootstrap.response"
+    },
     "/preferences": {
       "name": "preferences",
       "methods": ["GET", "POST"],

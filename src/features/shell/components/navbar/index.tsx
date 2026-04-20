@@ -337,14 +337,13 @@ export default function Navbar() {
         display: "flex",
         alignItems: "center",
         width: "100%",
-        height: "var(--shell-navbar-height, 64px)",
+        height: "var(--shell-navbar-height, 65px)",
         flexShrink: 0,
         background: headerBackground,
         paddingLeft: 0,
         paddingRight: 0,
-        borderBottom: `1px solid ${headerBorderColor}`,
         boxShadow: "none",
-        transition: "background 300ms ease, border-color 300ms ease, box-shadow 300ms ease",
+        transition: "background 300ms ease",
       }}
     >
       {/* Left: burger + breadcrumb (shrinks to show burger at minimum) */}
@@ -353,7 +352,7 @@ export default function Navbar() {
           display: "flex",
           alignItems: "center",
           flexShrink: 1,
-          minWidth: "var(--shell-navbar-height, 64px)",
+          minWidth: "var(--shell-navbar-height, 65px)",
           overflow: "hidden",
         }}
       >
@@ -365,8 +364,8 @@ export default function Navbar() {
           title={toggleLabel}
           aria-label={toggleLabel}
           style={{
-            width: "var(--shell-navbar-height, 64px)",
-            height: "var(--shell-navbar-height, 64px)",
+            width: "var(--shell-navbar-height, 65px)",
+            height: "var(--shell-navbar-height, 65px)",
             borderRadius: 0,
             fontSize: 18,
             color: token.colorTextSecondary,

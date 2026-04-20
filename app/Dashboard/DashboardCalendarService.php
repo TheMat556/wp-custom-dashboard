@@ -121,6 +121,40 @@ final class DashboardCalendarService {
 	}
 
 	/**
+	 * Returns the number of bookings in the last 30 days (status != cancelled).
+	 *
+	 * @return int|null Null when the booking plugin or its table is unavailable.
+	 */
+	public function get_bookings_30d_count(): ?int {
+		global $wpdb;
+
+		if ( ! function_exists( 'is_plugin_active' ) ) {
+			require_once ABSPATH . 'wp-admin/includes/plugin.php';
+		}
+
+		if ( ! is_plugin_active( 'h-bricks-elements/plugin.php' ) ) {
+			return null;
+		}
+
+		$table = $wpdb->prefix . 'hbe_bookings';
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.NoCaching
+		if ( $wpdb->get_var( $wpdb->prepare( 'SHOW TABLES LIKE %s', $table ) ) !== $table ) {
+			return null;
+		}
+
+		$since = gmdate( 'Y-m-d H:i:s', strtotime( '-30 days', current_time( 'timestamp' ) ) );
+
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching
+		return (int) $wpdb->get_var(
+			$wpdb->prepare(
+				"SELECT COUNT(*) FROM %i WHERE start_datetime >= %s AND status != 'cancelled'",
+				$table,
+				$since
+			)
+		);
+	}
+
+	/**
 	 * Returns an empty seven-day calendar payload.
 	 *
 	 * @param string $today Current site-local day.

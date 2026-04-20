@@ -1,8 +1,8 @@
 import {
   CheckCircleOutlined,
   ExclamationCircleOutlined,
+  FormOutlined,
   LineChartOutlined,
-  SearchOutlined,
   ThunderboltOutlined,
   UpCircleOutlined,
   WarningOutlined,
@@ -11,10 +11,9 @@ import { Flex, Progress, Tag, Typography, theme } from "antd";
 import { navigate } from "../../../../../utils/wp";
 import type {
   PendingUpdates,
-  SeoBasics,
-  SeoOverview,
   SiteHealthData,
   SiteSpeedData,
+  SubmissionStats,
   SummaryTilesProps,
   TFunc,
 } from "../types";
@@ -209,60 +208,54 @@ function getSpeedProps(
   return { value, sub, color };
 }
 
-function getSeoColor(
-  seo: SeoOverview | null | undefined,
-  seoBasics: SeoBasics | null | undefined,
-  token: TokenType
-): string {
-  if (!seo?.plugin) {
-    if (!seoBasics) return token.colorTextSecondary;
-    return seoBasics.score >= 75 ? token.colorSuccess : token.colorWarning;
-  }
-  if (seo.score >= 80) return token.colorSuccess;
-  if (seo.score >= 50) return token.colorWarning;
-  return token.colorError;
-}
-
-function getSeoProps(
-  seo: SeoOverview | null | undefined,
-  seoBasics: SeoBasics | null | undefined,
+function getConversionsProps(
+  submissionStats: SubmissionStats | null | undefined,
   t: TFunc,
   token: TokenType
 ) {
-  let value: string;
-  if (seo?.plugin) value = `${seo.score}%`;
-  else if (seoBasics) value = `${seoBasics.score}%`;
-  else value = "—";
+  const forms = submissionStats?.formSubmissions30d ?? null;
+  const bookings = submissionStats?.bookings30d ?? null;
+  const hasAny = forms !== null || bookings !== null;
 
-  const color = getSeoColor(seo, seoBasics, token);
-
-  let tooltip: string;
-  if (seo?.plugin) tooltip = t("Based on Yoast SEO data");
-  else if (seoBasics) tooltip = t("Basic SEO checks — install Yoast SEO (free) for full tracking");
-  else tooltip = t("Install Yoast SEO (free) to track your search visibility");
+  const value = hasAny
+    ? (forms ?? 0) + (bookings ?? 0)
+    : "—";
 
   let sub: React.ReactNode;
-  if (seo?.plugin) {
-    const issueColor = seo.issues.length === 0 ? token.colorSuccess : token.colorWarning;
-    const issueText =
-      seo.issues.length === 0 ? t("No issues") : t("{n} issues", { n: seo.issues.length });
+  if (!hasAny) {
     sub = (
-      <Typography.Text style={{ fontSize: 12, color: issueColor }}>{issueText}</Typography.Text>
-    );
-  } else if (seoBasics) {
-    const basicColor = seoBasics.score >= 75 ? token.colorSuccess : token.colorWarning;
-    sub = (
-      <Typography.Text style={{ fontSize: 12, color: basicColor }}>
-        {t("Basic check — tap to improve")}
+      <Typography.Text type="secondary" style={{ fontSize: 12 }}>
+        {t("No plugin detected")}
       </Typography.Text>
     );
   } else {
+    const parts: React.ReactNode[] = [];
+    if (forms !== null) {
+      parts.push(
+        <Tag key="forms" color="blue" style={{ margin: 0, fontSize: 11 }}>
+          {forms} {t("forms")}
+        </Tag>
+      );
+    }
+    if (bookings !== null) {
+      parts.push(
+        <Tag key="bookings" color="purple" style={{ margin: 0, fontSize: 11 }}>
+          {bookings} {t("bookings")}
+        </Tag>
+      );
+    }
     sub = (
-      <Typography.Text type="secondary" style={{ fontSize: 12 }}>
-        {t("No plugin")}
-      </Typography.Text>
+      <Flex gap={3} wrap="wrap">
+        {parts}
+      </Flex>
     );
   }
+
+  const color = hasAny && (forms ?? 0) + (bookings ?? 0) > 0
+    ? token.colorSuccess
+    : token.colorTextSecondary;
+
+  const tooltip = t("Form submissions and bookings in the last 30 days");
 
   return { value, sub, color, tooltip };
 }
@@ -272,8 +265,7 @@ export function SummaryTiles({
   health,
   speed,
   updates,
-  seo,
-  seoBasics,
+  submissionStats,
   total30Views,
   viewTrend,
   hasUpdates,
@@ -288,7 +280,7 @@ export function SummaryTiles({
   const visitorsProps = getVisitorsProps(total30Views, viewTrend, intlLocale, t, token);
   const updatesProps = getUpdatesProps(updates, hasUpdates, intlLocale, t, token);
   const speedProps = getSpeedProps(isSiteDown, speed, t, token);
-  const seoProps = getSeoProps(seo, seoBasics, t, token);
+  const conversionsProps = getConversionsProps(submissionStats, t, token);
 
   return (
     <div
@@ -343,14 +335,12 @@ export function SummaryTiles({
       />
 
       <StatTile
-        icon={<SearchOutlined />}
-        label={t("SEO")}
-        description={t("Your search engine visibility")}
-        value={seoProps.value}
-        sub={seoProps.sub}
-        color={seoProps.color}
-        tooltip={seoProps.tooltip}
-        onClick={() => navigate("edit.php?post_type=page", adminUrl)}
+        icon={<FormOutlined />}
+        label={t("Conversions (30d)")}
+        value={conversionsProps.value}
+        sub={conversionsProps.sub}
+        color={conversionsProps.color}
+        tooltip={conversionsProps.tooltip}
       />
     </div>
   );

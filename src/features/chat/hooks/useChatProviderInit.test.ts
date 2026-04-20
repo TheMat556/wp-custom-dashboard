@@ -15,6 +15,9 @@ describe("useChatProviderInit", () => {
     expect(typeof result.current.fetchBootstrap).toBe("function");
     expect(typeof result.current.fetchPoll).toBe("function");
     expect(typeof result.current.sendMessage).toBe("function");
+    expect(typeof result.current.archiveThread).toBe("function");
+    expect(typeof result.current.unarchiveThread).toBe("function");
+    expect(typeof result.current.deleteThread).toBe("function");
   });
 
   it("should return the same service instance if restUrl and nonce don't change", () => {

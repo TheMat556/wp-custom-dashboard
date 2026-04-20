@@ -1,5 +1,11 @@
-import { MenuFoldOutlined, MenuUnfoldOutlined } from "@ant-design/icons";
-import { Avatar, Button, ConfigProvider, Typography } from "antd";
+import {
+  DeleteOutlined,
+  InboxOutlined,
+  MenuFoldOutlined,
+  MenuUnfoldOutlined,
+  RollbackOutlined,
+} from "@ant-design/icons";
+import { Avatar, Button, ConfigProvider, Popconfirm, Tag, Typography } from "antd";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import PageCanvas from "../../../../shared/ui/PageCanvas";
 import { createT } from "../../../../utils/i18n";
@@ -19,6 +25,8 @@ import styles from "./ChatPage.module.css";
 
 type ChatThread = ChatBootstrapData["threads"][number];
 type ChatMessage = ChatBootstrapData["messages"][number];
+type ConversationView = "chat" | "archive";
+type ThreadAction = "archive" | "unarchive" | "delete";
 
 function isGraceState(status: string, graceDaysRemaining: number) {
   return status === "grace" || (status === "expired" && graceDaysRemaining > 0);
@@ -76,6 +84,27 @@ function applyMessageSent(
   };
 }
 
+function applyThreadActionResult(
+  current: ChatBootstrapData | null,
+  threadId: number,
+  result: ChatBootstrapData
+): ChatBootstrapData | null {
+  if (!current) return result;
+  if (current.selectedThreadId === threadId) {
+    return result;
+  }
+  return {
+    ...current,
+    role: result.role,
+    threads: sortThreads(result.threads),
+  };
+}
+
+function findFirstThreadIdByStatus(threads: ChatThread[], status: ChatThread["status"]) {
+  return threads.find((thread) => thread.status === status)?.id ?? null;
+}
+
+// biome-ignore lint/complexity/noExcessiveCognitiveComplexity: This page coordinates the chat shell's async states and view modes in one container.
 export default function ChatPage() {
   const sidebarId = "wp-react-ui-chat-sidebar";
   const config = useShellConfig();
@@ -106,8 +135,10 @@ export default function ChatPage() {
   const [conversation, setConversation] = useState<ChatBootstrapData | null>(null);
   const [loading, setLoading] = useState(false);
   const [sending, setSending] = useState(false);
+  const [threadAction, setThreadAction] = useState<ThreadAction | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [bannerDismissed, setBannerDismissed] = useState(false);
+  const [conversationView, setConversationView] = useState<ConversationView>("chat");
   const [showSettings, setShowSettings] = useState(false);
   const [pollBackoffSeconds, setPollBackoffSeconds] = useState(0);
   const pollBackoffRef = useRef(0);
@@ -115,6 +146,7 @@ export default function ChatPage() {
   const bootstrapRequestRef = useRef(0);
   const pollRequestRef = useRef(0);
   const sendRequestRef = useRef(0);
+  const threadActionRequestRef = useRef(0);
 
   // Stable ref so handlePoll never captures stale conversation
   const conversationRef = useRef(conversation);
@@ -124,6 +156,8 @@ export default function ChatPage() {
 
   const inGrace = isGraceState(license.status, license.graceDaysRemaining);
   const currentRole = conversation?.role ?? (license.role === "owner" ? "owner" : "customer");
+  const canDeleteThread = canManage && currentRole === "owner";
+  const settingsOpen = showSettings;
 
   const selectedThread = useMemo(
     () =>
@@ -157,6 +191,14 @@ export default function ChatPage() {
     if (error || !chatEnabled || inGrace) setBannerDismissed(false);
   }, [error, chatEnabled, inGrace]);
 
+  useEffect(() => {
+    if (!selectedThread) return;
+    const selectedView = selectedThread.status === "closed" ? "archive" : "chat";
+    if (conversationView !== selectedView) {
+      setConversationView(selectedView);
+    }
+  }, [conversationView, selectedThread]);
+
   // ── Bootstrap ──────────────────────────────────────────────────────────────
 
   const loadConversation = useCallback(
@@ -186,16 +228,26 @@ export default function ChatPage() {
       sendRequestRef.current++;
       setLoading(false);
       setError(null);
+      setThreadAction(null);
       setConversation(null);
       return;
     }
     void loadConversation();
   }, [chatEnabled, loadConversation]);
 
+  const cancelInFlightConversationRequests = useCallback(() => {
+    bootstrapRequestRef.current++;
+    pollRequestRef.current++;
+    sendRequestRef.current++;
+    setLoading(false);
+    setSending(false);
+  }, []);
+
   // ── Polling ────────────────────────────────────────────────────────────────
   // handlePoll only depends on `service` — conversation is read via ref so the
   // polling interval is never reset on state updates (fixes the reset loop).
 
+  // biome-ignore lint/complexity/noExcessiveCognitiveComplexity: Polling merges rate-limit handling, stale-response guards, and incremental message updates.
   const handlePoll = useCallback(async () => {
     const conv = conversationRef.current;
     if (!conv?.selectedThreadId) return;
@@ -240,7 +292,7 @@ export default function ChatPage() {
   useChatPolling({
     pollIntervalSeconds: Math.max(pollBackoffSeconds, conversation?.pollIntervalSeconds || 30),
     onPoll: handlePoll,
-    enabled: chatEnabled && !!conversation?.selectedThreadId,
+    enabled: chatEnabled && !!conversation?.selectedThreadId && threadAction === null,
   });
 
   // ── Handlers ───────────────────────────────────────────────────────────────
@@ -279,13 +331,141 @@ export default function ChatPage() {
     [conversation, service]
   );
 
+  const handleArchiveThread = useCallback(async (): Promise<void> => {
+    if (!conversation?.selectedThreadId || !canManage) return;
+    const threadId = conversation.selectedThreadId;
+    const requestId = ++threadActionRequestRef.current;
+    cancelInFlightConversationRequests();
+    setThreadAction("archive");
+    setError(null);
+
+    try {
+      const data = await service.archiveThread({
+        selectedThreadId: threadId,
+      });
+      if (requestId === threadActionRequestRef.current) {
+        if (conversationRef.current?.selectedThreadId === threadId) {
+          setConversationView("archive");
+          setShowSettings(false);
+        }
+        setConversation((current) => applyThreadActionResult(current, threadId, data));
+      }
+    } catch (err) {
+      if (requestId === threadActionRequestRef.current) {
+        setError(toErrorMessage(err, "Failed to archive the conversation."));
+      }
+    } finally {
+      setThreadAction((current) => (current === "archive" ? null : current));
+    }
+  }, [canManage, cancelInFlightConversationRequests, conversation?.selectedThreadId, service]);
+
+  const handleUnarchiveThread = useCallback(async (): Promise<void> => {
+    if (!conversation?.selectedThreadId || !canManage) return;
+    const threadId = conversation.selectedThreadId;
+    const requestId = ++threadActionRequestRef.current;
+    cancelInFlightConversationRequests();
+    setThreadAction("unarchive");
+    setError(null);
+
+    try {
+      const data = await service.unarchiveThread({
+        selectedThreadId: threadId,
+      });
+      if (requestId === threadActionRequestRef.current) {
+        if (conversationRef.current?.selectedThreadId === threadId) {
+          setConversationView("chat");
+          setShowSettings(false);
+        }
+        setConversation((current) => applyThreadActionResult(current, threadId, data));
+      }
+    } catch (err) {
+      if (requestId === threadActionRequestRef.current) {
+        setError(toErrorMessage(err, "Failed to unarchive the conversation."));
+      }
+    } finally {
+      setThreadAction((current) => (current === "unarchive" ? null : current));
+    }
+  }, [canManage, cancelInFlightConversationRequests, conversation?.selectedThreadId, service]);
+
+  const handleDeleteThread = useCallback(async (): Promise<void> => {
+    if (!conversation?.selectedThreadId || !canDeleteThread) return;
+    const threadId = conversation.selectedThreadId;
+    const requestId = ++threadActionRequestRef.current;
+    cancelInFlightConversationRequests();
+    setThreadAction("delete");
+    setError(null);
+
+    try {
+      const data = await service.deleteThread({
+        selectedThreadId: threadId,
+      });
+      if (requestId === threadActionRequestRef.current) {
+        setConversation((current) => applyThreadActionResult(current, threadId, data));
+      }
+    } catch (err) {
+      if (requestId === threadActionRequestRef.current) {
+        setError(toErrorMessage(err, "Failed to delete the conversation."));
+      }
+    } finally {
+      setThreadAction((current) => (current === "delete" ? null : current));
+    }
+  }, [
+    canDeleteThread,
+    cancelInFlightConversationRequests,
+    conversation?.selectedThreadId,
+    service,
+  ]);
+
   const handleToggleSidebar = useCallback(() => {
     setSidebarCollapsed((current) => !current);
   }, []);
 
-  const handleNavigate = useCallback((view: "chat" | "settings") => {
-    setShowSettings(view === "settings");
-  }, []);
+  const handleNavigate = useCallback(
+    (view: "chat" | "archive" | "settings") => {
+      if (view === "settings") {
+        setShowSettings(true);
+        return;
+      }
+
+      setShowSettings(false);
+      setConversationView(view);
+
+      const current = conversationRef.current;
+      if (!current) {
+        return;
+      }
+
+      const desiredStatus = view === "archive" ? "closed" : "open";
+      const currentThread =
+        current.threads.find((thread) => thread.id === current.selectedThreadId) ?? null;
+
+      if (currentThread?.status === desiredStatus) {
+        return;
+      }
+
+      const nextThreadId = findFirstThreadIdByStatus(current.threads, desiredStatus);
+
+      if (nextThreadId) {
+        setConversation((value) =>
+          value ? { ...value, selectedThreadId: null, messages: [] } : value
+        );
+        void loadConversation(nextThreadId);
+        return;
+      }
+
+      setConversation((value) =>
+        value ? { ...value, selectedThreadId: null, messages: [] } : value
+      );
+    },
+    [loadConversation]
+  );
+
+  const composerPlaceholder = useMemo(() => {
+    if (!selectedThread) return t("Select a conversation to send a message");
+    if (!chatEnabled) return t("Chat is unavailable");
+    if (selectedThread.status === "closed") return t("This conversation is archived");
+    return t("Write a message");
+  }, [chatEnabled, selectedThread, t]);
 
   // ── License server settings ────────────────────────────────────────────────
 
@@ -339,12 +519,13 @@ export default function ChatPage() {
                     handleNavigate(view);
                     if (isMobile) setSidebarCollapsed(true);
                   }}
+                  view={conversationView}
                   role={currentRole}
                   collapsed={!isMobile && sidebarCollapsed}
                   canManage={Boolean(canManage)}
                   serverConfigured={Boolean(savedServerUrl)}
                   hasUnsavedSettings={serverDirty}
-                  settingsOpen={showSettings}
+                  settingsOpen={settingsOpen}
                   t={t}
                 />
               </div>
@@ -380,9 +561,14 @@ export default function ChatPage() {
                       {getInitials(selectedThread.customerName ?? selectedThread.domain)}
                     </Avatar>
                     <div className={styles.navbarThreadMeta}>
-                      <Typography.Text strong className={styles.navbarThreadName}>
-                        {selectedThread.customerName ?? selectedThread.domain}
-                      </Typography.Text>
+                      <div className={styles.navbarThreadTitleRow}>
+                        <Typography.Text strong className={styles.navbarThreadName}>
+                          {selectedThread.customerName ?? selectedThread.domain}
+                        </Typography.Text>
+                        <Tag bordered={false} className={styles.navbarThreadStatus}>
+                          {selectedThread.status === "open" ? t("Live") : t("Archived")}
+                        </Tag>
+                      </div>
                       <Typography.Text className={styles.navbarThreadSub}>
                         {selectedThread.customerEmail ?? selectedThread.domain}
                       </Typography.Text>
@@ -393,10 +579,76 @@ export default function ChatPage() {
                     {t("Support Chat")}
                   </Typography.Text>
                 )}
+
+                {selectedThread && canManage ? (
+                  <div className={styles.navbarActions}>
+                    {selectedThread.status === "open" && (
+                      <Popconfirm
+                        title={t("Archive this conversation?")}
+                        description={t(
+                          "The thread stays visible, but no new messages can be sent."
+                        )}
+                        okText={t("Archive conversation")}
+                        cancelText={t("Cancel")}
+                        onConfirm={() => handleArchiveThread()}
+                      >
+                        <Button
+                          icon={<InboxOutlined />}
+                          loading={threadAction === "archive"}
+                          disabled={threadAction !== null}
+                        >
+                          {t("Archive conversation")}
+                        </Button>
+                      </Popconfirm>
+                    )}
+
+                    {selectedThread.status === "closed" && (
+                      <Popconfirm
+                        title={t("Unarchive this conversation?")}
+                        description={t(
+                          "The thread moves back to the inbox and messages can be sent again."
+                        )}
+                        okText={t("Unarchive")}
+                        cancelText={t("Cancel")}
+                        onConfirm={() => handleUnarchiveThread()}
+                      >
+                        <Button
+                          icon={<RollbackOutlined />}
+                          loading={threadAction === "unarchive"}
+                          disabled={threadAction !== null}
+                        >
+                          {t("Unarchive")}
+                        </Button>
+                      </Popconfirm>
+                    )}
+
+                    {canDeleteThread ? (
+                      <Popconfirm
+                        title={t("Delete this conversation permanently?")}
+                        description={t(
+                          "This removes the thread from the inbox and cannot be undone."
+                        )}
+                        okText={t("Delete")}
+                        cancelText={t("Cancel")}
+                        okButtonProps={{ danger: true }}
+                        onConfirm={() => handleDeleteThread()}
+                      >
+                        <Button
+                          danger
+                          icon={<DeleteOutlined />}
+                          loading={threadAction === "delete"}
+                          disabled={threadAction !== null}
+                        >
+                          {t("Delete")}
+                        </Button>
+                      </Popconfirm>
+                    ) : null}
+                  </div>
+                ) : null}
               </header>
 
               <div className={styles.chatMain}>
-                {showSettings && canManage ? (
+                {settingsOpen && canManage ? (
                   <div className={styles.settingsView}>
                     <ChatSettingsPanel
                       locale={config.locale ?? "en_US"}
@@ -419,6 +671,8 @@ export default function ChatPage() {
                     onSend={handleSend}
                     isSending={sending}
                     chatEnabled={chatEnabled}
+                    composerDisabled={threadAction !== null}
+                    composerPlaceholder={composerPlaceholder}
                   />
                 )}
               </div>

@@ -29,6 +29,32 @@ final class ChatConversationRouteController {
 		return current_user_can( 'read' );
 	}
 
+	public function can_manage_options(): bool {
+		return current_user_can( 'manage_options' );
+	}
+
+	/**
+	 * @param int $selected_thread_id Thread identifier being mutated.
+	 * @return true|\WP_Error
+	 */
+	private function ensure_owner_can_delete( int $selected_thread_id ) {
+		$bootstrap = $this->service->get_bootstrap_payload( $selected_thread_id );
+
+		if ( is_wp_error( $bootstrap ) ) {
+			return $bootstrap;
+		}
+
+		if ( 'owner' !== ( $bootstrap['role'] ?? null ) ) {
+			return new WP_Error(
+				'chat_delete_requires_owner',
+				'Only the owner can delete conversations.',
+				array( 'status' => 403 )
+			);
+		}
+
+		return true;
+	}
+
 	public function bootstrap( WP_REST_Request $request ) {
 		if ( ! LicenseGate::can( 'chat' ) ) {
 			return new \WP_Error(
@@ -116,6 +142,82 @@ final class ChatConversationRouteController {
 		$result = $this->service->send_message(
 			absint( $request->get_param( 'selectedThreadId' ) ),
 			$message
+		);
+
+		if ( is_wp_error( $result ) ) {
+			return $result;
+		}
+
+		return rest_ensure_response( $result );
+	}
+
+	public function archive( WP_REST_Request $request ) {
+		if ( ! LicenseGate::can( 'chat' ) ) {
+			return new \WP_Error(
+				'license_feature_disabled',
+				'Chat access requires an active license.',
+				array(
+					'status'  => 403,
+					'feature' => 'chat',
+				)
+			);
+		}
+
+		$result = $this->service->archive_thread(
+			absint( $request->get_param( 'selectedThreadId' ) )
+		);
+
+		if ( is_wp_error( $result ) ) {
+			return $result;
+		}
+
+		return rest_ensure_response( $result );
+	}
+
+	public function delete_thread( WP_REST_Request $request ) {
+		if ( ! LicenseGate::can( 'chat' ) ) {
+			return new \WP_Error(
+				'license_feature_disabled',
+				'Chat access requires an active license.',
+				array(
+					'status'  => 403,
+					'feature' => 'chat',
+				)
+			);
+		}
+
+		$selected_thread_id = absint( $request->get_param( 'selectedThreadId' ) );
+		$owner_check        = $this->ensure_owner_can_delete( $selected_thread_id );
+
+		if ( is_wp_error( $owner_check ) ) {
+			return $owner_check;
+		}
+
+		$result = $this->service->delete_thread(
+			$selected_thread_id
+		);
+
+		if ( is_wp_error( $result ) ) {
+			return $result;
+		}
+
+		return rest_ensure_response( $result );
+	}
+
+	public function unarchive( WP_REST_Request $request ) {
+		if ( ! LicenseGate::can( 'chat' ) ) {
+			return new \WP_Error(
+				'license_feature_disabled',
+				'Chat access requires an active license.',
+				array(
+					'status'  => 403,
+					'feature' => 'chat',
+				)
+			);
+		}
+
+		$result = $this->service->unarchive_thread(
+			absint( $request->get_param( 'selectedThreadId' ) )
 		);
 
 		if ( is_wp_error( $result ) ) {

@@ -44,6 +44,7 @@ final class DashboardPayloadService {
 			'onboardingChecklist' => $this->status->get_onboarding_checklist(),
 			'siteReadinessScore'  => $this->status->get_site_readiness_score(),
 			'calendarPreview'     => $this->calendar->get_calendar_preview(),
+			'submissionStats'     => $this->status->get_submission_stats(),
 		);
 	}
 }

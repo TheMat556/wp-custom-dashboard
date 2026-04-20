@@ -22,7 +22,7 @@ export function UpcomingBookings({
       <Section
         icon={<CalendarOutlined />}
         title={t("Upcoming Bookings")}
-        description={t("Next 7 days")}
+        description={t("Next 5 upcoming")}
         extra={
           <Flex align="center" gap={8}>
             {calendar.totalToday > 0 && (
@@ -41,7 +41,7 @@ export function UpcomingBookings({
       >
         {calendar.weekDays && calendar.weekDays.length > 0 && (
           <div style={{ marginBottom: 16 }}>
-            <WeekCalendar weekDays={calendar.weekDays} intlLocale={intlLocale} />
+            <WeekCalendar weekDays={calendar.weekDays} intlLocale={intlLocale} isMd={isMd} />
           </div>
         )}
         {calendar.upcoming.length === 0 ? (
@@ -51,57 +51,66 @@ export function UpcomingBookings({
             </Text>
           </Flex>
         ) : (
-          <div
-            style={{
-              display: "grid",
-              gridTemplateColumns: isMd ? "repeat(2, 1fr)" : "1fr",
-              gap: 8,
-            }}
-          >
-            {calendar.upcoming.map((booking: CalendarBooking) => (
-              <Flex
-                key={booking.id}
-                align="center"
-                gap={10}
-                className="wp-react-ui-inset-panel"
-                style={{
-                  padding: "10px 14px",
-                }}
-              >
-                <div
+          <>
+            <div
+              style={{
+                display: "grid",
+                gridTemplateColumns: isMd ? "repeat(2, 1fr)" : "1fr",
+                gap: 8,
+              }}
+            >
+              {calendar.upcoming.slice(0, 5).map((booking: CalendarBooking) => (
+                <Flex
+                  key={booking.id}
+                  align="center"
+                  gap={10}
+                  className="wp-react-ui-inset-panel"
                   style={{
-                    width: 8,
-                    height: 8,
-                    borderRadius: "50%",
-                    flexShrink: 0,
-                    background: booking.isToday ? token.colorPrimary : token.colorTextQuaternary,
+                    padding: "10px 14px",
                   }}
-                />
-                <div style={{ flex: 1, minWidth: 0 }}>
-                  <Text
+                >
+                  <div
                     style={{
-                      fontSize: 14,
-                      fontWeight: 500,
-                      display: "block",
-                      overflow: "hidden",
-                      textOverflow: "ellipsis",
-                      whiteSpace: "nowrap",
+                      width: 8,
+                      height: 8,
+                      borderRadius: "50%",
+                      flexShrink: 0,
+                      background: booking.isToday ? token.colorPrimary : token.colorTextQuaternary,
                     }}
-                  >
-                    {booking.customerName || "—"}
-                  </Text>
-                  <Text type="secondary" style={{ fontSize: 12 }}>
-                    {formatBookingTime(booking.startDate, intlLocale, t)}
-                  </Text>
-                </div>
-                {booking.isToday && (
-                  <Tag color="blue" style={{ margin: 0, fontSize: 11 }}>
-                    {t("Today")}
-                  </Tag>
-                )}
+                  />
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <Text
+                      style={{
+                        fontSize: 14,
+                        fontWeight: 500,
+                        display: "block",
+                        overflow: "hidden",
+                        textOverflow: "ellipsis",
+                        whiteSpace: "nowrap",
+                      }}
+                    >
+                      {booking.customerName || "—"}
+                    </Text>
+                    <Text type="secondary" style={{ fontSize: 12 }}>
+                      {formatBookingTime(booking.startDate, intlLocale, t)}
+                    </Text>
+                  </div>
+                  {booking.isToday && (
+                    <Tag color="blue" style={{ margin: 0, fontSize: 11 }}>
+                      {t("Today")}
+                    </Tag>
+                  )}
+                </Flex>
+              ))}
+            </div>
+            {calendar.upcoming.length > 5 && (
+              <Flex justify="center" style={{ marginTop: 8 }}>
+                <Text type="secondary" style={{ fontSize: 12 }}>
+                  {t("+ {n} more", { n: calendar.upcoming.length - 5 })}
+                </Text>
               </Flex>
-            ))}
-          </div>
+            )}
+          </>
         )}
       </Section>
     </div>

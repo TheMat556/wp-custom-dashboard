@@ -5,6 +5,7 @@ import type {
   ChatPollResponse,
   ChatSendRequest,
   ChatSendResponse,
+  ChatThreadActionRequest,
 } from "../../../generated/contracts/dto";
 import {
   type ChatLongPollPayload,
@@ -26,12 +27,17 @@ export type ChatPollData = ChatPollResponse;
 export type ChatLongPollInput = ChatLongPollPayload & { signal?: AbortSignal };
 export type ChatSendInput = ChatSendRequest;
 export type ChatSendData = ChatSendResponse;
+export type ChatThreadActionInput = ChatThreadActionRequest;
+export type ChatThreadActionData = ChatBootstrapResponse;
 
 export interface ChatConversationService {
   fetchBootstrap(data: ChatBootstrapInput): Promise<ChatBootstrapData>;
   fetchPoll(data: ChatPollInput): Promise<ChatPollData>;
   longPoll(data: ChatLongPollInput): Promise<ChatPollData>;
   sendMessage(data: ChatSendInput): Promise<ChatSendData>;
+  archiveThread(data: ChatThreadActionInput): Promise<ChatThreadActionData>;
+  unarchiveThread(data: ChatThreadActionInput): Promise<ChatThreadActionData>;
+  deleteThread(data: ChatThreadActionInput): Promise<ChatThreadActionData>;
 }
 
 export function createChatConversationService(
@@ -100,6 +106,54 @@ export function createChatConversationService(
       if (!result.success) {
         logger.error("[chat-send] Unexpected API shape:", result.error.flatten());
         throw new Error("Unexpected response from chat send API");
+      }
+      return result.data;
+    },
+
+    async archiveThread(data) {
+      const res = await api.archiveChatThread(data);
+
+      if (!res.ok) {
+        throw new Error(await notifyApiErrorWithBody(res, "Chat archive"));
+      }
+
+      const raw = await res.json();
+      const result = ChatBootstrapResponseSchema.safeParse(raw);
+      if (!result.success) {
+        logger.error("[chat-archive] Unexpected API shape:", result.error.flatten());
+        throw new Error("Unexpected response from chat archive API");
+      }
+      return result.data;
+    },
+
+    async unarchiveThread(data) {
+      const res = await api.unarchiveChatThread(data);
+
+      if (!res.ok) {
+        throw new Error(await notifyApiErrorWithBody(res, "Chat unarchive"));
+      }
+
+      const raw = await res.json();
+      const result = ChatBootstrapResponseSchema.safeParse(raw);
+      if (!result.success) {
+        logger.error("[chat-unarchive] Unexpected API shape:", result.error.flatten());
+        throw new Error("Unexpected response from chat unarchive API");
+      }
+      return result.data;
+    },
+
+    async deleteThread(data) {
+      const res = await api.deleteChatThread(data);
+
+      if (!res.ok) {
+        throw new Error(await notifyApiErrorWithBody(res, "Chat delete"));
+      }
+
+      const raw = await res.json();
+      const result = ChatBootstrapResponseSchema.safeParse(raw);
+      if (!result.success) {
+        logger.error("[chat-delete] Unexpected API shape:", result.error.flatten());
+        throw new Error("Unexpected response from chat delete API");
       }
       return result.data;
     },

@@ -1,4 +1,4 @@
-import { MessageOutlined, SearchOutlined, SettingOutlined } from "@ant-design/icons";
+import { InboxOutlined, MessageOutlined, SearchOutlined, SettingOutlined } from "@ant-design/icons";
 import { Avatar, Button, Empty, Input, Tooltip, Typography } from "antd";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { ChatBootstrapData } from "../../services/chatConversationApi";
@@ -11,7 +11,8 @@ interface ChatSidebarProps {
   threads: ChatThread[];
   selectedId: number | null;
   onSelect: (id: number) => void;
-  onNavigate: (view: "chat" | "settings") => void;
+  onNavigate: (view: "chat" | "archive" | "settings") => void;
+  view: "chat" | "archive";
   role: "owner" | "customer";
   collapsed: boolean;
   canManage: boolean;
@@ -21,11 +22,13 @@ interface ChatSidebarProps {
   t: (key: string) => string;
 }
 
+// biome-ignore lint/complexity/noExcessiveCognitiveComplexity: The sidebar combines view switching, filtering, keyboard navigation, and responsive rendering in one component.
 export function ChatSidebar({
   threads,
   selectedId,
   onSelect,
   onNavigate,
+  view,
   role,
   collapsed,
   canManage,
@@ -37,15 +40,31 @@ export function ChatSidebar({
   const [query, setQuery] = useState("");
 
   const filtered = useMemo(() => {
+    const scopedThreads = threads.filter((thread) =>
+      view === "archive" ? thread.status === "closed" : thread.status === "open"
+    );
     const value = query.trim().toLowerCase();
-    if (!value) return threads;
-    return threads.filter(
+    if (!value) return scopedThreads;
+    return scopedThreads.filter(
       (thread) =>
         thread.domain.toLowerCase().includes(value) ||
         (thread.customerName?.toLowerCase().includes(value) ?? false) ||
         (thread.customerEmail?.toLowerCase().includes(value) ?? false)
     );
-  }, [threads, query]);
+  }, [threads, query, view]);
+
+  const headerSubtitle = useMemo(() => {
+    if (view === "archive") {
+      return role === "owner" ? t("All archived chat threads") : t("Your archived support thread");
+    }
+
+    return role === "owner" ? t("All active chat threads") : t("Your site support thread");
+  }, [role, t, view]);
+
+  const emptyDescription = useMemo(() => {
+    if (query) return t("No matching conversations");
+    return view === "archive" ? t("No archived conversations") : t("No active conversations");
+  }, [query, t, view]);
 
   const selectedIndex = filtered.findIndex((thread) => thread.id === selectedId);
 
@@ -82,9 +101,7 @@ export function ChatSidebar({
             <Typography.Text strong className={styles.sidebarTitle}>
               {t("Support Chat")}
             </Typography.Text>
-            <Typography.Text className={styles.headerSubtitle}>
-              {role === "owner" ? t("All active chat threads") : t("Your site support thread")}
-            </Typography.Text>
+            <Typography.Text className={styles.headerSubtitle}>{headerSubtitle}</Typography.Text>
           </div>
         )}
       </div>
@@ -112,10 +129,7 @@ export function ChatSidebar({
       >
         {!collapsed && filtered.length === 0 ? (
           <div className={styles.emptyState} role="status">
-            <Empty
-              image={Empty.PRESENTED_IMAGE_SIMPLE}
-              description={query ? t("No matching conversations") : t("No conversations yet")}
-            />
+            <Empty image={Empty.PRESENTED_IMAGE_SIMPLE} description={emptyDescription} />
           </div>
         ) : (
           filtered.map((thread) => (
@@ -135,14 +149,28 @@ export function ChatSidebar({
         <Tooltip title={collapsed ? t("Chat") : undefined} placement="right">
           <Button
             block
-            type={!settingsOpen ? "primary" : collapsed ? "text" : "default"}
+            type={!settingsOpen && view === "chat" ? "primary" : collapsed ? "text" : "default"}
             icon={<MessageOutlined />}
             onClick={() => onNavigate("chat")}
-            className={`${styles.navButton} ${!settingsOpen ? styles.navButtonActive : ""}`}
+            className={`${styles.navButton} ${!settingsOpen && view === "chat" ? styles.navButtonActive : ""}`}
             aria-label={t("View chat")}
-            aria-pressed={!settingsOpen}
+            aria-pressed={!settingsOpen && view === "chat"}
           >
             {!collapsed ? t("Chat") : null}
+          </Button>
+        </Tooltip>
+
+        <Tooltip title={collapsed ? t("Archive") : undefined} placement="right">
+          <Button
+            block
+            type={!settingsOpen && view === "archive" ? "primary" : collapsed ? "text" : "default"}
+            icon={<InboxOutlined />}
+            onClick={() => onNavigate("archive")}
+            className={`${styles.navButton} ${!settingsOpen && view === "archive" ? styles.navButtonActive : ""}`}
+            aria-label={t("View archive")}
+            aria-pressed={!settingsOpen && view === "archive"}
+          >
+            {!collapsed ? t("Archive") : null}
           </Button>
         </Tooltip>
 
@@ -230,7 +258,11 @@ function ThreadRow({ thread, collapsed, isSelected, onClick, t }: ThreadRowProps
             <Typography.Text ellipsis className={styles.threadPreview}>
               {preview}
             </Typography.Text>
-            {isOpen && <span className={styles.threadStatus}>{t("Live")}</span>}
+            <span
+              className={`${styles.threadStatus} ${!isOpen ? styles.threadStatusArchived : ""}`}
+            >
+              {isOpen ? t("Live") : t("Archived")}
+            </span>
           </div>
         </div>
       )}

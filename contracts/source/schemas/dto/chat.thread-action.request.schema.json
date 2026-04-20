@@ -1,0 +1,13 @@
+{
+  "$id": "dto/chat.thread-action.request",
+  "title": "ChatThreadActionRequest",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["selectedThreadId"],
+  "properties": {
+    "selectedThreadId": {
+      "type": "integer",
+      "minimum": 1
+    }
+  }
+}

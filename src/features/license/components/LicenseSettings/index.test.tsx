@@ -75,14 +75,6 @@ function Wrapper({ children }: { children: ReactNode }) {
             keyPrefix: "12345678",
             serverConfigured: true,
           },
-          chat: {
-            provider: "chatwoot",
-            effectiveProvider: null,
-            chatwootBaseUrl: null,
-            chatwootWebsiteToken: null,
-            tawkPropertyId: null,
-            tawkWidgetId: null,
-          },
           shellRoutes: [],
           locale: "en_US",
         } as const

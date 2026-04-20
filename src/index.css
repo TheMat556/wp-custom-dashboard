@@ -159,7 +159,7 @@ body[data-theme="dark"] {
 .wp-react-ui-shell {
   display: grid;
   grid-template-columns: var(--sidebar-width, var(--shell-sidebar-width, 240px)) minmax(0, 1fr);
-  grid-template-rows: var(--shell-navbar-height, 64px) 1fr;
+  grid-template-rows: var(--shell-navbar-height, 65px) minmax(0, 1fr);
   grid-template-areas: "sidebar navbar" "sidebar content";
   transition: grid-template-columns var(--motion-base) var(--ease-standard);
   width: 100%;
@@ -225,6 +225,14 @@ body[data-theme="dark"] {
   border-right: 1px solid var(--color-border-subtle);
   background: var(--shell-chrome-bg);
   box-shadow: none;
+}
+
+/* Ensure AntD's inner wrapper fills the Sider height so the flex scroll chain works. */
+.wp-react-ui-shell-sidebar-frame > .ant-layout-sider-children {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
 }
 
 .wp-react-ui-page-canvas {
@@ -756,6 +764,10 @@ body[data-theme="dark"] {
   justify-content: center;
 }
 
+.wp-react-ui-navbar {
+  border-bottom: 1px solid var(--color-border-strong);
+}
+
 .wp-react-ui-navbar-icon-button,
 .wp-react-ui-navbar-toggle {
   min-width: 44px;
@@ -1056,16 +1068,15 @@ body[data-theme="dark"] {
 }
 
 .wp-react-ui-sidebar-shell {
-  background:
-    radial-gradient(circle at top left, var(--color-accent-soft), transparent 42%),
-    linear-gradient(180deg, var(--shell-chrome-bg) 0%, var(--color-bg-app) 100%);
+  background: var(--shell-chrome-bg);
 }
 
 /* ── Sidebar brand / logo ── */
 
 .wp-react-ui-sidebar-brand {
+  box-sizing: border-box;
   flex-shrink: 0;
-  height: 64px;
+  height: var(--shell-navbar-height, 65px);
   border-bottom: 1px solid var(--color-border-subtle);
 }
 
@@ -1328,8 +1339,8 @@ body[data-theme="dark"] {
   width: 100%;
   min-height: var(--shell-menu-item-height, 42px);
   padding: 0 12px;
-  border: 0;
-  border-radius: 12px;
+  border: 1px solid transparent;
+  border-radius: 14px;
   background: transparent;
   color: var(--color-text-secondary);
   font-size: var(--text-sm);
@@ -1340,11 +1351,13 @@ body[data-theme="dark"] {
   transition:
     background-color 160ms ease,
     color 160ms ease,
+    border-color 140ms ease,
     box-shadow 160ms ease;
 }
 
 .wp-react-ui-nav-item__button:hover {
   background: var(--wp-react-ui-shell-surface-soft);
+  border-color: var(--color-border-subtle);
   color: var(--color-text-primary);
 }
 
@@ -1353,8 +1366,9 @@ body[data-theme="dark"] {
 }
 
 .wp-react-ui-nav-item__button--active {
-  background: linear-gradient(135deg, var(--wp-react-ui-shell-accent-soft) 0%, transparent 100%);
-  box-shadow: inset 0 0 0 1px var(--wp-react-ui-shell-border-strong);
+  background: var(--color-accent-soft);
+  border-color: var(--color-accent-primary);
+  box-shadow: none;
   color: var(--color-text-primary);
   font-weight: 600;
 }
@@ -1547,6 +1561,7 @@ body[data-theme="dark"] {
 
 .wp-react-ui-nav-footer {
   padding: 6px 10px;
+  border-top: 1px solid var(--color-border-subtle);
 }
 
 /* Nav badges */
@@ -1591,14 +1606,14 @@ body[data-theme="dark"] {
 /* High contrast overrides */
 
 .wp-react-ui-high-contrast .wp-react-ui-nav-item__button--active {
-  background: var(--wp-react-ui-shell-accent-soft);
-  box-shadow: inset 0 0 0 2px var(--wp-react-ui-shell-border-strong);
+  background: var(--color-accent-soft);
+  box-shadow: inset 0 0 0 2px var(--color-accent-primary);
 }
 
 /* ── End nav tree ── */
 
 .wp-react-ui-sidebar-bottom-actions {
-  background: linear-gradient(180deg, transparent 0%, var(--shell-chrome-raised) 100%);
+  background: transparent;
 }
 
 .wp-react-ui-sidebar-bottom-actions .ant-btn {
@@ -1607,7 +1622,7 @@ body[data-theme="dark"] {
 
 .wp-react-ui-sidebar-bottom-actions .ant-btn:hover {
   background: var(--wp-react-ui-shell-surface-soft) !important;
-  border-color: var(--wp-react-ui-shell-border-strong) !important;
+  border-color: var(--color-border-subtle) !important;
 }
 
 .wp-react-ui-content-loading-overlay {

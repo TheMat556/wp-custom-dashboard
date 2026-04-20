@@ -54,6 +54,11 @@ export function AtAGlanceWidget({ data }: { data: AtAGlanceData }) {
         <Text type="secondary" style={{ fontSize: 12 }}>
           PHP {data.phpVersion}
         </Text>
+        {data.lastBackupDate && (
+          <Text type="secondary" style={{ fontSize: 12 }}>
+            Last backup: {data.lastBackupDate}
+          </Text>
+        )}
       </Flex>
     </Card>
   );

@@ -26,8 +26,9 @@ final class LicenseRouteController {
 		return current_user_can( 'manage_options' );
 	}
 
-	public function show() {
-		return rest_ensure_response( $this->service->get_license_payload() );
+	public function show( WP_REST_Request $request ) {
+		$force = (bool) $request->get_param( 'force' );
+		return rest_ensure_response( $this->service->get_license_payload( $force ) );
 	}
 
 	public function show_settings() {
