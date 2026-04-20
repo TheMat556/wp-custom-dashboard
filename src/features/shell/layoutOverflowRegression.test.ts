@@ -33,7 +33,9 @@ describe("shell overflow regression guards", () => {
   it("removes the hidden native wpcontent from layout once the shell is active", () => {
     const criticalCss = loadSource("../../../includes/critical.css");
 
-    expect(criticalCss).toMatch(/#wpwrap\.has-react-shell > #wpcontent,\s*#wpwrap\.has-react-shell > #wpfooter\s*\{[\s\S]*display:\s*none/i);
+    expect(criticalCss).toMatch(
+      /#wpwrap\.has-react-shell > #wpcontent,\s*#wpwrap\.has-react-shell > #wpfooter\s*\{[\s\S]*display:\s*none/i
+    );
     expect(criticalCss).toMatch(/grid-template-rows:\s*65px\s+minmax\(0,\s*1fr\)\s*!important/i);
   });
 });

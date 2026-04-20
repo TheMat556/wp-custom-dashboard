@@ -217,9 +217,7 @@ function getConversionsProps(
   const bookings = submissionStats?.bookings30d ?? null;
   const hasAny = forms !== null || bookings !== null;
 
-  const value = hasAny
-    ? (forms ?? 0) + (bookings ?? 0)
-    : "—";
+  const value = hasAny ? (forms ?? 0) + (bookings ?? 0) : "—";
 
   let sub: React.ReactNode;
   if (!hasAny) {
@@ -251,9 +249,8 @@ function getConversionsProps(
     );
   }
 
-  const color = hasAny && (forms ?? 0) + (bookings ?? 0) > 0
-    ? token.colorSuccess
-    : token.colorTextSecondary;
+  const color =
+    hasAny && (forms ?? 0) + (bookings ?? 0) > 0 ? token.colorSuccess : token.colorTextSecondary;
 
   const tooltip = t("Form submissions and bookings in the last 30 days");
 

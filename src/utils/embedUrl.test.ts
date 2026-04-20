@@ -134,9 +134,9 @@ describe("normalizeToMenuKey", () => {
   });
 
   it("includes taxonomy param so taxonomy screens match WP menu slugs", () => {
-    expect(
-      normalizeToMenuKey("http://localhost/wp-admin/edit-tags.php?taxonomy=category")
-    ).toBe("edit-tags.php?taxonomy=category");
+    expect(normalizeToMenuKey("http://localhost/wp-admin/edit-tags.php?taxonomy=category")).toBe(
+      "edit-tags.php?taxonomy=category"
+    );
     expect(
       normalizeToMenuKey(
         "http://localhost/wp-admin/edit-tags.php?taxonomy=category&tag_ID=5&orderby=name"
