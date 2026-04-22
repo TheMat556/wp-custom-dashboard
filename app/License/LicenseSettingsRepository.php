@@ -218,6 +218,18 @@ final class LicenseSettingsRepository {
 
 		if ( null === $encrypted ) {
 			// Encryption unavailable — store plain text as a last resort.
+			trigger_error( 'WP React UI: webhook secret stored unencrypted (sodium and openssl unavailable).', E_USER_WARNING );
+			add_action(
+				'admin_notices',
+				static function () {
+					if ( ! current_user_can( 'manage_options' ) ) {
+						return;
+					}
+					echo '<div class="notice notice-warning is-dismissible"><p>'
+						. esc_html__( 'WP React UI: Your webhook secret is stored unencrypted because neither the sodium nor openssl PHP extension is available. Enable one of these extensions to secure your data.', 'wp-react-ui' )
+						. '</p></div>';
+				}
+			);
 			return update_option(
 				self::OPTION_NAME,
 				array_merge(
@@ -383,7 +395,7 @@ final class LicenseSettingsRepository {
 		$salt = wp_salt( 'auth' );
 		$salt = is_string( $salt ) && '' !== $salt ? $salt : 'wp-react-ui-license';
 
-		return hash( 'sha256', $salt, true );
+		return hash_hkdf( 'sha256', $salt, 32, 'wp-react-ui-license-key-v1' );
 	}
 
 	/**

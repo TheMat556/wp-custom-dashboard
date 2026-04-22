@@ -15,7 +15,9 @@ use WP_REST_Request;
 defined( 'ABSPATH' ) || exit;
 
 final class WebhookListener {
-	private const MAX_CLOCK_SKEW = 300;
+	private const MAX_CLOCK_SKEW    = 300;
+	private const RATE_LIMIT_MAX    = 10;
+	private const RATE_LIMIT_WINDOW = 300; // seconds (5 minutes)
 
 	private LicenseSettingsRepository $settings_repository;
 	private LicenseManager $manager;
@@ -29,12 +31,65 @@ final class WebhookListener {
 	}
 
 	/**
+	 * Returns the caller IP, honouring X-Forwarded-For only when the site
+	 * explicitly declares a trusted proxy via WP_CUSTOM_DASHBOARD_TRUSTED_PROXY.
+	 */
+	private function get_caller_ip(): string {
+		if (
+			defined( 'WP_CUSTOM_DASHBOARD_TRUSTED_PROXY' ) &&
+			WP_CUSTOM_DASHBOARD_TRUSTED_PROXY === ( $_SERVER['REMOTE_ADDR'] ?? '' ) &&
+			! empty( $_SERVER['HTTP_X_FORWARDED_FOR'] )
+		) {
+			$forwarded = explode( ',', (string) $_SERVER['HTTP_X_FORWARDED_FOR'] );
+			return trim( $forwarded[0] );
+		}
+
+		return (string) ( $_SERVER['REMOTE_ADDR'] ?? '' );
+	}
+
+	/**
+	 * Enforces a transient-based rate limit for the given IP.
+	 *
+	 * @return WP_Error|null WP_Error with status 429 when the limit is exceeded, null otherwise.
+	 */
+	private function check_rate_limit(): ?WP_Error {
+		$ip  = $this->get_caller_ip();
+		$key = 'wh_rl_' . md5( $ip );
+
+		$attempts = (int) get_transient( $key );
+
+		if ( $attempts >= self::RATE_LIMIT_MAX ) {
+			return new WP_Error(
+				'webhook_rate_limit_exceeded',
+				'Too many requests. Please try again later.',
+				array(
+					'status'      => 429,
+					'headers'     => array( 'Retry-After' => (string) self::RATE_LIMIT_WINDOW ),
+				)
+			);
+		}
+
+		if ( 0 === $attempts ) {
+			set_transient( $key, 1, self::RATE_LIMIT_WINDOW );
+		} else {
+			set_transient( $key, $attempts + 1, self::RATE_LIMIT_WINDOW );
+		}
+
+		return null;
+	}
+
+	/**
 	 * Processes a webhook request after verification succeeds.
 	 *
 	 * @param WP_REST_Request $request Incoming webhook request.
 	 * @return array{status: string, event: string}|WP_Error
 	 */
 	public function handle( WP_REST_Request $request ) {
+		$rate_limit_error = $this->check_rate_limit();
+		if ( null !== $rate_limit_error ) {
+			return $rate_limit_error;
+		}
+
 		$stored_secret = $this->settings_repository->get_webhook_secret();
 		$header_secret = strtolower( sanitize_text_field( (string) $request->get_header( 'X-Webhook-Secret' ) ) );
 

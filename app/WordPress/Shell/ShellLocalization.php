@@ -50,8 +50,8 @@ class WP_React_UI_Shell_Localization {
 			'locale'    => get_locale(),
 			'user'      => array(
 				'name'             => $user->display_name,
-				'role'             => implode( ', ', $user->roles ),
 				'canManageOptions' => $can_manage,
+				'canEditPosts'     => current_user_can( 'edit_posts' ),
 			),
 			'license'   => $license,
 			'shellRoutes' => self::get_shell_routes(),

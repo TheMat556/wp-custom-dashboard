@@ -63,7 +63,7 @@ class WP_React_UI_Activity_Log {
 			'action'       => $action,
 			'object_type'  => $object_type,
 			'object_id'    => $object_id,
-			'object_title' => mb_substr( $object_title, 0, 200 ),
+			'object_title' => mb_substr( wp_strip_all_tags( $object_title ), 0, 200 ),
 			'details'      => mb_substr( $details, 0, 500 ),
 			'created_at'   => gmdate( 'Y-m-d H:i:s' ),
 		);
