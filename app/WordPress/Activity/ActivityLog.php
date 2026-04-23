@@ -143,10 +143,10 @@ class WP_React_UI_Activity_Log {
 	}
 
 	/**
-	 * @param int      $user_id  User ID.
-	 * @param int|null $reassign Reassign ID.
+	 * @param int      $user_id   User ID.
+	 * @param int|null $_reassign Reassign ID (unused).
 	 */
-	public static function on_delete_user( int $user_id, $reassign ): void {
+	public static function on_delete_user( int $user_id, $_reassign ): void {
 		$user = get_userdata( $user_id );
 		self::record( 'user_deleted', 'user', $user ? $user->display_name : "User #{$user_id}", $user_id );
 	}
@@ -176,11 +176,11 @@ class WP_React_UI_Activity_Log {
 	/**
 	 * Only log core settings updates, skip transients and internal options.
 	 *
-	 * @param string $option    Option name.
-	 * @param mixed  $old_value Old value.
-	 * @param mixed  $value     New value.
+	 * @param string $option      Option name.
+	 * @param mixed  $_old_value  Old value (unused).
+	 * @param mixed  $_value      New value (unused).
 	 */
-	public static function on_update_option( string $option, $old_value, $value ): void {
+	public static function on_update_option( string $option, $_old_value, $_value ): void {
 		$tracked = array( 'blogname', 'blogdescription', 'siteurl', 'home', 'admin_email', 'permalink_structure' );
 		if ( ! in_array( $option, $tracked, true ) ) {
 			return;

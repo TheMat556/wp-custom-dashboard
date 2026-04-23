@@ -514,7 +514,7 @@ class WP_React_UI_REST_API {
 			: get_option( 'wp_custom_dashboard_webhook_secret', '' );
 
 		if ( '' === $expected ) {
-			error_log( 'WP Custom Dashboard: webhook secret is not configured.' );
+			error_log( 'WP Custom Dashboard: webhook secret is not configured.' ); // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log
 			return new WP_Error(
 				'rest_forbidden',
 				__( 'Webhook secret not configured.', 'wp-custom-dashboard' ),

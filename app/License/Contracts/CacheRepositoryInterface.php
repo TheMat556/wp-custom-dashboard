@@ -9,7 +9,7 @@ declare(strict_types=1);
 
 namespace WpReactUi\License\Contracts;
 
-defined('ABSPATH') || exit;
+defined( 'ABSPATH' ) || exit;
 
 /**
  * Repository interface for temporary cache storage (e.g., transients).
@@ -24,7 +24,7 @@ interface CacheRepositoryInterface {
 	 * @param string $key Cache key.
 	 * @return mixed Cached value, or null if not found.
 	 */
-	public function get(string $key): mixed;
+	public function get( string $key ): mixed;
 
 	/**
 	 * Stores a value in the cache with a TTL.
@@ -34,7 +34,7 @@ interface CacheRepositoryInterface {
 	 * @param int    $ttl Time-to-live in seconds.
 	 * @return bool True on success, false on failure.
 	 */
-	public function set(string $key, mixed $value, int $ttl): bool;
+	public function set( string $key, mixed $value, int $ttl ): bool;
 
 	/**
 	 * Removes a value from the cache.
@@ -42,7 +42,7 @@ interface CacheRepositoryInterface {
 	 * @param string $key Cache key.
 	 * @return bool True on success, false on failure.
 	 */
-	public function delete(string $key): bool;
+	public function delete( string $key ): bool;
 
 	/**
 	 * Increments a numeric cache value within a time window.
@@ -53,5 +53,5 @@ interface CacheRepositoryInterface {
 	 * @param int    $window_seconds Time window in seconds.
 	 * @return int The incremented value, or 0 if window reset.
 	 */
-	public function increment(string $key, int $window_seconds): int;
+	public function increment( string $key, int $window_seconds ): int;
 }

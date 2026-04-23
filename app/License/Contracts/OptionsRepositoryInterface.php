@@ -9,7 +9,7 @@ declare(strict_types=1);
 
 namespace WpReactUi\License\Contracts;
 
-defined('ABSPATH') || exit;
+defined( 'ABSPATH' ) || exit;
 
 /**
  * Repository interface for persistent options storage.
@@ -21,11 +21,11 @@ interface OptionsRepositoryInterface {
 	/**
 	 * Retrieves an option value.
 	 *
-	 * @param string $key Option key.
-	 * @param mixed  $default Default value if option not found.
-	 * @return mixed Option value, or $default if not found.
+	 * @param string $key           Option key.
+	 * @param mixed  $default_value Default value if option not found.
+	 * @return mixed Option value, or $default_value if not found.
 	 */
-	public function get(string $key, mixed $default = null): mixed;
+	public function get( string $key, mixed $default_value = null ): mixed;
 
 	/**
 	 * Updates an option value.
@@ -34,7 +34,7 @@ interface OptionsRepositoryInterface {
 	 * @param mixed  $value New value.
 	 * @return bool True on success, false on failure.
 	 */
-	public function update(string $key, mixed $value): bool;
+	public function update( string $key, mixed $value ): bool;
 
 	/**
 	 * Deletes an option.
@@ -42,5 +42,5 @@ interface OptionsRepositoryInterface {
 	 * @param string $key Option key.
 	 * @return bool True on success, false on failure.
 	 */
-	public function delete(string $key): bool;
+	public function delete( string $key ): bool;
 }

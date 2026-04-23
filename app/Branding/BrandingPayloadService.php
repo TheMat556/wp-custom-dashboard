@@ -33,8 +33,8 @@ final class BrandingPayloadService {
 		$long_url  = $this->media_library->get_attachment_url( $this->repository->get_logo_id( 'long_logo_id' ) );
 
 		return array(
-			'siteName' => $site_name,
-			'logos'    => array(
+			'siteName'     => $site_name,
+			'logos'        => array(
 				'lightUrl'   => null === $light_url ? null : $light_url,
 				'darkUrl'    => null === $dark_url ? null : $dark_url,
 				'longUrl'    => $long_url,

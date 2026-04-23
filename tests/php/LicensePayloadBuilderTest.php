@@ -85,7 +85,7 @@ class LicensePayloadBuilderTest extends TestCase {
 	}
 
 	/**
-	 * Test buildPublic returns same as build (for now).
+	 * Test build_public returns same as build (for now).
 	 */
 	public function test_buildPublic_returns_same_as_build(): void {
 		$cached_state = array(
@@ -100,7 +100,7 @@ class LicensePayloadBuilderTest extends TestCase {
 		);
 
 		$builder = new LicensePayloadBuilder( $cached_state, true, true );
-		$public  = $builder->buildPublic();
+		$public  = $builder->build_public();
 		$full    = $builder->build();
 
 		$this->assertSame( $full, $public );

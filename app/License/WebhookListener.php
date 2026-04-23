@@ -17,9 +17,12 @@ defined( 'ABSPATH' ) || exit;
 final class WebhookListener {
 	private const MAX_CLOCK_SKEW    = 300;
 	private const RATE_LIMIT_MAX    = 10;
-	private const RATE_LIMIT_WINDOW = 300; // seconds (5 minutes)
+	private const RATE_LIMIT_WINDOW = 300; // seconds (5 minutes).
 
+	/** @var LicenseSettingsRepository */
 	private LicenseSettingsRepository $settings_repository;
+
+	/** @var LicenseManager */
 	private LicenseManager $manager;
 
 	public function __construct(
@@ -37,14 +40,14 @@ final class WebhookListener {
 	private function get_caller_ip(): string {
 		if (
 			defined( 'WP_CUSTOM_DASHBOARD_TRUSTED_PROXY' ) &&
-			WP_CUSTOM_DASHBOARD_TRUSTED_PROXY === ( $_SERVER['REMOTE_ADDR'] ?? '' ) &&
+			WP_CUSTOM_DASHBOARD_TRUSTED_PROXY === sanitize_text_field( wp_unslash( $_SERVER['REMOTE_ADDR'] ?? '' ) ) &&
 			! empty( $_SERVER['HTTP_X_FORWARDED_FOR'] )
 		) {
-			$forwarded = explode( ',', (string) $_SERVER['HTTP_X_FORWARDED_FOR'] );
+			$forwarded = explode( ',', sanitize_text_field( wp_unslash( (string) $_SERVER['HTTP_X_FORWARDED_FOR'] ) ) );
 			return trim( $forwarded[0] );
 		}
 
-		return (string) ( $_SERVER['REMOTE_ADDR'] ?? '' );
+		return sanitize_text_field( wp_unslash( (string) ( $_SERVER['REMOTE_ADDR'] ?? '' ) ) );
 	}
 
 	/**
@@ -63,8 +66,8 @@ final class WebhookListener {
 				'webhook_rate_limit_exceeded',
 				'Too many requests. Please try again later.',
 				array(
-					'status'      => 429,
-					'headers'     => array( 'Retry-After' => (string) self::RATE_LIMIT_WINDOW ),
+					'status'  => 429,
+					'headers' => array( 'Retry-After' => (string) self::RATE_LIMIT_WINDOW ),
 				)
 			);
 		}

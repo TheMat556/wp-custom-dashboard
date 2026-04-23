@@ -23,7 +23,7 @@ final class LicenseGracePeriod {
 		?OptionsRepositoryInterface $options = null
 	) {
 		if ( null === $options ) {
-			$options = LicenseServiceContainer::getInstance()->getOptionsRepository();
+			$options = LicenseServiceContainer::get_instance()->get_options_repository();
 		}
 		$this->options = $options;
 	}

@@ -36,7 +36,7 @@ class WP_React_UI_Shell_Early_Boot {
 	 */
 	public static function get_csp_nonce(): string {
 		if ( '' === self::$csp_nonce ) {
-			self::$csp_nonce = base64_encode( random_bytes( 16 ) );
+			self::$csp_nonce = base64_encode( random_bytes( 16 ) ); // phpcs:ignore WordPress.PHP.DiscouragedPHPFunctions.obfuscation_base64_encode
 		}
 		return self::$csp_nonce;
 	}
@@ -84,9 +84,9 @@ class WP_React_UI_Shell_Early_Boot {
 			// Restrict form submissions to same-origin only.
 			"form-action 'self'",
 			// Upgrade HTTP requests to HTTPS if possible.
-			"upgrade-insecure-requests",
+			'upgrade-insecure-requests',
 			// Block mixed (HTTP/HTTPS) content.
-			"block-all-mixed-content",
+			'block-all-mixed-content',
 		);
 
 		header( 'Content-Security-Policy: ' . implode( '; ', $directives ) );

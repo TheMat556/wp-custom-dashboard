@@ -23,11 +23,11 @@ class LicenseGateTest extends TestCase {
 			false
 		);
 		// Reset service container to ensure clean state
-		LicenseServiceContainer::getInstance()->reset();
+		LicenseServiceContainer::get_instance()->reset();
 	}
 
 	protected function tear_down(): void {
-		LicenseServiceContainer::getInstance()->reset();
+		LicenseServiceContainer::get_instance()->reset();
 		parent::tear_down();
 	}
 
@@ -110,7 +110,7 @@ class LicenseGateTest extends TestCase {
 		);
 
 		$this->assertTrue( LicenseGate::can( 'chat' ) );
-		$this->assertSame( 'grace', \WpReactUi\License\LicenseServiceContainer::getInstance()->getGracePeriod()->get_status()['mode'] );
+		$this->assertSame( 'grace', \WpReactUi\License\LicenseServiceContainer::get_instance()->get_grace_period()->get_status()['mode'] );
 	}
 
 	public function test_can_rejects_mismatched_cached_key_prefix(): void {
@@ -359,8 +359,8 @@ class LicenseGateTest extends TestCase {
 	 * Test: Service container is a singleton.
 	 */
 	public function test_service_container_is_singleton(): void {
-		$container1 = LicenseServiceContainer::getInstance();
-		$container2 = LicenseServiceContainer::getInstance();
+		$container1 = LicenseServiceContainer::get_instance();
+		$container2 = LicenseServiceContainer::get_instance();
 
 		$this->assertSame( $container1, $container2 );
 	}
@@ -369,7 +369,7 @@ class LicenseGateTest extends TestCase {
 	 * Test: Service container allows dependency injection for testing.
 	 */
 	public function test_service_container_allows_dependency_injection(): void {
-		$container = LicenseServiceContainer::getInstance();
+		$container = LicenseServiceContainer::get_instance();
 
 		// Create a real cache and set it via the container
 		$injectedCache = new LicenseCache();
@@ -382,28 +382,28 @@ class LicenseGateTest extends TestCase {
 				'keyPrefix'          => '99999999',
 			)
 		);
-		$container->setCache( $injectedCache );
+		$container->set_cache( $injectedCache );
 
 		// The container should return the injected cache
-		$this->assertSame( $injectedCache, $container->getCache() );
+		$this->assertSame( $injectedCache, $container->get_cache() );
 	}
 
 	/**
 	 * Test: Service container reset clears all injected dependencies.
 	 */
 	public function test_service_container_reset_clears_injection(): void {
-		$container = LicenseServiceContainer::getInstance();
+		$container = LicenseServiceContainer::get_instance();
 
 		// Inject a cache
 		$injectedCache = new LicenseCache();
-		$container->setCache( $injectedCache );
-		$this->assertSame( $injectedCache, $container->getCache() );
+		$container->set_cache( $injectedCache );
+		$this->assertSame( $injectedCache, $container->get_cache() );
 
 		// Reset the container
 		$container->reset();
 
 		// Now the container creates a fresh cache
-		$newCache = $container->getCache();
+		$newCache = $container->get_cache();
 		$this->assertNotSame( $injectedCache, $newCache );
 		$this->assertInstanceOf( LicenseCache::class, $newCache );
 	}

@@ -24,16 +24,16 @@ final class LicenseGate {
 	 *
 	 * @param FeatureFilterInterface $filter Feature filter instance.
 	 */
-	public static function setFeatureFilter( FeatureFilterInterface $filter ): void {
+	public static function set_feature_filter( FeatureFilterInterface $filter ): void {
 		self::$feature_filter = $filter;
 	}
 
 	/**
 	 * Gets the feature filter implementation, using default from container.
 	 */
-	private static function getFeatureFilter(): FeatureFilterInterface {
+	private static function get_feature_filter(): FeatureFilterInterface {
 		if ( null === self::$feature_filter ) {
-			self::$feature_filter = LicenseServiceContainer::getInstance()->getFeatureFilter();
+			self::$feature_filter = LicenseServiceContainer::get_instance()->get_feature_filter();
 		}
 		return self::$feature_filter;
 	}
@@ -42,11 +42,11 @@ final class LicenseGate {
 	 * Returns whether the current site has a valid license for licensed settings.
 	 */
 	public static function has_valid_license(): bool {
-		$container           = LicenseServiceContainer::getInstance();
-		$settings_repository = $container->getSettingsRepository();
-		$cache               = $container->getCache();
-		$manager             = $container->getManager();
-		$grace_period        = $container->getGracePeriod();
+		$container           = LicenseServiceContainer::get_instance();
+		$settings_repository = $container->get_settings_repository();
+		$cache               = $container->get_cache();
+		$manager             = $container->get_manager();
+		$grace_period        = $container->get_grace_period();
 		$cached              = self::resolve_payload( $cache, $settings_repository, $manager, $grace_period );
 
 		return is_array( $cached ) && self::allows_payload( $cached );
@@ -64,18 +64,18 @@ final class LicenseGate {
 			return false;
 		}
 
-		$container           = LicenseServiceContainer::getInstance();
-		$settings_repository = $container->getSettingsRepository();
-		$cache               = $container->getCache();
-		$manager             = $container->getManager();
-		$grace_period        = $container->getGracePeriod();
+		$container           = LicenseServiceContainer::get_instance();
+		$settings_repository = $container->get_settings_repository();
+		$cache               = $container->get_cache();
+		$manager             = $container->get_manager();
+		$grace_period        = $container->get_grace_period();
 		$cached              = self::resolve_payload( $cache, $settings_repository, $manager, $grace_period );
 
 		if ( ! is_array( $cached ) || ! self::allows_payload( $cached ) ) {
 			return false;
 		}
 
-		$filter_service = self::getFeatureFilter();
+		$filter_service = self::get_feature_filter();
 		$features       = $filter_service->filter( 'wp_react_ui_license_allowed_features', $cached['features'] );
 
 		return is_array( $features ) && in_array( $normalized_feature, $features, true );
@@ -100,6 +100,7 @@ final class LicenseGate {
 	 * @param LicenseCache              $cache               License cache instance.
 	 * @param LicenseSettingsRepository $settings_repository License settings repository.
 	 * @param LicenseManager            $manager             License manager used for refreshes.
+	 * @param LicenseGracePeriod        $grace_period        Grace period instance.
 	 * @return array<string, mixed>|null
 	 */
 	private static function resolve_payload(

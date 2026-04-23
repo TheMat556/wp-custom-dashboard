@@ -15,11 +15,11 @@ use WpReactUi\License\Contracts\OptionsRepositoryInterface;
 defined( 'ABSPATH' ) || exit;
 
 final class LicenseCache {
-	public const TRANSIENT_KEY = 'wp_react_ui_license_state';
-	private const OPTION_KEY   = 'wp_react_ui_license_state_backup';
-	public const STATUS_ACTIVE = 'active';
-	public const STATUS_EXPIRED = 'expired';
-	public const STATUS_GRACE = 'grace';
+	public const TRANSIENT_KEY   = 'wp_react_ui_license_state';
+	private const OPTION_KEY     = 'wp_react_ui_license_state_backup';
+	public const STATUS_ACTIVE   = 'active';
+	public const STATUS_EXPIRED  = 'expired';
+	public const STATUS_GRACE    = 'grace';
 	public const STATUS_DISABLED = 'disabled';
 
 	private const NORMAL_TTL = DAY_IN_SECONDS;
@@ -32,19 +32,19 @@ final class LicenseCache {
 		?CacheRepositoryInterface $cache = null,
 		?OptionsRepositoryInterface $options = null
 	) {
-		$container = LicenseServiceContainer::getInstance();
-		$this->cache   = $cache ?? $container->getCacheRepository();
-		$this->options = $options ?? $container->getOptionsRepository();
+		$container     = LicenseServiceContainer::get_instance();
+		$this->cache   = $cache ?? $container->get_cache_repository();
+		$this->options = $options ?? $container->get_options_repository();
 	}
 
 	/**
 	 * Factory method for backward-compatible instantiation with WordPress adapters.
 	 *
-	 * @deprecated Use LicenseServiceContainer::getInstance()->getCache() instead.
+	 * @deprecated Use LicenseServiceContainer::get_instance()->get_cache() instead.
 	 */
 	public static function createWithWordPressAdapters(): self {
-		$container = LicenseServiceContainer::getInstance();
-		return $container->getCache();
+		$container = LicenseServiceContainer::get_instance();
+		return $container->get_cache();
 	}
 
 	/**

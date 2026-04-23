@@ -121,11 +121,11 @@ final class DashboardStatusService {
 
 		$form_plugins = array(
 			'contact-form-7/wp-contact-form-7.php' => 'Contact Form 7 (free)',
-			'gravityforms/gravityforms.php'         => 'Gravity Forms',
-			'wpforms-lite/wpforms.php'              => 'WPForms (free)',
-			'formidable/formidable.php'             => 'Formidable Forms',
-			'ninja-forms/ninja-forms.php'           => 'Ninja Forms (free)',
-			'fluentform/fluentform.php'             => 'FluentForms (free)',
+			'gravityforms/gravityforms.php'        => 'Gravity Forms',
+			'wpforms-lite/wpforms.php'             => 'WPForms (free)',
+			'formidable/formidable.php'            => 'Formidable Forms',
+			'ninja-forms/ninja-forms.php'          => 'Ninja Forms (free)',
+			'fluentform/fluentform.php'            => 'FluentForms (free)',
 		);
 		$active_form  = null;
 
@@ -152,10 +152,10 @@ final class DashboardStatusService {
 		}
 
 		$smtp_plugins = array(
-			'wp-mail-smtp/wp_mail_smtp.php'                      => 'WP Mail SMTP (free)',
-			'post-smtp/postman-smtp.php'                        => 'Post SMTP',
-			'fluent-smtp/fluent-smtp.php'                       => 'FluentSMTP (free)',
-			'easy-wp-smtp/easy-wp-smtp.php'                     => 'Easy WP SMTP (free)',
+			'wp-mail-smtp/wp_mail_smtp.php' => 'WP Mail SMTP (free)',
+			'post-smtp/postman-smtp.php'    => 'Post SMTP',
+			'fluent-smtp/fluent-smtp.php'   => 'FluentSMTP (free)',
+			'easy-wp-smtp/easy-wp-smtp.php' => 'Easy WP SMTP (free)',
 			'sendgrid-email-delivery-simplified/wpsendgrid.php' => 'SendGrid',
 		);
 		$active_smtp  = null;
@@ -190,7 +190,7 @@ final class DashboardStatusService {
 			require_once ABSPATH . 'wp-admin/includes/plugin.php';
 		}
 
-		$since = gmdate( 'Y-m-d H:i:s', strtotime( '-30 days', current_time( 'timestamp' ) ) );
+		$since = gmdate( 'Y-m-d H:i:s', strtotime( '-30 days', time() ) );
 
 		$form_count  = null;
 		$form_plugin = null;
@@ -198,7 +198,7 @@ final class DashboardStatusService {
 		// Gravity Forms — gf_entry table.
 		if ( class_exists( 'GFAPI' ) ) {
 			$table = $wpdb->prefix . 'gf_entry';
-			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.NoCaching
+			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching
 			if ( $wpdb->get_var( $wpdb->prepare( 'SHOW TABLES LIKE %s', $table ) ) === $table ) {
 				// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching
 				$form_count  = (int) $wpdb->get_var( $wpdb->prepare( 'SELECT COUNT(*) FROM %i WHERE date_created >= %s AND status = %s', $table, $since, 'active' ) );
@@ -209,7 +209,7 @@ final class DashboardStatusService {
 		// WPForms — wpforms_entries table (Pro only).
 		if ( null === $form_count && is_plugin_active( 'wpforms/wpforms.php' ) ) {
 			$table = $wpdb->prefix . 'wpforms_entries';
-			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.NoCaching
+			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching
 			if ( $wpdb->get_var( $wpdb->prepare( 'SHOW TABLES LIKE %s', $table ) ) === $table ) {
 				// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching
 				$form_count  = (int) $wpdb->get_var( $wpdb->prepare( 'SELECT COUNT(*) FROM %i WHERE date >= %s', $table, $since ) );
@@ -220,7 +220,7 @@ final class DashboardStatusService {
 		// FluentForms — fluentform_submissions table.
 		if ( null === $form_count && ( is_plugin_active( 'fluentform/fluentform.php' ) || defined( 'FLUENTFORM_VERSION' ) ) ) {
 			$table = $wpdb->prefix . 'fluentform_submissions';
-			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.NoCaching
+			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching
 			if ( $wpdb->get_var( $wpdb->prepare( 'SHOW TABLES LIKE %s', $table ) ) === $table ) {
 				// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching
 				$form_count  = (int) $wpdb->get_var( $wpdb->prepare( 'SELECT COUNT(*) FROM %i WHERE created_at >= %s', $table, $since ) );
@@ -231,7 +231,7 @@ final class DashboardStatusService {
 		// Ninja Forms — nf_sub table.
 		if ( null === $form_count && is_plugin_active( 'ninja-forms/ninja-forms.php' ) ) {
 			$table = $wpdb->prefix . 'nf_sub';
-			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.NoCaching
+			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching
 			if ( $wpdb->get_var( $wpdb->prepare( 'SHOW TABLES LIKE %s', $table ) ) === $table ) {
 				// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching
 				$form_count  = (int) $wpdb->get_var( $wpdb->prepare( 'SELECT COUNT(*) FROM %i WHERE sub_date >= %s', $table, $since ) );
@@ -242,7 +242,7 @@ final class DashboardStatusService {
 		// Formidable Forms — frm_items table.
 		if ( null === $form_count && is_plugin_active( 'formidable/formidable.php' ) ) {
 			$table = $wpdb->prefix . 'frm_items';
-			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.NoCaching
+			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching
 			if ( $wpdb->get_var( $wpdb->prepare( 'SHOW TABLES LIKE %s', $table ) ) === $table ) {
 				// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching
 				$form_count  = (int) $wpdb->get_var( $wpdb->prepare( 'SELECT COUNT(*) FROM %i WHERE created_at >= %s', $table, $since ) );
@@ -326,7 +326,7 @@ final class DashboardStatusService {
 		);
 
 		// Count published pages whose title is under 10 characters.
-		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching
 		$short = (int) $wpdb->get_var(
 			$wpdb->prepare(
 				'SELECT COUNT(*) FROM %i WHERE post_type = %s AND post_status = %s AND CHAR_LENGTH(post_title) < %d',
@@ -370,7 +370,7 @@ final class DashboardStatusService {
 		global $wpdb;
 
 		// Count all published pages to use as the score denominator.
-		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching
 		$total_pages = (int) $wpdb->get_var(
 			$wpdb->prepare(
 				'SELECT COUNT(*) FROM %i WHERE post_type = %s AND post_status = %s',
@@ -394,7 +394,7 @@ final class DashboardStatusService {
 
 		if ( 'yoast' === $plugin && $total_pages > 0 ) {
 			// Count published pages that have no Yoast SEO meta description set.
-			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery
+			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching
 			$missing_meta = (int) $wpdb->get_var(
 				$wpdb->prepare(
 					'SELECT COUNT(p.ID) FROM %i p
@@ -411,7 +411,7 @@ final class DashboardStatusService {
 			);
 
 			if ( $missing_meta > 0 ) {
-				$issues[] = array(
+				$issues[]      = array(
 					'label' => $missing_meta . ' page' . ( $missing_meta > 1 ? 's' : '' ) . ' missing meta description',
 					'url'   => 'edit.php?post_type=page',
 				);
@@ -421,7 +421,7 @@ final class DashboardStatusService {
 
 		if ( $total_pages > 0 ) {
 			// Fetch up to 5 published pages with very short titles to surface as individual issues.
-			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery
+			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching
 			$short_pages = $wpdb->get_results(
 				$wpdb->prepare(
 					'SELECT ID, post_title FROM %i
@@ -442,7 +442,7 @@ final class DashboardStatusService {
 					'url'     => 'post.php?post=' . $page->ID . '&action=edit',
 					'editUrl' => admin_url( 'post.php?post=' . $page->ID . '&action=edit' ),
 				);
-				$issues_count++;
+				++$issues_count;
 			}
 		}
 
@@ -476,7 +476,7 @@ final class DashboardStatusService {
 			'url'   => 'options-general.php',
 		);
 
-		$page_count = (int) ( wp_count_posts( 'page' )->publish ?? 0 );
+		$page_count  = (int) ( wp_count_posts( 'page' )->publish ?? 0 );
 		$checklist[] = array(
 			'key'   => 'first-page',
 			'label' => 'Create and publish your first page',
@@ -513,8 +513,8 @@ final class DashboardStatusService {
 			'url'   => 'update-core.php',
 		);
 
-		$health    = get_transient( 'health-check-site-status-result' );
-		$health_ok = $health && isset( $health['status'] ) && 'good' === $health['status'];
+		$health      = get_transient( 'health-check-site-status-result' );
+		$health_ok   = $health && isset( $health['status'] ) && 'good' === $health['status'];
 		$checklist[] = array(
 			'key'   => 'site-health',
 			'label' => 'Fix site health issues',
@@ -563,13 +563,13 @@ final class DashboardStatusService {
 		}
 
 		// Build one LIKE condition per keyword, combined with OR.
-		$conditions   = implode( ' OR ', array_fill( 0, count( $keywords ), 'LOWER(post_title) LIKE %s' ) );
-		$like_values  = array_map(
+		$conditions  = implode( ' OR ', array_fill( 0, count( $keywords ), 'LOWER(post_title) LIKE %s' ) );
+		$like_values = array_map(
 			fn( string $k ) => '%' . $wpdb->esc_like( $k ) . '%',
 			$keywords
 		);
 
-		// phpcs:disable WordPress.DB.PreparedSQL.InterpolatedNotPrepared,WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching
+		// phpcs:disable WordPress.DB.PreparedSQL.InterpolatedNotPrepared,WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching,WordPress.DB.PreparedSQLPlaceholders.ReplacementsWrongNumber
 		$row = $wpdb->get_row(
 			$wpdb->prepare(
 				"SELECT ID, post_title, post_status, post_modified_gmt

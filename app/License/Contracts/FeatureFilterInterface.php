@@ -9,7 +9,7 @@ declare(strict_types=1);
 
 namespace WpReactUi\License\Contracts;
 
-defined('ABSPATH') || exit;
+defined( 'ABSPATH' ) || exit;
 
 /**
  * Filter interface for applying plugin hooks to feature lists.
@@ -21,9 +21,9 @@ interface FeatureFilterInterface {
 	/**
 	 * Applies a filter hook to a feature array.
 	 *
-	 * @param string   $hook Hook name.
+	 * @param string        $hook Hook name.
 	 * @param array<string> $features Feature identifiers.
 	 * @return array<string> Filtered features.
 	 */
-	public function filter(string $hook, array $features): array;
+	public function filter( string $hook, array $features ): array;
 }

@@ -12,7 +12,7 @@ namespace WpReactUi\License;
 defined( 'ABSPATH' ) || exit;
 
 final class LicenseSettingsRepository {
-	private const OPTION_NAME       = 'wp_react_ui_license_settings';
+	private const OPTION_NAME      = 'wp_react_ui_license_settings';
 	private const SECRETBOX_CIPHER = 'secretbox';
 	private const OPENSSL_CIPHER   = 'aes-256-gcm';
 
@@ -218,6 +218,7 @@ final class LicenseSettingsRepository {
 
 		if ( null === $encrypted ) {
 			// Encryption unavailable — store plain text as a last resort.
+			// phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_trigger_trigger_error
 			trigger_error( 'WP React UI: webhook secret stored unencrypted (sodium and openssl unavailable).', E_USER_WARNING );
 			add_action(
 				'admin_notices',
@@ -314,12 +315,14 @@ final class LicenseSettingsRepository {
 			$nonce      = random_bytes( SODIUM_CRYPTO_SECRETBOX_NONCEBYTES );
 			$ciphertext = sodium_crypto_secretbox( $plaintext, $nonce, $key );
 
+			// phpcs:disable WordPress.PHP.DiscouragedPHPFunctions.obfuscation_base64_encode
 			return array(
 				'ciphertext' => base64_encode( $ciphertext ),
 				'nonce'      => base64_encode( $nonce ),
 				'tag'        => '',
 				'cipher'     => self::SECRETBOX_CIPHER,
 			);
+			// phpcs:enable WordPress.PHP.DiscouragedPHPFunctions.obfuscation_base64_encode
 		}
 
 		if ( function_exists( 'openssl_encrypt' ) ) {
@@ -331,12 +334,14 @@ final class LicenseSettingsRepository {
 				return null;
 			}
 
+			// phpcs:disable WordPress.PHP.DiscouragedPHPFunctions.obfuscation_base64_encode
 			return array(
 				'ciphertext' => base64_encode( $ciphertext ),
 				'nonce'      => base64_encode( $nonce ),
 				'tag'        => base64_encode( $tag ),
 				'cipher'     => self::OPENSSL_CIPHER,
 			);
+			// phpcs:enable WordPress.PHP.DiscouragedPHPFunctions.obfuscation_base64_encode
 		}
 
 		return null;
@@ -357,9 +362,11 @@ final class LicenseSettingsRepository {
 			return '';
 		}
 
+		// phpcs:disable WordPress.PHP.DiscouragedPHPFunctions.obfuscation_base64_decode
 		$decoded_ciphertext = base64_decode( $ciphertext_b64, true );
 		$decoded_nonce      = base64_decode( $nonce_b64, true );
 		$decoded_tag        = '' !== $tag_b64 ? base64_decode( $tag_b64, true ) : '';
+		// phpcs:enable WordPress.PHP.DiscouragedPHPFunctions.obfuscation_base64_decode
 
 		if ( ! is_string( $decoded_ciphertext ) || ! is_string( $decoded_nonce ) ) {
 			return '';
@@ -412,7 +419,7 @@ final class LicenseSettingsRepository {
 		}
 
 		if ( '' === $configured ) {
-			$stored = get_option( 'wp_react_ui_license_server_url', '' );
+			$stored     = get_option( 'wp_react_ui_license_server_url', '' );
 			$configured = is_string( $stored ) ? $stored : '';
 		}
 

@@ -11,7 +11,7 @@ namespace WpReactUi\WordPress\License;
 
 use WpReactUi\License\Contracts\CacheRepositoryInterface;
 
-defined('ABSPATH') || exit;
+defined( 'ABSPATH' ) || exit;
 
 /**
  * Implements CacheRepositoryInterface using WordPress transients.
@@ -27,8 +27,8 @@ final class WordPressCacheRepository implements CacheRepositoryInterface {
 	 * @param string $key Cache key.
 	 * @return mixed Cached value, or false if not found (treats false as not found).
 	 */
-	public function get(string $key): mixed {
-		$value = get_transient($key);
+	public function get( string $key ): mixed {
+		$value = get_transient( $key );
 		return false === $value ? null : $value;
 	}
 
@@ -40,8 +40,8 @@ final class WordPressCacheRepository implements CacheRepositoryInterface {
 	 * @param int    $ttl Time-to-live in seconds.
 	 * @return bool True on success, false on failure.
 	 */
-	public function set(string $key, mixed $value, int $ttl): bool {
-		return set_transient($key, $value, $ttl);
+	public function set( string $key, mixed $value, int $ttl ): bool {
+		return set_transient( $key, $value, $ttl );
 	}
 
 	/**
@@ -50,8 +50,8 @@ final class WordPressCacheRepository implements CacheRepositoryInterface {
 	 * @param string $key Cache key.
 	 * @return bool True on success, false on failure.
 	 */
-	public function delete(string $key): bool {
-		return delete_transient($key);
+	public function delete( string $key ): bool {
+		return delete_transient( $key );
 	}
 
 	/**
@@ -64,23 +64,23 @@ final class WordPressCacheRepository implements CacheRepositoryInterface {
 	 * @param int    $window_seconds Time window in seconds.
 	 * @return int The incremented value, or 1 if window reset.
 	 */
-	public function increment(string $key, int $window_seconds): int {
+	public function increment( string $key, int $window_seconds ): int {
 		$window_key   = "{$key}_window";
-		$current      = (int) get_transient($key);
-		$window_start = (int) get_transient($window_key);
+		$current      = (int) get_transient( $key );
+		$window_start = (int) get_transient( $window_key );
 
 		$now = time();
 
 		// If no window start or window has expired, reset the counter.
-		if ($window_start <= 0 || ($now - $window_start) >= $window_seconds) {
-			set_transient($window_key, $now, $window_seconds);
-			set_transient($key, 1, $window_seconds);
+		if ( $window_start <= 0 || ( $now - $window_start ) >= $window_seconds ) {
+			set_transient( $window_key, $now, $window_seconds );
+			set_transient( $key, 1, $window_seconds );
 			return 1;
 		}
 
 		// Increment within the current window.
 		$incremented = $current + 1;
-		set_transient($key, $incremented, $window_seconds);
+		set_transient( $key, $incremented, $window_seconds );
 		return $incremented;
 	}
 }

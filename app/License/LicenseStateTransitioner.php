@@ -25,9 +25,9 @@ class LicenseStateTransitioner {
 	 *
 	 * @return array{status: string, role: ?string, tier: ?string, expiresAt: ?string, features: array<int, string>, graceDaysRemaining: int, keyPrefix: ?string, lastValidatedAt: ?string}
 	 */
-	public function transitionToGrace(): array {
-		$grace_status = $this->grace_period->start_grace();
-		$current      = $this->cache->get() ?? $this->cache->default_payload();
+	public function transition_to_grace(): array {
+		$grace_status                  = $this->grace_period->start_grace();
+		$current                       = $this->cache->get() ?? $this->cache->default_payload();
 		$current['status']             = LicenseCache::STATUS_GRACE;
 		$current['graceDaysRemaining'] = $grace_status['graceDaysRemaining'];
 		$current['keyPrefix']          = $current['keyPrefix'] ?? $this->settings_repository->get_key_prefix();
@@ -42,10 +42,10 @@ class LicenseStateTransitioner {
 	 *
 	 * @return array{status: string, role: ?string, tier: ?string, expiresAt: ?string, features: array<int, string>, graceDaysRemaining: int, keyPrefix: ?string, lastValidatedAt: ?string}
 	 */
-	public function transitionToDisabled(): array {
+	public function transition_to_disabled(): array {
 		$this->grace_period->clear_grace();
 
-		$current      = $this->cache->default_payload();
+		$current              = $this->cache->default_payload();
 		$current['status']    = LicenseCache::STATUS_DISABLED;
 		$current['keyPrefix'] = $this->settings_repository->get_key_prefix();
 		$this->cache->set( $current );
@@ -59,7 +59,7 @@ class LicenseStateTransitioner {
 	 * @param array<string, mixed> $webhook_data Optional webhook event data.
 	 * @return array{status: string, role: ?string, tier: ?string, expiresAt: ?string, features: array<int, string>, graceDaysRemaining: int, keyPrefix: ?string, lastValidatedAt: ?string}
 	 */
-	public function transitionToExpired( array $webhook_data = array() ): array {
+	public function transition_to_expired( array $webhook_data = array() ): array {
 		$current = $this->cache->get() ?? $this->cache->default_payload();
 
 		if ( isset( $webhook_data['grace_days_remaining'] ) ) {
@@ -109,7 +109,7 @@ class LicenseStateTransitioner {
 	 * @param string               $license_key    Normalized 64-character license key.
 	 * @return array{status: string, role: ?string, tier: ?string, expiresAt: ?string, features: array<int, string>, graceDaysRemaining: int, keyPrefix: ?string, lastValidatedAt: ?string}
 	 */
-	public function transitionToActive( array $remote_payload, string $license_key ): array {
+	public function transition_to_active( array $remote_payload, string $license_key ): array {
 		$this->settings_repository->save_license_key( $license_key );
 		if ( isset( $remote_payload['webhook_secret'] ) && is_string( $remote_payload['webhook_secret'] ) ) {
 			$this->settings_repository->save_webhook_secret( $remote_payload['webhook_secret'] );
@@ -118,7 +118,7 @@ class LicenseStateTransitioner {
 		}
 		$this->grace_period->clear_grace();
 
-		$payload = $this->buildPayloadFromRemote( $remote_payload, $license_key );
+		$payload           = $this->build_payload_from_remote( $remote_payload, $license_key );
 		$payload['status'] = LicenseCache::STATUS_ACTIVE;
 		$this->cache->set( $payload );
 
@@ -130,7 +130,7 @@ class LicenseStateTransitioner {
 	 *
 	 * @param array{status: string, graceDaysRemaining: int} $payload Cached payload.
 	 */
-	public function isGraceState( array $payload ): bool {
+	public function is_grace_state( array $payload ): bool {
 		return LicenseCache::STATUS_GRACE === $payload['status']
 			|| ( LicenseCache::STATUS_EXPIRED === $payload['status'] && $payload['graceDaysRemaining'] > 0 );
 	}
@@ -142,7 +142,7 @@ class LicenseStateTransitioner {
 	 * @param string               $license_key     License key used for the remote request.
 	 * @return array{status: string, role: ?string, tier: ?string, expiresAt: ?string, features: array<int, string>, graceDaysRemaining: int, keyPrefix: ?string, lastValidatedAt: ?string}
 	 */
-	public function buildPayloadFromRemote( array $remote_response, string $license_key ): array {
+	public function build_payload_from_remote( array $remote_response, string $license_key ): array {
 		$license = isset( $remote_response['license'] ) && is_array( $remote_response['license'] )
 			? $remote_response['license']
 			: array();

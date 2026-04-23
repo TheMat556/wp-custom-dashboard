@@ -117,12 +117,12 @@ final class LicenseClient {
 			)
 		);
 
-		$body       = array(
+		$body      = array(
 			'plugin_version' => $this->get_plugin_version(),
 			'wp_version'     => get_bloginfo( 'version' ),
 			'php_version'    => PHP_VERSION,
 		);
-		$json_body  = wp_json_encode( $body );
+		$json_body = wp_json_encode( $body );
 
 		if ( ! is_string( $json_body ) ) {
 			return new WP_Error(
@@ -300,12 +300,12 @@ final class LicenseClient {
 		$this->emit_debug(
 			'remote_response',
 			array(
-				'action'     => $action,
-				'keyPrefix'  => $key_prefix,
-				'status'     => $status_code,
-				'code'       => $error_code,
-				'message'    => $message,
-				'rawBody'    => $raw_body,
+				'action'    => $action,
+				'keyPrefix' => $key_prefix,
+				'status'    => $status_code,
+				'code'      => $error_code,
+				'message'   => $message,
+				'rawBody'   => $raw_body,
 			)
 		);
 

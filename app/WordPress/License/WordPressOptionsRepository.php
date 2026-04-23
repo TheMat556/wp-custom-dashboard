@@ -11,7 +11,7 @@ namespace WpReactUi\WordPress\License;
 
 use WpReactUi\License\Contracts\OptionsRepositoryInterface;
 
-defined('ABSPATH') || exit;
+defined( 'ABSPATH' ) || exit;
 
 /**
  * Implements OptionsRepositoryInterface using WordPress options.
@@ -24,12 +24,12 @@ final class WordPressOptionsRepository implements OptionsRepositoryInterface {
 	/**
 	 * Retrieves an option value using WordPress get_option.
 	 *
-	 * @param string $key Option key.
-	 * @param mixed  $default Default value if option not found.
-	 * @return mixed Option value, or $default if not found.
+	 * @param string $key           Option key.
+	 * @param mixed  $default_value Default value if option not found.
+	 * @return mixed Option value, or $default_value if not found.
 	 */
-	public function get(string $key, mixed $default = null): mixed {
-		return get_option($key, $default);
+	public function get( string $key, mixed $default_value = null ): mixed {
+		return get_option( $key, $default_value );
 	}
 
 	/**
@@ -39,8 +39,8 @@ final class WordPressOptionsRepository implements OptionsRepositoryInterface {
 	 * @param mixed  $value New value.
 	 * @return bool True on success, false on failure.
 	 */
-	public function update(string $key, mixed $value): bool {
-		return false !== update_option($key, $value);
+	public function update( string $key, mixed $value ): bool {
+		return false !== update_option( $key, $value );
 	}
 
 	/**
@@ -49,7 +49,7 @@ final class WordPressOptionsRepository implements OptionsRepositoryInterface {
 	 * @param string $key Option key.
 	 * @return bool True on success, false on failure.
 	 */
-	public function delete(string $key): bool {
-		return delete_option($key);
+	public function delete( string $key ): bool {
+		return delete_option( $key );
 	}
 }

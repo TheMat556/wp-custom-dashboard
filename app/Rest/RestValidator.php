@@ -20,9 +20,9 @@ final class RestValidator {
 	/**
 	 * Validates a required non-empty string with max length.
 	 *
-	 * @param mixed  $value     The value to validate.
-	 * @param int    $min_length Minimum string length (default 1).
-	 * @param int    $max_length Maximum string length (default 256).
+	 * @param mixed $value     The value to validate.
+	 * @param int   $min_length Minimum string length (default 1).
+	 * @param int   $max_length Maximum string length (default 256).
 	 * @return bool True if valid, false otherwise.
 	 */
 	public static function validate_string(
@@ -40,8 +40,8 @@ final class RestValidator {
 	/**
 	 * Validates an optional string (may be empty) with max length.
 	 *
-	 * @param mixed  $value     The value to validate.
-	 * @param int    $max_length Maximum string length (default 256).
+	 * @param mixed $value     The value to validate.
+	 * @param int   $max_length Maximum string length (default 256).
 	 * @return bool True if valid or empty, false otherwise.
 	 */
 	public static function validate_optional_string(
@@ -49,7 +49,7 @@ final class RestValidator {
 		int $max_length = 256
 	): bool {
 		if ( empty( $value ) ) {
-			return true; // Optional field
+			return true; // Optional field.
 		}
 		if ( ! is_string( $value ) ) {
 			return false;
@@ -88,7 +88,7 @@ final class RestValidator {
 	 */
 	public static function validate_optional_url( $value ): bool {
 		if ( empty( $value ) ) {
-			return true; // Optional field
+			return true; // Optional field.
 		}
 		return self::validate_url( $value );
 	}
@@ -127,7 +127,7 @@ final class RestValidator {
 		int $max = PHP_INT_MAX
 	): bool {
 		if ( empty( $value ) ) {
-			return true; // Optional field
+			return true; // Optional field.
 		}
 		return self::validate_integer( $value, $min, $max );
 	}
@@ -156,9 +156,9 @@ final class RestValidator {
 	/**
 	 * Validates a string by character length using mb_strlen (multibyte safe).
 	 *
-	 * @param mixed  $value      The value to validate.
-	 * @param int    $min_length Minimum string length.
-	 * @param int    $max_length Maximum string length.
+	 * @param mixed $value      The value to validate.
+	 * @param int   $min_length Minimum string length.
+	 * @param int   $max_length Maximum string length.
 	 * @return bool True if valid, false otherwise.
 	 */
 	public static function validate_mb_string(
@@ -176,8 +176,8 @@ final class RestValidator {
 	/**
 	 * Validates an optional multibyte string.
 	 *
-	 * @param mixed  $value      The value to validate.
-	 * @param int    $max_length Maximum string length.
+	 * @param mixed $value      The value to validate.
+	 * @param int   $max_length Maximum string length.
 	 * @return bool True if valid or empty, false otherwise.
 	 */
 	public static function validate_optional_mb_string(
@@ -185,7 +185,7 @@ final class RestValidator {
 		int $max_length = 256
 	): bool {
 		if ( empty( $value ) ) {
-			return true; // Optional field
+			return true; // Optional field.
 		}
 		if ( ! is_string( $value ) ) {
 			return false;

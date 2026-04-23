@@ -28,11 +28,11 @@ final class LicenseManager {
 		?LicenseStateTransitioner $transitioner = null,
 		?LicenseGracePeriod $grace_period = null
 	) {
-		$container                 = LicenseServiceContainer::getInstance();
-		$this->settings_repository = $settings_repository ?? $container->getSettingsRepository();
+		$container                 = LicenseServiceContainer::get_instance();
+		$this->settings_repository = $settings_repository ?? $container->get_settings_repository();
 		$this->client              = $client ?? new LicenseClient( null, $this->settings_repository );
-		$this->cache               = $cache ?? $container->getCache();
-		$this->grace_period        = $grace_period ?? $container->getGracePeriod();
+		$this->cache               = $cache ?? $container->get_cache();
+		$this->grace_period        = $grace_period ?? $container->get_grace_period();
 		$this->transitioner        = $transitioner ?? new LicenseStateTransitioner(
 			$this->cache,
 			$this->settings_repository,
@@ -61,24 +61,24 @@ final class LicenseManager {
 		if ( is_array( $cached ) ) {
 			$grace_status = $this->grace_period->get_status();
 
-			if ( 'normal' === $grace_status['mode'] && $this->transitioner->isGraceState( $cached ) ) {
+			if ( 'normal' === $grace_status['mode'] && $this->transitioner->is_grace_state( $cached ) ) {
 				$grace_status = $this->grace_period->sync_grace_days_remaining( (int) $cached['graceDaysRemaining'] );
 			}
 
-			if ( $this->transitioner->isGraceState( $cached ) && 'disabled' === $grace_status['mode'] ) {
-				return $this->build_public_payload( $this->transitioner->transitionToDisabled() );
+			if ( $this->transitioner->is_grace_state( $cached ) && 'disabled' === $grace_status['mode'] ) {
+				return $this->build_public_payload( $this->transitioner->transition_to_disabled() );
 			}
 
-			if ( $this->transitioner->isGraceState( $cached ) && $grace_status['graceDaysRemaining'] > 0 ) {
+			if ( $this->transitioner->is_grace_state( $cached ) && $grace_status['graceDaysRemaining'] > 0 ) {
 				$cached['graceDaysRemaining'] = $grace_status['graceDaysRemaining'];
 			}
 
 			return $this->build_public_payload( $cached );
 		}
 
-		$grace_status = $this->grace_period->get_status();
-		$status       = 'normal' === $grace_status['mode'] ? LicenseCache::STATUS_DISABLED : $grace_status['mode'];
-		$payload      = $this->cache->default_payload();
+		$grace_status                  = $this->grace_period->get_status();
+		$status                        = 'normal' === $grace_status['mode'] ? LicenseCache::STATUS_DISABLED : $grace_status['mode'];
+		$payload                       = $this->cache->default_payload();
 		$payload['status']             = $status;
 		$payload['graceDaysRemaining'] = $grace_status['graceDaysRemaining'];
 		$payload['keyPrefix']          = $key_prefix;
@@ -130,9 +130,9 @@ final class LicenseManager {
 				$this->emit_debug(
 					'deactivate_for_retry',
 					array(
-						'keyPrefix'  => substr( $normalized_key, 0, 8 ),
-						'success'    => ! is_wp_error( $deactivate_result ),
-						'errorCode'  => is_wp_error( $deactivate_result ) ? $deactivate_result->get_error_code() : null,
+						'keyPrefix' => substr( $normalized_key, 0, 8 ),
+						'success'   => ! is_wp_error( $deactivate_result ),
+						'errorCode' => is_wp_error( $deactivate_result ) ? $deactivate_result->get_error_code() : null,
 					)
 				);
 
@@ -162,7 +162,7 @@ final class LicenseManager {
 			return $result;
 		}
 
-		$payload = $this->transitioner->transitionToActive( $result, $normalized_key );
+		$payload = $this->transitioner->transition_to_active( $result, $normalized_key );
 
 		$this->emit_debug(
 			'activated',
@@ -204,9 +204,9 @@ final class LicenseManager {
 			$this->settings_repository->save_webhook_secret( $result['webhook_secret'] );
 		}
 
-		$payload = $this->transitioner->buildPayloadFromRemote( $result, $key );
+		$payload = $this->transitioner->build_payload_from_remote( $result, $key );
 
-		if ( $this->transitioner->isGraceState( $payload ) ) {
+		if ( $this->transitioner->is_grace_state( $payload ) ) {
 			$grace_status                  = $this->grace_period->sync_grace_days_remaining( (int) $payload['graceDaysRemaining'] );
 			$payload['graceDaysRemaining'] = $grace_status['graceDaysRemaining'];
 		} else {
@@ -271,7 +271,7 @@ final class LicenseManager {
 		$normalized_event = sanitize_text_field( $event );
 
 		if ( 'license.expired' === $normalized_event ) {
-			$current = $this->transitioner->transitionToExpired( $data );
+			$current = $this->transitioner->transition_to_expired( $data );
 			$this->emit_debug(
 				'webhook_expired',
 				array(
@@ -285,7 +285,7 @@ final class LicenseManager {
 		}
 
 		if ( in_array( $normalized_event, array( 'license.suspended', 'license.cancelled' ), true ) ) {
-			$disabled_state = $this->transitioner->transitionToDisabled();
+			$disabled_state = $this->transitioner->transition_to_disabled();
 			$this->emit_debug(
 				'webhook_disabled',
 				array(
@@ -313,7 +313,7 @@ final class LicenseManager {
 	 * @return array{status: string, role: ?string, tier: ?string, expiresAt: ?string, features: array<int, string>, graceDaysRemaining: int, hasKey: bool, keyPrefix: ?string, serverConfigured: bool}
 	 */
 	public function enter_grace_state(): array {
-		$payload = $this->transitioner->transitionToGrace();
+		$payload = $this->transitioner->transition_to_grace();
 		$this->emit_debug(
 			'grace_started',
 			array(
@@ -330,7 +330,7 @@ final class LicenseManager {
 	 * @return array{status: string, role: ?string, tier: ?string, expiresAt: ?string, features: array<int, string>, graceDaysRemaining: int, hasKey: bool, keyPrefix: ?string, serverConfigured: bool}
 	 */
 	public function enter_disabled_state(): array {
-		$payload = $this->transitioner->transitionToDisabled();
+		$payload = $this->transitioner->transition_to_disabled();
 		$this->emit_debug(
 			'disabled',
 			array(
@@ -361,7 +361,7 @@ final class LicenseManager {
 	 * @param array{status: string, tier: ?string, expiresAt: ?string, features: array<int, string>, graceDaysRemaining: int, keyPrefix: ?string, lastValidatedAt: ?string} $cached Cached payload.
 	 */
 	private function should_refresh_public_payload( array $cached ): bool {
-		if ( $this->transitioner->isGraceState( $cached ) && ! $this->cache->has_fresh_transient() ) {
+		if ( $this->transitioner->is_grace_state( $cached ) && ! $this->cache->has_fresh_transient() ) {
 			return true;
 		}
 
@@ -437,10 +437,10 @@ final class LicenseManager {
 
 		if ( is_wp_error( $result ) ) {
 			if ( $this->is_recoverable_error( $result ) ) {
-				return $this->build_public_payload( $this->transitioner->transitionToGrace() );
+				return $this->build_public_payload( $this->transitioner->transition_to_grace() );
 			}
 
-			return $this->build_public_payload( $this->transitioner->transitionToDisabled() );
+			return $this->build_public_payload( $this->transitioner->transition_to_disabled() );
 		}
 
 		return $result;
@@ -488,7 +488,7 @@ final class LicenseManager {
 			'license_replace_failed',
 			'The current site key could not be released before activating a new one.',
 			array(
-				'status'              => $http_status ?: 409,
+				'status'              => ! empty( $http_status ) ? $http_status : 409,
 				'previous_key_prefix' => substr( $license_key, 0, 8 ),
 			)
 		);
@@ -508,7 +508,7 @@ final class LicenseManager {
 			return;
 		}
 
-		$this->transitioner->transitionToActive( $result, $license_key );
+		$this->transitioner->transition_to_active( $result, $license_key );
 	}
 
 	/**

@@ -39,17 +39,17 @@ class LicensePayloadBuilder {
 	 * Constructor.
 	 *
 	 * @param array{status: string, role: ?string, tier: ?string, expiresAt: ?string, features: array<int, string>, graceDaysRemaining: int, keyPrefix: ?string, lastValidatedAt: ?string} $cached_state     Cached state.
-	 * @param bool                                                                                                                                                                            $has_key          Whether a key is stored.
-	 * @param bool                                                                                                                                                                            $server_configured Whether the server is configured.
+	 * @param bool                                                                                                                                                                         $has_key          Whether a key is stored.
+	 * @param bool                                                                                                                                                                         $server_configured Whether the server is configured.
 	 */
 	public function __construct(
 		array $cached_state,
 		bool $has_key,
 		bool $server_configured
 	) {
-		$this->cached_state       = $cached_state;
-		$this->has_key            = $has_key;
-		$this->server_configured  = $server_configured;
+		$this->cached_state      = $cached_state;
+		$this->has_key           = $has_key;
+		$this->server_configured = $server_configured;
 	}
 
 	/**
@@ -76,7 +76,7 @@ class LicensePayloadBuilder {
 	 *
 	 * @return array{status: string, role: ?string, tier: ?string, expiresAt: ?string, features: array<int, string>, graceDaysRemaining: int, hasKey: bool, keyPrefix: ?string, serverConfigured: bool}
 	 */
-	public function buildPublic(): array {
+	public function build_public(): array {
 		// For now, public and full are the same.
 		// In the future, non-admin users might see a redacted version.
 		return $this->build();

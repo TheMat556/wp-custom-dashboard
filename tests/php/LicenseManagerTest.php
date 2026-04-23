@@ -92,7 +92,7 @@ class LicenseManagerTest extends TestCase {
 		$this->assertIsArray( $payload );
 		$this->assertSame( 'expired', $payload['status'] );
 		$this->assertSame( 4, $payload['graceDaysRemaining'] );
-		$this->assertSame( 'grace', \WpReactUi\License\LicenseServiceContainer::getInstance()->getGracePeriod()->get_status()['mode'] );
+		$this->assertSame( 'grace', \WpReactUi\License\LicenseServiceContainer::get_instance()->get_grace_period()->get_status()['mode'] );
 	}
 
 	public function test_activate_releases_previous_site_key_before_switching(): void {

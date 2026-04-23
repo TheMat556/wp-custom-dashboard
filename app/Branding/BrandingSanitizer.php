@@ -31,12 +31,12 @@ final class BrandingSanitizer {
 		$input = is_array( $input ) ? $input : array();
 
 		return array(
-			'light_logo_id'          => $this->sanitize_logo_id( $input['light_logo_id'] ?? 0, 'light' ),
-			'dark_logo_id'           => $this->sanitize_logo_id( $input['dark_logo_id'] ?? 0, 'dark' ),
-			'long_logo_id'           => $this->sanitize_logo_id( $input['long_logo_id'] ?? 0, 'long' ),
-			'use_long_logo'          => ! empty( $input['use_long_logo'] ),
-			'primary_color'          => $this->sanitize_primary_color( $input['primary_color'] ?? BrandingSettingsRepository::DEFAULT_PRIMARY_COLOR ),
-			'font_preset'            => $this->sanitize_font_preset( $input['font_preset'] ?? BrandingSettingsRepository::DEFAULT_FONT_PRESET ),
+			'light_logo_id'            => $this->sanitize_logo_id( $input['light_logo_id'] ?? 0, 'light' ),
+			'dark_logo_id'             => $this->sanitize_logo_id( $input['dark_logo_id'] ?? 0, 'dark' ),
+			'long_logo_id'             => $this->sanitize_logo_id( $input['long_logo_id'] ?? 0, 'long' ),
+			'use_long_logo'            => ! empty( $input['use_long_logo'] ),
+			'primary_color'            => $this->sanitize_primary_color( $input['primary_color'] ?? BrandingSettingsRepository::DEFAULT_PRIMARY_COLOR ),
+			'font_preset'              => $this->sanitize_font_preset( $input['font_preset'] ?? BrandingSettingsRepository::DEFAULT_FONT_PRESET ),
 			'open_in_new_tab_patterns' => $this->sanitize_open_in_new_tab_patterns( $input['open_in_new_tab_patterns'] ?? '' ),
 		);
 	}

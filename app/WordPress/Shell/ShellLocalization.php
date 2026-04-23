@@ -31,29 +31,29 @@ class WP_React_UI_Shell_Localization {
 		}
 
 		return array(
-			'menu'      => WP_React_UI_Menu_Repository::get_menu_data(),
-			'siteName'  => $branding['siteName'],
-			'branding'  => $branding,
-			'theme'     => $theme,
-			'adminUrl'  => admin_url(),
-			'publicUrl' => home_url( '/' ),
-			'navigation' => array(
+			'menu'        => WP_React_UI_Menu_Repository::get_menu_data(),
+			'siteName'    => $branding['siteName'],
+			'branding'    => $branding,
+			'theme'       => $theme,
+			'adminUrl'    => admin_url(),
+			'publicUrl'   => home_url( '/' ),
+			'navigation'  => array(
 				'fullReloadPageParams' => array_values( $special_pages['full_reload_page_params'] ),
 				'shellDisabledPagenow' => array_values( $special_pages['shell_disabled_pagenow'] ),
 				'breakoutPagenow'      => array_values( $special_pages['breakout_pagenow'] ),
 				'openInNewTabPatterns' => array_values( $preferences['openInNewTabPatterns'] ),
 			),
-			'nonce'     => wp_create_nonce( 'wp_rest' ),
-			'restUrl'   => rest_url( 'wp-react-ui/v1' ),
-			'logoutUrl' => wp_logout_url( admin_url() ),
-			'assetsUrl' => plugins_url( 'dist/', dirname( __DIR__, 3 ) . '/wp-custom-dashboard.php' ),
-			'locale'    => get_locale(),
-			'user'      => array(
+			'nonce'       => wp_create_nonce( 'wp_rest' ),
+			'restUrl'     => rest_url( 'wp-react-ui/v1' ),
+			'logoutUrl'   => wp_logout_url( admin_url() ),
+			'assetsUrl'   => plugins_url( 'dist/', dirname( __DIR__, 3 ) . '/wp-custom-dashboard.php' ),
+			'locale'      => get_locale(),
+			'user'        => array(
 				'name'             => $user->display_name,
 				'canManageOptions' => $can_manage,
 				'canEditPosts'     => current_user_can( 'edit_posts' ),
 			),
-			'license'   => $license,
+			'license'     => $license,
 			'shellRoutes' => self::get_shell_routes(),
 		);
 	}

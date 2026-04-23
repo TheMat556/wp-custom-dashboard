@@ -24,7 +24,7 @@ class LicenseStateTransitionerTest extends TestCase {
 		parent::setUp();
 		$this->cache                  = new LicenseCache();
 		$this->settings_repository    = new LicenseSettingsRepository();
-		$this->grace_period           = LicenseServiceContainer::getInstance()->getGracePeriod();
+		$this->grace_period           = LicenseServiceContainer::get_instance()->get_grace_period();
 		$this->transitioner           = new LicenseStateTransitioner( $this->cache, $this->settings_repository, $this->grace_period );
 
 		// Clear any existing state
@@ -33,7 +33,7 @@ class LicenseStateTransitionerTest extends TestCase {
 	}
 
 	/**
-	 * Test isGraceState returns true for grace status.
+	 * Test is_grace_state returns true for grace status.
 	 */
 	public function test_isGraceState_returns_true_for_grace_status(): void {
 		$payload = array(
@@ -41,11 +41,11 @@ class LicenseStateTransitionerTest extends TestCase {
 			'graceDaysRemaining' => 7,
 		);
 
-		$this->assertTrue( $this->transitioner->isGraceState( $payload ) );
+		$this->assertTrue( $this->transitioner->is_grace_state( $payload ) );
 	}
 
 	/**
-	 * Test isGraceState returns true for expired with grace days remaining.
+	 * Test is_grace_state returns true for expired with grace days remaining.
 	 */
 	public function test_isGraceState_returns_true_for_expired_with_grace_days(): void {
 		$payload = array(
@@ -53,11 +53,11 @@ class LicenseStateTransitionerTest extends TestCase {
 			'graceDaysRemaining' => 5,
 		);
 
-		$this->assertTrue( $this->transitioner->isGraceState( $payload ) );
+		$this->assertTrue( $this->transitioner->is_grace_state( $payload ) );
 	}
 
 	/**
-	 * Test isGraceState returns false for expired with no grace days.
+	 * Test is_grace_state returns false for expired with no grace days.
 	 */
 	public function test_isGraceState_returns_false_for_expired_without_grace_days(): void {
 		$payload = array(
@@ -65,11 +65,11 @@ class LicenseStateTransitionerTest extends TestCase {
 			'graceDaysRemaining' => 0,
 		);
 
-		$this->assertFalse( $this->transitioner->isGraceState( $payload ) );
+		$this->assertFalse( $this->transitioner->is_grace_state( $payload ) );
 	}
 
 	/**
-	 * Test buildPayloadFromRemote parses active license correctly.
+	 * Test build_payload_from_remote parses active license correctly.
 	 */
 	public function test_buildPayloadFromRemote_parses_active_license(): void {
 		$remote = array(
@@ -83,7 +83,7 @@ class LicenseStateTransitionerTest extends TestCase {
 			),
 		);
 
-		$payload = $this->transitioner->buildPayloadFromRemote( $remote, 'a1b2c3d4e5f6g7h8i9j0k1l2m3n4o5p6q7r8s9t0u1v2w3x4y5z6a7b8c9d0e1f2' );
+		$payload = $this->transitioner->build_payload_from_remote( $remote, 'a1b2c3d4e5f6g7h8i9j0k1l2m3n4o5p6q7r8s9t0u1v2w3x4y5z6a7b8c9d0e1f2' );
 
 		$this->assertSame( LicenseCache::STATUS_ACTIVE, $payload['status'] );
 		$this->assertSame( 'owner', $payload['role'] );
@@ -93,7 +93,7 @@ class LicenseStateTransitionerTest extends TestCase {
 	}
 
 	/**
-	 * Test buildPayloadFromRemote handles missing optional fields.
+	 * Test build_payload_from_remote handles missing optional fields.
 	 */
 	public function test_buildPayloadFromRemote_handles_missing_optional_fields(): void {
 		$remote = array(
@@ -101,7 +101,7 @@ class LicenseStateTransitionerTest extends TestCase {
 			'license' => array(),
 		);
 
-		$payload = $this->transitioner->buildPayloadFromRemote( $remote, 'a' );
+		$payload = $this->transitioner->build_payload_from_remote( $remote, 'a' );
 
 		$this->assertSame( LicenseCache::STATUS_ACTIVE, $payload['status'] );
 		$this->assertNull( $payload['role'] );
@@ -110,10 +110,10 @@ class LicenseStateTransitionerTest extends TestCase {
 	}
 
 	/**
-	 * Test transitionToDisabled sets disabled status.
+	 * Test transition_to_disabled sets disabled status.
 	 */
 	public function test_transitionToDisabled_sets_disabled_status(): void {
-		$payload = $this->transitioner->transitionToDisabled();
+		$payload = $this->transitioner->transition_to_disabled();
 
 		$this->assertSame( LicenseCache::STATUS_DISABLED, $payload['status'] );
 
@@ -124,7 +124,7 @@ class LicenseStateTransitionerTest extends TestCase {
 	}
 
 	/**
-	 * Test transitionToGrace sets grace status.
+	 * Test transition_to_grace sets grace status.
 	 */
 	public function test_transitionToGrace_sets_grace_status(): void {
 		// Need to set up an existing license state
@@ -133,7 +133,7 @@ class LicenseStateTransitionerTest extends TestCase {
 		$existing['role']   = 'owner';
 		$this->cache->set( $existing );
 
-		$payload = $this->transitioner->transitionToGrace();
+		$payload = $this->transitioner->transition_to_grace();
 
 		$this->assertSame( LicenseCache::STATUS_GRACE, $payload['status'] );
 		$this->assertGreaterThan( 0, $payload['graceDaysRemaining'] );
@@ -145,21 +145,21 @@ class LicenseStateTransitionerTest extends TestCase {
 	}
 
 	/**
-	 * Test transitionToExpired sets expired status.
+	 * Test transition_to_expired sets expired status.
 	 */
 	public function test_transitionToExpired_sets_expired_status(): void {
 		$existing = $this->cache->default_payload();
 		$existing['status'] = LicenseCache::STATUS_ACTIVE;
 		$this->cache->set( $existing );
 
-		$payload = $this->transitioner->transitionToExpired();
+		$payload = $this->transitioner->transition_to_expired();
 
 		$this->assertSame( LicenseCache::STATUS_EXPIRED, $payload['status'] );
 		$this->assertGreaterThan( 0, $payload['graceDaysRemaining'] );
 	}
 
 	/**
-	 * Test transitionToExpired accepts webhook data.
+	 * Test transition_to_expired accepts webhook data.
 	 */
 	public function test_transitionToExpired_accepts_webhook_data(): void {
 		$webhook_data = array(
@@ -170,7 +170,7 @@ class LicenseStateTransitionerTest extends TestCase {
 			'grace_days_remaining'  => 10,
 		);
 
-		$payload = $this->transitioner->transitionToExpired( $webhook_data );
+		$payload = $this->transitioner->transition_to_expired( $webhook_data );
 
 		$this->assertSame( LicenseCache::STATUS_EXPIRED, $payload['status'] );
 		$this->assertSame( 'starter', $payload['tier'] );
@@ -180,7 +180,7 @@ class LicenseStateTransitionerTest extends TestCase {
 	}
 
 	/**
-	 * Test transitionToActive saves license key and updates cache.
+	 * Test transition_to_active saves license key and updates cache.
 	 */
 	public function test_transitionToActive_saves_license_key_and_updates_cache(): void {
 		$this->settings_repository->clear_license_key();
@@ -197,7 +197,7 @@ class LicenseStateTransitionerTest extends TestCase {
 		);
 
 		$license_key = 'a1b2c3d4e5f6g7h8i9j0k1l2m3n4o5p6q7r8s9t0u1v2w3x4y5z6a7b8c9d0e1f2';
-		$payload     = $this->transitioner->transitionToActive( $remote, $license_key );
+		$payload     = $this->transitioner->transition_to_active( $remote, $license_key );
 
 		$this->assertSame( LicenseCache::STATUS_ACTIVE, $payload['status'] );
 		$this->assertSame( 'owner', $payload['role'] );

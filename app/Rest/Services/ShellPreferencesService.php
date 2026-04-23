@@ -87,5 +87,4 @@ final class ShellPreferencesService {
 		}
 		return $clean;
 	}
-
 }

@@ -36,7 +36,7 @@ final class PluginBootstrap {
 	 * @return void
 	 */
 	public static function boot(): void {
-		// Run option migrations before any other initialization
+		// Run option migrations before any other initialization.
 		OptionsMigration::run();
 
 		foreach ( self::legacy_init_sequence() as $class_name ) {

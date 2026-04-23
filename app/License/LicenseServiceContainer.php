@@ -29,12 +29,12 @@ defined( 'ABSPATH' ) || exit;
  * mock injection.
  *
  * Usage:
- *   $container = LicenseServiceContainer::getInstance();
- *   $manager = $container->getManager();
+ *   $container = LicenseServiceContainer::get_instance();
+ *   $manager = $container->get_manager();
  *
  * For testing:
  *   $mockCache = $this->createMock(LicenseCache::class);
- *   $container->setCache($mockCache);
+ *   $container->set_cache($mockCache);
  *   // ... run test
  *   $container->reset(); // in tearDown()
  */
@@ -99,7 +99,7 @@ final class LicenseServiceContainer {
 	/**
 	 * Gets the singleton instance of the container.
 	 */
-	public static function getInstance(): self {
+	public static function get_instance(): self {
 		if ( null === self::$instance ) {
 			self::$instance = new self();
 		}
@@ -110,47 +110,47 @@ final class LicenseServiceContainer {
 	/**
 	 * Gets the cache repository, lazy-initializing if not overridden.
 	 */
-	public function getCacheRepository(): CacheRepositoryInterface {
+	public function get_cache_repository(): CacheRepositoryInterface {
 		return $this->cache_repository ??= new WordPressCacheRepository();
 	}
 
 	/**
 	 * Gets the options repository, lazy-initializing if not overridden.
 	 */
-	public function getOptionsRepository(): OptionsRepositoryInterface {
+	public function get_options_repository(): OptionsRepositoryInterface {
 		return $this->options_repository ??= new WordPressOptionsRepository();
 	}
 
 	/**
 	 * Gets the feature filter, lazy-initializing if not overridden.
 	 */
-	public function getFeatureFilter(): FeatureFilterInterface {
+	public function get_feature_filter(): FeatureFilterInterface {
 		return $this->feature_filter ??= new WordPressFeatureFilter();
 	}
 
 	/**
 	 * Gets the settings repository, lazy-initializing if not overridden.
 	 */
-	public function getSettingsRepository(): LicenseSettingsRepository {
+	public function get_settings_repository(): LicenseSettingsRepository {
 		return $this->settings_repository ??= new LicenseSettingsRepository();
 	}
 
 	/**
 	 * Gets the license cache, lazy-initializing if not overridden.
 	 */
-	public function getCache(): LicenseCache {
+	public function get_cache(): LicenseCache {
 		return $this->cache ??= new LicenseCache(
-			$this->getCacheRepository(),
-			$this->getOptionsRepository()
+			$this->get_cache_repository(),
+			$this->get_options_repository()
 		);
 	}
 
 	/**
 	 * Gets the license grace period, lazy-initializing if not overridden.
 	 */
-	public function getGracePeriod(): LicenseGracePeriod {
+	public function get_grace_period(): LicenseGracePeriod {
 		return $this->grace_period ??= new LicenseGracePeriod(
-			$this->getOptionsRepository()
+			$this->get_options_repository()
 		);
 	}
 
@@ -160,11 +160,11 @@ final class LicenseServiceContainer {
 	 * The manager is constructed with null client (uses default), and
 	 * the lazily-initialized cache and settings repository from this container.
 	 */
-	public function getManager(): LicenseManager {
+	public function get_manager(): LicenseManager {
 		return $this->manager ??= new LicenseManager(
 			null,
-			$this->getCache(),
-			$this->getSettingsRepository()
+			$this->get_cache(),
+			$this->get_settings_repository()
 		);
 	}
 
@@ -173,7 +173,7 @@ final class LicenseServiceContainer {
 	 *
 	 * @param CacheRepositoryInterface $repo Repository to inject.
 	 */
-	public function setCacheRepository( CacheRepositoryInterface $repo ): void {
+	public function set_cache_repository( CacheRepositoryInterface $repo ): void {
 		$this->cache_repository = $repo;
 		$this->cache            = null; // Reset dependent cache.
 	}
@@ -183,7 +183,7 @@ final class LicenseServiceContainer {
 	 *
 	 * @param OptionsRepositoryInterface $repo Repository to inject.
 	 */
-	public function setOptionsRepository( OptionsRepositoryInterface $repo ): void {
+	public function set_options_repository( OptionsRepositoryInterface $repo ): void {
 		$this->options_repository = $repo;
 		$this->cache              = null; // Reset dependent cache.
 		$this->grace_period       = null; // Reset dependent grace period.
@@ -194,7 +194,7 @@ final class LicenseServiceContainer {
 	 *
 	 * @param FeatureFilterInterface $filter Filter to inject.
 	 */
-	public function setFeatureFilter( FeatureFilterInterface $filter ): void {
+	public function set_feature_filter( FeatureFilterInterface $filter ): void {
 		$this->feature_filter = $filter;
 	}
 
@@ -203,7 +203,7 @@ final class LicenseServiceContainer {
 	 *
 	 * @param LicenseSettingsRepository $repo Repository to inject.
 	 */
-	public function setSettingsRepository( LicenseSettingsRepository $repo ): void {
+	public function set_settings_repository( LicenseSettingsRepository $repo ): void {
 		$this->settings_repository = $repo;
 	}
 
@@ -212,7 +212,7 @@ final class LicenseServiceContainer {
 	 *
 	 * @param LicenseCache $cache Cache to inject.
 	 */
-	public function setCache( LicenseCache $cache ): void {
+	public function set_cache( LicenseCache $cache ): void {
 		$this->cache = $cache;
 	}
 
@@ -221,7 +221,7 @@ final class LicenseServiceContainer {
 	 *
 	 * @param LicenseGracePeriod $grace_period Grace period to inject.
 	 */
-	public function setGracePeriod( LicenseGracePeriod $grace_period ): void {
+	public function set_grace_period( LicenseGracePeriod $grace_period ): void {
 		$this->grace_period = $grace_period;
 	}
 
@@ -230,7 +230,7 @@ final class LicenseServiceContainer {
 	 *
 	 * @param LicenseManager $manager Manager to inject.
 	 */
-	public function setManager( LicenseManager $manager ): void {
+	public function set_manager( LicenseManager $manager ): void {
 		$this->manager = $manager;
 	}
 
@@ -241,12 +241,12 @@ final class LicenseServiceContainer {
 	 * The next call to get*() will create a fresh instance.
 	 */
 	public function reset(): void {
-		$this->settings_repository   = null;
-		$this->cache_repository      = null;
-		$this->options_repository    = null;
-		$this->feature_filter        = null;
-		$this->cache                 = null;
-		$this->grace_period          = null;
-		$this->manager               = null;
+		$this->settings_repository = null;
+		$this->cache_repository    = null;
+		$this->options_repository  = null;
+		$this->feature_filter      = null;
+		$this->cache               = null;
+		$this->grace_period        = null;
+		$this->manager             = null;
 	}
 }

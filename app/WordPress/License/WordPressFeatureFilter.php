@@ -11,7 +11,7 @@ namespace WpReactUi\WordPress\License;
 
 use WpReactUi\License\Contracts\FeatureFilterInterface;
 
-defined('ABSPATH') || exit;
+defined( 'ABSPATH' ) || exit;
 
 /**
  * Implements FeatureFilterInterface using WordPress apply_filters.
@@ -28,15 +28,15 @@ final class WordPressFeatureFilter implements FeatureFilterInterface {
 	 * @param array<string> $features Feature identifiers.
 	 * @return array<string> Filtered features.
 	 */
-	public function filter(string $hook, array $features): array {
+	public function filter( string $hook, array $features ): array {
 		/**
 		 * Filters the allowed features list.
 		 *
 		 * @param array<string> $features Feature identifiers.
 		 */
-		$filtered = apply_filters($hook, $features);
+		$filtered = apply_filters( $hook, $features );
 
 		// Ensure the filter result is still an array.
-		return is_array($filtered) ? $filtered : $features;
+		return is_array( $filtered ) ? $filtered : $features;
 	}
 }

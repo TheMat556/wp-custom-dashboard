@@ -14,11 +14,11 @@ class LicenseGracePeriodTest extends TestCase {
 	protected function set_up(): void {
 		parent::set_up();
 		wp_test_reset_state();
-		LicenseServiceContainer::getInstance()->reset();
+		LicenseServiceContainer::get_instance()->reset();
 	}
 
 	public function test_get_status_returns_normal_when_no_grace_is_active(): void {
-		$grace = LicenseServiceContainer::getInstance()->getGracePeriod();
+		$grace = LicenseServiceContainer::get_instance()->get_grace_period();
 		$status = $grace->get_status();
 
 		$this->assertSame( 'normal', $status['mode'] );
@@ -27,7 +27,7 @@ class LicenseGracePeriodTest extends TestCase {
 	}
 
 	public function test_start_grace_persists_started_at_and_returns_grace_state(): void {
-		$grace = LicenseServiceContainer::getInstance()->getGracePeriod();
+		$grace = LicenseServiceContainer::get_instance()->get_grace_period();
 		$status = $grace->start_grace();
 
 		$this->assertSame( 'grace', $status['mode'] );
@@ -39,7 +39,7 @@ class LicenseGracePeriodTest extends TestCase {
 	public function test_get_status_returns_disabled_after_grace_window_expires(): void {
 		update_option( 'wp_react_ui_license_grace_started_at', time() - ( 8 * DAY_IN_SECONDS ), false );
 
-		$grace = LicenseServiceContainer::getInstance()->getGracePeriod();
+		$grace = LicenseServiceContainer::get_instance()->get_grace_period();
 		$status = $grace->get_status();
 
 		$this->assertSame( 'disabled', $status['mode'] );

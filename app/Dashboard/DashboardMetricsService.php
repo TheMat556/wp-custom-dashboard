@@ -111,12 +111,12 @@ final class DashboardMetricsService {
 						continue;
 					}
 
-					$total++;
+					++$total;
 
 					try {
 						$check = call_user_func( $test['test'] );
 						if ( isset( $check['status'] ) && 'good' === $check['status'] ) {
-							$passed++;
+							++$passed;
 						}
 					} catch ( \Throwable $exception ) {
 						continue;
@@ -152,8 +152,8 @@ final class DashboardMetricsService {
 		$plugin_updates = get_site_transient( 'update_plugins' );
 		if ( $plugin_updates && ! empty( $plugin_updates->response ) ) {
 			foreach ( $plugin_updates->response as $slug => $data ) {
-				$file      = WP_PLUGIN_DIR . '/' . $slug;
-				$installed = file_exists( $file ) ? get_plugin_data( $file, false, false ) : array();
+				$file           = WP_PLUGIN_DIR . '/' . $slug;
+				$installed      = file_exists( $file ) ? get_plugin_data( $file, false, false ) : array();
 				$plugins_list[] = array(
 					'slug'           => $slug,
 					'name'           => $installed['Name'] ?? basename( $slug, '.php' ),
@@ -224,7 +224,7 @@ final class DashboardMetricsService {
 			$views     = (int) get_transient( 'wp_react_ui_pv_' . $day );
 
 			if ( $i < 30 ) {
-				$results[] = array(
+				$results[]  = array(
 					'date'  => gmdate( 'M d', $timestamp ),
 					'views' => $views,
 				);
@@ -255,7 +255,7 @@ final class DashboardMetricsService {
 		global $wpdb;
 
 		$table = $wpdb->prefix . 'statistics_visitor';
-		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.NoCaching
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching
 		if ( $wpdb->get_var( $wpdb->prepare( 'SHOW TABLES LIKE %s', $table ) ) !== $table ) {
 			return array();
 		}
@@ -267,7 +267,7 @@ final class DashboardMetricsService {
 		$column  = in_array( 'location', $columns, true ) ? 'location' : 'country';
 		$since   = gmdate( 'Y-m-d', strtotime( '-30 days' ) );
 
-		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching
 		$rows = $wpdb->get_results(
 			$wpdb->prepare(
 				'SELECT %i AS country, COUNT(*) AS visits
@@ -323,7 +323,7 @@ final class DashboardMetricsService {
 				'user-agent' => 'WP-React-UI-Health/1.0',
 			)
 		);
-		$ms = (int) round( ( microtime( true ) - $start ) * 1000 );
+		$ms       = (int) round( ( microtime( true ) - $start ) * 1000 );
 
 		$history = get_option( 'wp_react_ui_speed_history', array() );
 		if ( ! is_array( $history ) ) {

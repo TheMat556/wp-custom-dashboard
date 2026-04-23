@@ -83,7 +83,7 @@ final class DashboardCalendarService {
 			);
 
 			if ( $start_date === $today ) {
-				$today_count++;
+				++$today_count;
 			}
 
 			if ( $booking['start_datetime'] >= $now ) {
@@ -99,8 +99,8 @@ final class DashboardCalendarService {
 
 		$week_days = array();
 		for ( $i = 0; $i < 7; $i++ ) {
-			$timestamp = strtotime( "+{$i} days", strtotime( $today . ' 00:00:00' ) );
-			$date      = gmdate( 'Y-m-d', $timestamp );
+			$timestamp   = strtotime( "+{$i} days", strtotime( $today . ' 00:00:00' ) );
+			$date        = gmdate( 'Y-m-d', $timestamp );
 			$week_days[] = array(
 				'date'     => $date,
 				'dayLabel' => gmdate( 'D', $timestamp ),
@@ -142,7 +142,7 @@ final class DashboardCalendarService {
 			return null;
 		}
 
-		$since = gmdate( 'Y-m-d H:i:s', strtotime( '-30 days', current_time( 'timestamp' ) ) );
+		$since = gmdate( 'Y-m-d H:i:s', strtotime( '-30 days', time() ) );
 
 		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching
 		return (int) $wpdb->get_var(
@@ -164,8 +164,8 @@ final class DashboardCalendarService {
 		$week_days = array();
 
 		for ( $i = 0; $i < 7; $i++ ) {
-			$timestamp = strtotime( "+{$i} days", strtotime( $today . ' 00:00:00' ) );
-			$date      = gmdate( 'Y-m-d', $timestamp );
+			$timestamp   = strtotime( "+{$i} days", strtotime( $today . ' 00:00:00' ) );
+			$date        = gmdate( 'Y-m-d', $timestamp );
 			$week_days[] = array(
 				'date'     => $date,
 				'dayLabel' => gmdate( 'D', $timestamp ),

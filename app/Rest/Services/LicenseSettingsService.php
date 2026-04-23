@@ -76,14 +76,14 @@ final class LicenseSettingsService {
 	 * @return array{serverUrl: ?string, serverConfigured: bool, storedLicenseKey: ?string}
 	 */
 	public function get_license_server_settings_payload(): array {
-		$server_url  = $this->settings_repository->get_server_url();
-		$full_key    = $this->settings_repository->get_license_key();
-		$masked_key  = self::mask_license_key( $full_key );
+		$server_url = $this->settings_repository->get_server_url();
+		$full_key   = $this->settings_repository->get_license_key();
+		$masked_key = self::mask_license_key( $full_key );
 
 		return array(
-			'serverUrl'         => '' !== $server_url ? $server_url : null,
-			'serverConfigured'  => $this->settings_repository->is_server_configured(),
-			'storedLicenseKey'  => '' !== $masked_key ? $masked_key : null,
+			'serverUrl'        => '' !== $server_url ? $server_url : null,
+			'serverConfigured' => $this->settings_repository->is_server_configured(),
+			'storedLicenseKey' => '' !== $masked_key ? $masked_key : null,
 		);
 	}
 

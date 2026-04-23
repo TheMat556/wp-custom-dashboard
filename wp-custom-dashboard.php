@@ -62,7 +62,7 @@ require_once __DIR__ . '/includes/class-wp-react-ui-activity-log.php';
  */
 function wp_react_ui_get_special_page_config(): array {
 	return array(
-		'shell_disabled_pagenow' => array(
+		'shell_disabled_pagenow'  => array(
 			'post.php',
 			'post-new.php',
 			'site-editor.php',
@@ -71,7 +71,7 @@ function wp_react_ui_get_special_page_config(): array {
 			'site-health',
 			'h-bricks-elements',
 		),
-		'breakout_pagenow' => array(
+		'breakout_pagenow'        => array(
 			'post.php',
 			'post-new.php',
 			'site-editor.php',
@@ -103,7 +103,7 @@ function wp_react_ui_get_admin_path_prefix(): string {
  */
 function wp_react_ui_is_embed_mode(): bool {
 	// phpcs:disable WordPress.Security.NonceVerification
-	$get_embed = isset( $_GET['wp_shell_embed'] ) && '1' === sanitize_text_field( wp_unslash( $_GET['wp_shell_embed'] ) );
+	$get_embed  = isset( $_GET['wp_shell_embed'] ) && '1' === sanitize_text_field( wp_unslash( $_GET['wp_shell_embed'] ) );
 	$post_embed = false;
 
 	if ( isset( $_POST['wp_shell_embed'] ) ) {

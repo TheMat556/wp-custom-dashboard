@@ -40,7 +40,7 @@ final class RateLimiter {
 	 * @return bool True if the request is within the limit, false otherwise.
 	 */
 	public static function check( string $action, int $limit, int $user_id = 0 ): bool {
-		$identity = $user_id > 0 ? (string) $user_id : ( $_SERVER['REMOTE_ADDR'] ?? '' );
+		$identity = $user_id > 0 ? (string) $user_id : sanitize_text_field( wp_unslash( $_SERVER['REMOTE_ADDR'] ?? '' ) );
 		$key      = 'wp_react_ui_rl_' . md5( $action . '_' . $identity );
 		$current  = (int) get_transient( $key );
 

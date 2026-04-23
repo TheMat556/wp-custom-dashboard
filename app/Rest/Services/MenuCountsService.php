@@ -30,8 +30,8 @@ final class MenuCountsService {
 			$counts['edit-comments.php'] = $pending;
 		}
 
-		$update_data   = wp_get_update_data();
-		$total_updates = isset( $update_data['counts']['total'] ) ? (int) $update_data['counts']['total'] : 0;
+		$update_data    = wp_get_update_data();
+		$total_updates  = isset( $update_data['counts']['total'] ) ? (int) $update_data['counts']['total'] : 0;
 		$plugin_updates = isset( $update_data['counts']['plugins'] ) ? (int) $update_data['counts']['plugins'] : 0;
 		$theme_updates  = isset( $update_data['counts']['themes'] ) ? (int) $update_data['counts']['themes'] : 0;
 
