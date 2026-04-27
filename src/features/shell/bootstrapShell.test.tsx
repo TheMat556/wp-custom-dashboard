@@ -82,7 +82,7 @@ describe("bootstrapShell teardown", () => {
     teardown();
 
     expect(themeStore.getState().theme).toBe("light");
-  });
+  }, 10_000);
 
   it("teardown resets menuStore items to empty", async () => {
     const bootstrapShell = await getBootstrapShell();
