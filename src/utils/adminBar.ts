@@ -6,7 +6,7 @@ export interface AdminBarAction {
   html: string;
 }
 
-const ALLOWED_TAGS = ["span", "svg", "path", "img", "abbr"];
+const ALLOWED_TAGS = ["span", "svg", "path", "abbr"];
 const ALLOWED_ATTR = [
   "class",
   "aria-label",

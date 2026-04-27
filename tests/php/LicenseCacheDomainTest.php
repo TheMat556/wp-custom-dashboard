@@ -91,7 +91,7 @@ class MockOptionsRepository implements OptionsRepositoryInterface {
  *
  * @requires function define
  */
-final class LicenseCacheTest extends TestCase {
+final class LicenseCacheDomainTest extends TestCase {
 	private LicenseCache $cache;
 	private MockCacheRepository $mock_cache;
 	private MockOptionsRepository $mock_options;

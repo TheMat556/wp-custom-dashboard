@@ -18,7 +18,7 @@ use WpReactUi\License\LicenseGracePeriod;
  *
  * @requires function define
  */
-final class LicenseGracePeriodTest extends TestCase {
+final class LicenseGracePeriodDomainTest extends TestCase {
 	private LicenseGracePeriod $grace_period;
 	private MockOptionsRepository $mock_options;
 	private const OPTION_NAME = 'wp_react_ui_license_grace_started_at';

@@ -1,5 +1,5 @@
 import { defineConfig } from "vitest/config";
-import react from "@vitejs/plugin-react-swc";
+import react from "@vitejs/plugin-react";
 import { resolve } from "path";
 
 export default defineConfig(({ mode }) => ({
@@ -9,8 +9,8 @@ export default defineConfig(({ mode }) => ({
   // Strip all console.* calls and debugger statements from production bundles.
   // This prevents internal state, store shapes, and error traces from leaking
   // to anyone with browser devtools open.
-  esbuild: {
-    drop: mode === "production" ? (["console", "debugger"] as const) : [],
+  oxc: {
+    drop: mode === "production" ? (["console.debug", "console.log", "console.warn", "debugger"] as const) : [],
   },
 
   publicDir: "public",
@@ -29,7 +29,6 @@ export default defineConfig(({ mode }) => ({
         embedBridge: resolve(__dirname, "src/embedBridge.ts"),
         main: resolve(__dirname, "src/main.tsx"),
         outside: resolve(__dirname, "src/outside.css"),
-        sessionStore: resolve(__dirname, "src/features/session/store/sessionStore.ts"),
       },
 
       output: {

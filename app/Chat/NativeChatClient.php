@@ -323,6 +323,7 @@ final class NativeChatClient {
 	}
 
 	private function sanitize_license_key( string $license_key ): string {
-		return strtolower( preg_replace( '/[^a-fA-F0-9]/', '', $license_key ) ?? '' );
+		$normalized = preg_replace( '/[^a-f0-9]/i', '', strtolower( sanitize_text_field( $license_key ) ) );
+		return is_string( $normalized ) ? $normalized : '';
 	}
 }

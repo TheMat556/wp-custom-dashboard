@@ -64,7 +64,8 @@ function readPersistedState(): PersistedShellPreferences {
           ? parsed.themePreset
           : defaults.themePreset,
       customPresetColor:
-        typeof parsed.customPresetColor === "string"
+        typeof parsed.customPresetColor === "string" &&
+        /^#[0-9a-fA-F]{6}$/.test(parsed.customPresetColor)
           ? parsed.customPresetColor
           : defaults.customPresetColor,
       dashboardWidgetOrder: Array.isArray(parsed.dashboardWidgetOrder)

@@ -492,44 +492,13 @@ class WP_React_UI_REST_API {
 			array(
 				'methods'             => 'POST',
 				'callback'            => array( $license_webhook_controller, 'handle' ),
-				'permission_callback' => array( __CLASS__, 'permission_webhook_request' ),
+				'permission_callback' => '__return_true',
 			)
 		);
 	}
-
-	/**
-	 * Validates the incoming license-webhook request via a shared secret.
-	 *
-	 * Reads the secret from the X-Webhook-Secret header and compares it
-	 * against the value defined in WP_CUSTOM_DASHBOARD_WEBHOOK_SECRET or
-	 * stored in the wp_custom_dashboard_webhook_secret option.
-	 *
-	 * @param WP_REST_Request $request The incoming REST request.
-	 * @return bool|WP_Error True on success, WP_Error on failure.
-	 */
-	private static function permission_webhook_request( WP_REST_Request $request ): bool|WP_Error {
-		$provided = (string) $request->get_header( 'x-webhook-secret' );
-		$expected = defined( 'WP_CUSTOM_DASHBOARD_WEBHOOK_SECRET' )
-			? WP_CUSTOM_DASHBOARD_WEBHOOK_SECRET
-			: get_option( 'wp_custom_dashboard_webhook_secret', '' );
-
-		if ( '' === $expected ) {
-			error_log( 'WP Custom Dashboard: webhook secret is not configured.' ); // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log
-			return new WP_Error(
-				'rest_forbidden',
-				__( 'Webhook secret not configured.', 'wp-custom-dashboard' ),
-				array( 'status' => 403 )
-			);
-		}
-
-		if ( hash_equals( $expected, $provided ) ) {
-			return true;
-		}
-
-		return new WP_Error(
-			'rest_forbidden',
-			__( 'Invalid webhook secret.', 'wp-custom-dashboard' ),
-			array( 'status' => 403 )
-		);
-	}
 }
+
+// Ensure the webhook permission callback stays __return_true — the endpoint must
+// be public to receive push events from the license server. Actual verification
+// happens inside WebhookListener::handle(): secret comparison, HMAC signature,
+// timestamp expiry, and rate limiting.

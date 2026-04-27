@@ -37,6 +37,10 @@ export async function loadLicenseStatus(force = false): Promise<boolean> {
     return true;
   } catch {
     licenseStore.setState({ loading: false });
+    notificationStore.getState().push({
+      type: "error",
+      message: "Failed to check license status",
+    });
     return false;
   }
 }
@@ -72,6 +76,11 @@ export async function activateLicense(input: LicenseActivateInput): Promise<bool
     return true;
   } catch {
     licenseStore.setState({ saving: false });
+    notificationStore.getState().push({
+      type: "error",
+      message: "License activation failed",
+      description: "Could not reach the license server. Please try again.",
+    });
     return false;
   }
 }
@@ -86,6 +95,10 @@ export async function loadLicenseServerSettings(): Promise<LicenseSettingsData |
     licenseStore.setState({ serverConfigured: settings.serverConfigured });
     return settings;
   } catch {
+    notificationStore.getState().push({
+      type: "error",
+      message: "Failed to load license settings",
+    });
     return null;
   }
 }
@@ -102,6 +115,10 @@ export async function saveLicenseServerSettings(
     licenseStore.setState({ serverConfigured: settings.serverConfigured });
     return settings;
   } catch {
+    notificationStore.getState().push({
+      type: "error",
+      message: "Failed to save license server settings",
+    });
     return null;
   }
 }

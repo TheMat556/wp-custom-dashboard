@@ -32,6 +32,9 @@ function getDynamicComponent(
     if (!isSameOrigin(route.entrypoint_url)) {
       throw new Error(`[shell] Blocked cross-origin entrypoint: ${route.entrypoint_url}`);
     }
+    // Security chain: (1) PHP ShellLocalization blocks cross-origin entrypoints,
+    // (2) getShellRoute verifies the route slug exists in pluginRoutes,
+    // (3) isSameOrigin above. @vite-ignore is safe because of these layers.
     cached = lazy(() =>
       import(/* @vite-ignore */ route.entrypoint_url).catch(() => ({
         default: () => null,

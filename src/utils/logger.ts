@@ -15,6 +15,6 @@ export const logger = {
   },
 
   error: (msg: string, ...details: unknown[]): void => {
-    if (process.env.NODE_ENV !== "production") console.error(msg, ...details);
+    console.error(msg, ...details);
   },
 };

@@ -47,10 +47,10 @@ describe("sanitizeAdminBarHtml", () => {
   });
 
   it("strips event handler attributes", () => {
-    const malicious = '<img src="x" onerror="alert(1)" alt="icon">';
+    const malicious = '<span onmouseover="alert(1)" class="icon">hover</span>';
     const result = sanitizeAdminBarHtml(malicious);
-    expect(result).not.toContain("onerror");
-    expect(result).toContain('alt="icon"');
+    expect(result).not.toContain("onmouseover");
+    expect(result).toContain('class="icon"');
   });
 
   it("strips style attributes", () => {
@@ -64,14 +64,6 @@ describe("sanitizeAdminBarHtml", () => {
     expect(result).toContain("<svg");
     expect(result).toContain("<path");
     expect(result).toContain('viewBox="0 0 24 24"');
-  });
-
-  it("preserves allowed img tags", () => {
-    const img = '<img src="/avatar.png" alt="User" class="avatar">';
-    const result = sanitizeAdminBarHtml(img);
-    expect(result).toContain("src=");
-    expect(result).toContain('alt="User"');
-    expect(result).toContain('class="avatar"');
   });
 
   it("strips iframe tags", () => {

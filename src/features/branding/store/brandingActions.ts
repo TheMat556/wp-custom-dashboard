@@ -31,6 +31,10 @@ export async function loadBranding() {
       return;
     }
 
+    notificationStore.getState().push({
+      type: "error",
+      message: "Failed to load branding settings",
+    });
     brandingStore.setState({ loading: false });
   }
 }
@@ -50,6 +54,10 @@ export async function saveBranding(data: BrandingSaveInput): Promise<boolean> {
       return false;
     }
 
+    notificationStore.getState().push({
+      type: "error",
+      message: "Failed to save branding settings",
+    });
     brandingStore.setState({ saving: false });
     return false;
   }

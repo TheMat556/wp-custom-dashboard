@@ -112,7 +112,7 @@ final class BrandingSanitizer {
 			add_settings_error(
 				BrandingSettingsRepository::OPTION_NAME,
 				'invalid_' . $variant . '_logo',
-				sprintf( 'The selected %s logo must be an image attachment.', $variant )
+				sprintf( 'The selected %s logo must be an image attachment.', esc_html( $variant ) )
 			);
 
 			return 0;
