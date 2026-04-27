@@ -596,7 +596,7 @@ export default function LicenseSettings() {
                         className="wp-react-ui-license-field"
                         value={serverUrl}
                         onChange={(event) => setServerUrl(event.target.value)}
-                        placeholder="https://licenses.example.com"
+                        placeholder={t("https://licenses.example.com")}
                         autoComplete="off"
                         disabled={settingsLoading}
                         style={{ flex: 1 }}

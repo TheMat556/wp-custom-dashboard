@@ -147,7 +147,7 @@ wp-custom-dashboard/
 ## Documentation
 
 - [Architecture Decisions](ARCHITECTURE.md) — Design rationale, tradeoffs, and implementation notes
-- [CLAUD.md](CLAUDE.md) — Development workflow reference for AI-assisted coding
+- [AGENTS.md](AGENTS.md) — Development workflow, commands, and conventions for AI-assisted coding
 
 ## Deployment
 
