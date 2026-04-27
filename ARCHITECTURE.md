@@ -81,30 +81,47 @@ This works because each instance communicates via `postMessage` rather than shar
 
 **Current state (2026-04-27)**: The standalone `sessionStore` Vite entry produces a deployed `sessionStore-[hash].js` artifact that is **never enqueued by PHP**. The `ShellEmbedMode::enqueue_bridge_script()` method loads only the bridge script. There is only one running instance of the session store (in the parent shell). The standalone entry should either be removed or wired as an enqueued embed-mode script.
 
-## Shell feature as composition root (FSD tension)
+## Shell feature as composition root (FSD tension) — RESOLVED
 
-`bootstrapShell.tsx` lives in `features/shell/` but imports directly from other feature internals (`activity/store/activityStore`, `branding/store/brandingStore`, `dashboard/store/dashboardStore`, `license/store/licenseStore`, etc.) rather than through feature barrels. This violates the FSD cross-feature import rules documented in `FSD_GUIDELINES.md`.
+`bootstrapShell.tsx` lives in `features/shell/` but imports from other feature internals. This violated FSD cross-feature import rules.
 
-**Why this happened**: The bootstrap functions (`bootstrap*Store`, `reset*Store`) are intentionally excluded from feature barrels — they're framework construction internals, not public API. But the shell feature needs them to wire up the application. Neither approach is wrong, but the inconsistency needs resolution.
+**Resolution (2026-04-27)**: All features now export `bootstrap*Store` and `reset*Store` functions from their barrel (`index.ts`):
 
-**Options**:
-1. Export bootstrap/reset functions from each feature's barrel (making them public API)
-2. Move bootstrap logic into the shell feature entirely
-3. Acknowledge `bootstrapShell.tsx` as a privileged composition root exempt from FSD rules
+- `src/features/activity/index.ts` — exports `bootstrapActivityStore`, `resetActivityStore`
+- `src/features/branding/index.ts` — exports `bootstrapBrandingStore`, `resetBrandingStore`  
+- `src/features/dashboard/index.ts` — exports `bootstrapDashboardStore`, `resetDashboardStore`
+- `src/features/license/index.ts` — exports `bootstrapLicenseStore`, `resetLicenseStore`
+- `src/features/navigation/index.ts` — exports `bootstrapMenuStore`, `resetMenuStore`, `bootstrapMenuCountsStore`, `resetMenuCountsStore`, `bootstrapNavigationStore`, `resetNavigationStore`
+- `src/features/session/index.ts` — had them already
 
-**Current approach**: The code uses deep imports; `FSD_GUIDELINES.md` is silent on this exception.
+**Decision**: Option 1 — bootstrap/reset functions are public construction API. The shell is the composition root and uses barrel imports like any other consumer. `bootstrapShell.tsx` now imports exclusively through barrels.
 
-## PHP test stubs
+## Cognitive complexity decomposition patterns
 
-PHPUnit tests require WordPress function stubs. These are in `tests/php/wp-stubs.php` — a minimal set of mocked WordPress functions needed by the unit tests under `tests/php/`.
+Biome enforces a **max 15** cognitive complexity score. Several components exceeded this threshold. The following patterns were used to bring them under the limit:
 
-When writing new PHP tests, add function stubs to `wp-stubs.php` as needed. Do not load the full WordPress test suite (this is not a WordPress plugin integration test — it's a unit test suite for the plugin's PHP code).
+### LicenseSettings (complexity 35 → ≤15)
 
-## Menu caching
+The biggest offender. Decomposition:
 
-Menu payloads are cached per-user with a versioned namespace (`MenuCache.php`). The cache is invalidated when:
-- A plugin is activated/deactivated
-- A menu item is added/removed
-- The shell asset version changes (deploy)
+1. **`getLicenseStatusDisplay()`** — Pure function extracting the 5-branch if/else chain for status icon/label/color. Moved conditional logic out of the component body.
+2. **`LicenseKpiSection`** — Sub-component rendering the 4 KPI tiles. Isolated all tile-level conditionals from the main component.
+3. **`LicenseKeySurface`** — Sub-component encapsulating ALL key editing state and handlers (`licenseKey`, `handleLicenseKeyKeyDown`, `handleLicenseKeyPaste`, `applyLicenseKeyEdit`, `handleActivate`, `handleDeactivate`). This was the biggest win — the keyboard handler alone had 4 early-return conditions.
 
-The REST `GET /menu` endpoint is **advisory**. The source of truth is always the PHP-localized `window.wpReactUi` payload. The REST endpoint exists for cases where the menu must be refreshed without a full page reload.
+**Critical rule**: `useLicenseServerSettings()` must be called exactly ONCE per component tree. Extracting `LicenseKeySurface` as a sub-component required passing server settings as props rather than calling the hook again. Calling the hook in two components creates duplicate store instances and desynchronized state.
+
+### BusinessSection (complexity 16 → ≤15)
+
+Extracted 3 row sub-components: `BookingsRow`, `ContactFormsRow`, `EmailDeliveryRow`. Each row was a self-contained `<Flex>` block with its own conditionals. Moving them into named components broke the complexity chain.
+
+### SummaryTiles — `getConversionsProps` (complexity 16 → ≤15)
+
+Extracted a `renderConversionTags()` helper for the nested sub-rendering logic. The sub-building had an if/else with two inner ifs. The helper isolates the branching from the value/color/tooltip computation.
+
+### dashboardViewModel — `extractDataFields` (complexity 16 → ≤15)
+
+Introduced `val<T>()` and `arr<T>()` helper functions that wrap `?? null` / `?? []` behind a function call. This moves the nullish coalescing operators (each counting toward cognitive complexity) out of the calling function. The function went from 15 `??` operators to 2 function calls.
+
+### MessageList — useEffect dependency
+
+Biome flagged `messageCount` as an unnecessary dependency. The effect uses only `bottomRef` (a stable ref). The dependency was kept with a `biome-ignore` comment — `messages` is a prop, and when the parent passes a new array the component needs to re-scroll. The correct dependency is `[messages]` since it's the prop reference that changes on new messages.
