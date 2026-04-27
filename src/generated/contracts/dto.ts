@@ -37,6 +37,91 @@ export interface BrandingResponse {
   openInNewTabPatterns: Array<string>;
 }
 
+export interface ChatBootstrapRequest {
+  selectedThreadId?: number | null;
+}
+
+export interface ChatBootstrapResponse {
+  role: "owner" | "customer";
+  threads: Array<{
+    id: number;
+    domain: string;
+    customerName: string | null;
+    customerEmail: string | null;
+    status: "open" | "closed";
+    lastMessagePreview: string | null;
+    lastMessageAt: string;
+    createdAt: string;
+  }>;
+  selectedThreadId: number | null;
+  messages: Array<{
+    id: number;
+    authorRole: "owner" | "customer" | "system";
+    authorName: string;
+    message: string;
+    createdAt: string;
+  }>;
+  pollIntervalSeconds: number;
+}
+
+export interface ChatPollRequest {
+  selectedThreadId: number;
+  afterMessageId: number;
+}
+
+export interface ChatPollResponse {
+  role: "owner" | "customer";
+  threads: Array<{
+    id: number;
+    domain: string;
+    customerName: string | null;
+    customerEmail: string | null;
+    status: "open" | "closed";
+    lastMessagePreview: string | null;
+    lastMessageAt: string;
+    createdAt: string;
+  }>;
+  selectedThreadId: number;
+  messages: Array<{
+    id: number;
+    authorRole: "owner" | "customer" | "system";
+    authorName: string;
+    message: string;
+    createdAt: string;
+  }>;
+  pollIntervalSeconds: number;
+}
+
+export interface ChatSendRequest {
+  selectedThreadId: number;
+  message: string;
+}
+
+export interface ChatSendResponse {
+  role: "owner" | "customer";
+  thread: {
+    id: number;
+    domain: string;
+    customerName: string | null;
+    customerEmail: string | null;
+    status: "open" | "closed";
+    lastMessagePreview: string | null;
+    lastMessageAt: string;
+    createdAt: string;
+  };
+  message: {
+    id: number;
+    authorRole: "owner" | "customer" | "system";
+    authorName: string;
+    message: string;
+    createdAt: string;
+  };
+}
+
+export interface ChatThreadActionRequest {
+  selectedThreadId: number;
+}
+
 export interface DashboardResponse {
   atAGlance: Record<string, unknown>;
   siteHealth: Record<string, unknown>;
@@ -53,6 +138,37 @@ export interface DashboardResponse {
   onboardingChecklist: Array<Record<string, unknown>>;
   siteReadinessScore: number;
   calendarPreview: Record<string, unknown>;
+}
+
+export interface LicenseWebhookResponse {
+  status: "accepted";
+  event: string;
+}
+
+export interface LicenseActivateRequest {
+  licenseKey: string;
+}
+
+export interface LicenseResponse {
+  status: "active" | "expired" | "grace" | "disabled";
+  role: string | null;
+  tier: string | null;
+  expiresAt: string | null;
+  features: Array<string>;
+  graceDaysRemaining: number;
+  hasKey: boolean;
+  keyPrefix: string | null;
+  serverConfigured: boolean;
+}
+
+export interface LicenseSettingsRequest {
+  serverUrl: string | null;
+}
+
+export interface LicenseSettingsResponse {
+  serverUrl: string | null;
+  serverConfigured: boolean;
+  storedLicenseKey: string | null;
 }
 
 export interface MenuCountsResponse {

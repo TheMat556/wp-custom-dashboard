@@ -9,6 +9,7 @@ declare(strict_types=1);
 
 namespace WpReactUi\Rest\Controllers;
 
+use WpReactUi\License\LicenseGate;
 use WpReactUi\Rest\Services\DashboardDataService;
 
 defined( 'ABSPATH' ) || exit;
@@ -29,6 +30,17 @@ final class DashboardRouteController {
 	}
 
 	public function show() {
+		if ( ! LicenseGate::can( 'dashboard' ) ) {
+			return new \WP_Error(
+				'license_feature_disabled',
+				'Dashboard access requires an active license.',
+				array(
+					'status'  => 403,
+					'feature' => 'dashboard',
+				)
+			);
+		}
+
 		return rest_ensure_response( $this->service->get_dashboard_payload() );
 	}
 }

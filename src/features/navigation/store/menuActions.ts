@@ -1,4 +1,5 @@
 import type { WpReactUiConfig } from "../../../types/wp";
+import { logger } from "../../../utils/logger";
 import { createMenuService, type MenuService } from "../services/menuApi";
 import { menuStore } from "./menuStore";
 
@@ -21,7 +22,7 @@ export async function refreshMenu() {
     const items = _service ? await _service.fetchMenu() : menuStore.getState().items;
     menuStore.setState({ items, loading: false });
   } catch (error) {
-    console.error("[WP React UI] Menu refresh failed:", error);
+    logger.error("[WP React UI] Menu refresh failed:", error);
     menuStore.setState({ loading: false });
   }
 }

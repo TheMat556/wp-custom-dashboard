@@ -38,6 +38,17 @@ const TEST_CONFIG: Readonly<WpReactUiConfig> = Object.freeze({
     name: "Admin",
     role: "administrator",
   },
+  license: {
+    status: "disabled" as const,
+    role: null,
+    tier: null,
+    expiresAt: null,
+    features: [],
+    graceDaysRemaining: 0,
+    hasKey: false,
+    keyPrefix: null,
+    serverConfigured: true,
+  },
   shellRoutes: [],
   locale: "en_US",
 });
@@ -70,18 +81,15 @@ describe("useQuickDraft", () => {
       });
     });
 
-    expect(fetchMock).toHaveBeenCalledWith("/wp-json/wp/v2/posts", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "X-WP-Nonce": "test-nonce",
-      },
-      body: JSON.stringify({
-        title: "Draft title",
-        content: "Draft content",
-        status: "draft",
-      }),
-    });
+    const [postUrl, postInit] = fetchMock.mock.calls[0] as [string, RequestInit];
+    expect(postUrl).toBe("/wp-json/wp/v2/posts");
+    expect(postInit.method).toBe("POST");
+    expect(postInit.body).toBe(
+      JSON.stringify({ title: "Draft title", content: "Draft content", status: "draft" })
+    );
+    const draftHeaders = new Headers(postInit.headers);
+    expect(draftHeaders.get("Content-Type")).toBe("application/json");
+    expect(draftHeaders.get("X-WP-Nonce")).toBe("test-nonce");
     expect(message.success).toHaveBeenCalledWith("Draft saved");
     expect(onSuccess).toHaveBeenCalledTimes(1);
     expect(result.current.saving).toBe(false);

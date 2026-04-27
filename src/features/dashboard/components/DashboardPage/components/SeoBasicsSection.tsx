@@ -11,17 +11,21 @@ import { Section } from "./Section";
 
 const { Text } = Typography;
 
-export function SeoBasicsSection({ seoBasics, adminUrl }: SeoBasicsSectionProps) {
+export function SeoBasicsSection({
+  seoBasics,
+  adminUrl,
+  t,
+}: SeoBasicsSectionProps & { t: (key: string) => string }) {
   const { token } = theme.useToken();
   const checks = Object.values(seoBasics.checks);
   return (
     <Section
       icon={<SearchOutlined />}
-      title="SEO Basics"
+      title={t("SEO Basics")}
       description={
         seoBasics.plugin
           ? `Powered by ${seoBasics.plugin}`
-          : "Basic checks — no SEO plugin required"
+          : t("Basic checks — no SEO plugin required")
       }
       extra={
         <Flex align="center" gap={8}>
@@ -68,7 +72,7 @@ export function SeoBasicsSection({ seoBasics, adminUrl }: SeoBasicsSectionProps)
                 if (check.url) navigate(check.url, adminUrl);
               }}
             >
-              Fix →
+              {t("Fix →")}
             </Button>
           )}
         </Flex>
@@ -80,7 +84,9 @@ export function SeoBasicsSection({ seoBasics, adminUrl }: SeoBasicsSectionProps)
           icon={<InfoCircleOutlined />}
           message={
             <Text style={{ fontSize: 12 }}>
-              Install Yoast SEO (free) for full SEO tracking, meta descriptions, and XML sitemaps.
+              {t(
+                "Install Yoast SEO (free) for full SEO tracking, meta descriptions, and XML sitemaps."
+              )}
             </Text>
           }
           style={{ marginTop: 12, borderRadius: token.borderRadius }}
@@ -91,7 +97,7 @@ export function SeoBasicsSection({ seoBasics, adminUrl }: SeoBasicsSectionProps)
                 navigate("plugin-install.php?s=yoast+seo&tab=search&type=term", adminUrl)
               }
             >
-              Install free
+              {t("Install free")}
             </Button>
           }
         />

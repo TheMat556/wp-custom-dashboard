@@ -7,12 +7,6 @@
 
 defined( 'ABSPATH' ) || exit;
 
-require_once dirname( __DIR__, 2 ) . '/Dashboard/DashboardTrackingService.php';
-require_once dirname( __DIR__, 2 ) . '/Dashboard/DashboardMetricsService.php';
-require_once dirname( __DIR__, 2 ) . '/Dashboard/DashboardCalendarService.php';
-require_once dirname( __DIR__, 2 ) . '/Dashboard/DashboardStatusService.php';
-require_once dirname( __DIR__, 2 ) . '/Dashboard/DashboardActionService.php';
-require_once dirname( __DIR__, 2 ) . '/Dashboard/DashboardPayloadService.php';
 
 /**
  * Preserves the legacy static dashboard entrypoints while delegating internals.

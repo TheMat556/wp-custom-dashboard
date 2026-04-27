@@ -47,12 +47,19 @@ html, body {
 #wpwrap {
     display: grid !important;
     grid-template-columns: var(--sidebar-width, 240px) 1fr !important;
-    grid-template-rows: 64px 1fr !important;
+    grid-template-rows: 65px minmax(0, 1fr) !important;
     grid-template-areas:
         "sidebar navbar"
         "sidebar content" !important;
-    height: 100vh !important;
-    min-height: 100vh !important;
+    /* position: fixed pins to viewport — prevents iOS Safari from scrolling the
+       layout when the virtual keyboard appears or browser chrome animates */
+    position: fixed !important;
+    top: 0 !important;
+    left: 0 !important;
+    right: 0 !important;
+    bottom: 0 !important;
+    height: auto !important;
+    min-height: unset !important;
     padding: 0 !important;
     overflow: hidden !important;
     transition: grid-template-columns var(--sidebar-transition) !important;
@@ -119,7 +126,7 @@ html, body {
  */
 #wpwrap:not(.has-react-shell)::after {
     grid-area: navbar;
-    height: 64px;
+    height: 65px;
     background:
         /* burger icon */
         linear-gradient(90deg, #d8e3ed 25%, #e5eef7 50%, #d8e3ed 75%) 22px 23px / 20px 18px no-repeat,
@@ -176,25 +183,25 @@ body[data-theme="dark"] #wpwrap:not(.has-react-shell)::after {
     display: flex !important;
     width: 100% !important;
     min-width: 0 !important;
-    height: 100vh !important;
-    min-height: 100vh !important;
-    position: sticky !important;
-    top: 0 !important;
-    align-self: start !important;
+    /* Use 100% of #wpwrap (position:fixed; inset:0), never 100vh.
+       On iOS Safari 100vh = the "large" viewport (URL bar hidden) which is
+       taller than the actual visible fixed container — causing the navbar
+       to be pushed out of view. 100% always equals the fixed container. */
+    height: 100% !important;
+    min-height: 0 !important;
     background: transparent !important;
     z-index: 100 !important;
     pointer-events: none !important;
 }
 
 #react-shell-root:not(.mounted) {
-    position: sticky !important;
     overflow: hidden !important;
 }
 
 /* ── Content area (iframe shell) ──────────────────────────────────────────────
    Content is served by the iframe inside #react-shell-root.
    The native WordPress #wpcontent / #wpfooter remain in the DOM (PHP renders
-   them) but are hidden — users never interact with them directly.
+   them) but must not size the fixed viewport grid once the shell takes over.
    ─────────────────────────────────────────────────────────────────────────── */
 #wpcontent,
 #wpfooter {
@@ -202,6 +209,11 @@ body[data-theme="dark"] #wpwrap:not(.has-react-shell)::after {
     margin-left: 0 !important;
     visibility: hidden !important;
     pointer-events: none !important;
+}
+
+#wpwrap.has-react-shell > #wpcontent,
+#wpwrap.has-react-shell > #wpfooter {
+    display: none !important;
 }
 
 /* ── Skeleton shimmer ── */
@@ -217,7 +229,7 @@ body[data-theme="dark"] #wpwrap:not(.has-react-shell)::after {
     top: 0;
     left: var(--sidebar-width, 240px);
     right: 0;
-    height: 64px;
+    height: 65px;
     background:
         /* burger icon */
         linear-gradient(90deg, #d8e3ed 25%, #e5eef7 50%, #d8e3ed 75%) 22px 23px / 20px 18px no-repeat,

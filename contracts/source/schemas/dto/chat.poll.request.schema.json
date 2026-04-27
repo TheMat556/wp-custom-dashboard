@@ -1,0 +1,17 @@
+{
+  "$id": "dto/chat.poll.request",
+  "title": "ChatPollRequest",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["selectedThreadId", "afterMessageId"],
+  "properties": {
+    "selectedThreadId": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "afterMessageId": {
+      "type": "integer",
+      "minimum": 0
+    }
+  }
+}

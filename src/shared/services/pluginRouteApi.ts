@@ -3,6 +3,16 @@
 export type {
   ActivityFilters,
   BrandingSavePayload,
+  ChatBootstrapData,
+  ChatBootstrapPayload,
+  ChatLongPollPayload,
+  ChatPollData,
+  ChatPollPayload,
+  ChatSendData,
+  ChatSendPayload,
+  LicenseActivatePayload,
+  LicenseSettingsData,
+  LicenseSettingsPayload,
   PluginRestConfig,
   PluginRouteApi,
 } from "../../platform/wordpress/gateway/pluginRouteGateway";

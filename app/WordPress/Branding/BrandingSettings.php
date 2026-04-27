@@ -7,19 +7,14 @@
 
 defined( 'ABSPATH' ) || exit;
 
-require_once dirname( __DIR__, 2 ) . '/Branding/BrandingSettingsRepository.php';
-require_once dirname( __DIR__, 2 ) . '/Branding/BrandingMediaLibraryAdapter.php';
-require_once dirname( __DIR__, 2 ) . '/Branding/BrandingSanitizer.php';
-require_once dirname( __DIR__, 2 ) . '/Branding/BrandingPayloadService.php';
-require_once dirname( __DIR__, 2 ) . '/Branding/BrandingSettingsManager.php';
 
 /**
  * Handles logo upload settings and frontend branding data.
  */
 class WP_React_UI_Branding_Settings {
 	private const DEFAULT_PRIMARY_COLOR = '#4f46e5';
-	private const DEFAULT_FONT_PRESET = 'inter';
-	private const ALLOWED_FONT_PRESETS = array( 'inter', 'system', 'grotesk', 'serif' );
+	private const DEFAULT_FONT_PRESET   = 'inter';
+	private const ALLOWED_FONT_PRESETS  = array( 'inter', 'system', 'grotesk', 'serif' );
 
 	/**
 	 * Settings option group identifier.
@@ -47,7 +42,7 @@ class WP_React_UI_Branding_Settings {
 	 *
 	 * @var string
 	 */
-	private const SECTION_ID = 'wp_react_ui_branding_section';
+	private const SECTION_ID            = 'wp_react_ui_branding_section';
 	private const NAVIGATION_SECTION_ID = 'wp_react_ui_navigation_section';
 
 	/**

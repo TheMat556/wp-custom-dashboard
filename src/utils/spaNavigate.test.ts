@@ -12,7 +12,10 @@
 
 import { act, renderHook } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
-import { navigationStore, resetNavigationStore } from "../store/navigationStore";
+import {
+  navigationStore,
+  resetNavigationStore,
+} from "../features/navigation/store/navigationStore";
 import { toEmbedUrl } from "./embedUrl";
 import { isAdminUrl, useActiveKey } from "./spaNavigate";
 

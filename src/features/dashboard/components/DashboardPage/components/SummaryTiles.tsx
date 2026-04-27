@@ -1,8 +1,8 @@
 import {
   CheckCircleOutlined,
   ExclamationCircleOutlined,
+  FormOutlined,
   LineChartOutlined,
-  SearchOutlined,
   ThunderboltOutlined,
   UpCircleOutlined,
   WarningOutlined,
@@ -11,10 +11,9 @@ import { Flex, Progress, Tag, Typography, theme } from "antd";
 import { navigate } from "../../../../../utils/wp";
 import type {
   PendingUpdates,
-  SeoBasics,
-  SeoOverview,
   SiteHealthData,
   SiteSpeedData,
+  SubmissionStats,
   SummaryTilesProps,
   TFunc,
 } from "../types";
@@ -153,7 +152,7 @@ function getUpdatesProps(
         )}
         {(updates?.core ?? 0) > 0 && (
           <Tag color="red" style={{ margin: 0, fontSize: 11 }}>
-            core
+            {t("WordPress")}
           </Tag>
         )}
       </Flex>
@@ -184,10 +183,13 @@ function getSpeedProps(
   t: TFunc,
   token: TokenType
 ) {
-  let value: string;
-  if (isSiteDown) value = t("Error");
-  else if (speed?.ms != null) value = `${speed.ms} ms`;
-  else value = "—";
+  let speedLabel = "";
+  if (speed?.status === "good") speedLabel = t("Fast");
+  else if (speed?.status === "fair") speedLabel = t("Acceptable");
+  else if (speed?.status) speedLabel = t("Slow");
+
+  // Primary value is the speed label
+  const value = isSiteDown ? t("Error") : speedLabel || "—";
 
   let color: string;
   if (isSiteDown) color = token.colorError;
@@ -195,79 +197,75 @@ function getSpeedProps(
   else if (speed?.status === "fair") color = token.colorWarning;
   else color = token.colorError;
 
-  let speedLabel = "";
-  if (speed?.status === "good") speedLabel = t("Fast");
-  else if (speed?.status === "fair") speedLabel = t("Acceptable");
-  else if (speed?.status) speedLabel = t("Slow");
-
+  // Secondary shows the milliseconds
   const sub: React.ReactNode =
-    !isSiteDown && speed?.status ? (
-      <Typography.Text style={{ fontSize: 12, color }}>{speedLabel}</Typography.Text>
-    ) : (
-      <Typography.Text style={{ fontSize: 12, color: token.colorError }}>
-        {t("Unreachable")}
+    !isSiteDown && speed?.ms != null ? (
+      <Typography.Text type="secondary" style={{ fontSize: 12 }}>
+        {speed.ms} ms
       </Typography.Text>
-    );
+    ) : null;
 
   return { value, sub, color };
 }
 
-function getSeoColor(
-  seo: SeoOverview | null | undefined,
-  seoBasics: SeoBasics | null | undefined,
-  token: TokenType
-): string {
-  if (!seo?.plugin) {
-    if (!seoBasics) return token.colorTextSecondary;
-    return seoBasics.score >= 75 ? token.colorSuccess : token.colorWarning;
+function renderConversionTags(
+  forms: number | null,
+  bookings: number | null,
+  hasAny: boolean,
+  t: TFunc
+): React.ReactNode {
+  if (!hasAny) {
+    return (
+      <Typography.Text type="secondary" style={{ fontSize: 12 }}>
+        {t("No plugin detected")}
+      </Typography.Text>
+    );
   }
-  if (seo.score >= 80) return token.colorSuccess;
-  if (seo.score >= 50) return token.colorWarning;
-  return token.colorError;
+
+  const parts: React.ReactNode[] = [];
+  if (forms !== null) {
+    parts.push(
+      <Tag key="forms" color="blue" style={{ margin: 0, fontSize: 11 }}>
+        {forms} {t("forms")}
+      </Tag>
+    );
+  }
+  if (bookings !== null) {
+    parts.push(
+      <Tag key="bookings" color="purple" style={{ margin: 0, fontSize: 11 }}>
+        {bookings} {t("bookings")}
+      </Tag>
+    );
+  }
+  return (
+    <Flex gap={3} wrap="wrap">
+      {parts}
+    </Flex>
+  );
 }
 
-function getSeoProps(
-  seo: SeoOverview | null | undefined,
-  seoBasics: SeoBasics | null | undefined,
+function getConversionsProps(
+  submissionStats: SubmissionStats | null | undefined,
   t: TFunc,
   token: TokenType
 ) {
-  let value: string;
-  if (seo?.plugin) value = `${seo.score}%`;
-  else if (seoBasics) value = `${seoBasics.score}%`;
-  else value = "—";
+  const forms = submissionStats?.formSubmissions30d ?? null;
+  const bookings = submissionStats?.bookings30d ?? null;
+  const hasAny = forms !== null || bookings !== null;
 
-  const color = getSeoColor(seo, seoBasics, token);
+  const value = hasAny ? (forms ?? 0) + (bookings ?? 0) : "—";
 
-  let tooltip: string;
-  if (seo?.plugin) tooltip = t("Based on Yoast SEO data");
-  else if (seoBasics) tooltip = t("Basic SEO checks — install Yoast SEO (free) for full tracking");
-  else tooltip = t("Install Yoast SEO (free) to track your search visibility");
+  const color =
+    hasAny && (forms ?? 0) + (bookings ?? 0) > 0 ? token.colorSuccess : token.colorTextSecondary;
 
-  let sub: React.ReactNode;
-  if (seo?.plugin) {
-    const issueColor = seo.issues.length === 0 ? token.colorSuccess : token.colorWarning;
-    const issueText =
-      seo.issues.length === 0 ? t("No issues") : t("{n} issues", { n: seo.issues.length });
-    sub = (
-      <Typography.Text style={{ fontSize: 12, color: issueColor }}>{issueText}</Typography.Text>
-    );
-  } else if (seoBasics) {
-    const basicColor = seoBasics.score >= 75 ? token.colorSuccess : token.colorWarning;
-    sub = (
-      <Typography.Text style={{ fontSize: 12, color: basicColor }}>
-        {t("Basic check")}
-      </Typography.Text>
-    );
-  } else {
-    sub = (
-      <Typography.Text type="secondary" style={{ fontSize: 12 }}>
-        {t("No plugin")}
-      </Typography.Text>
-    );
-  }
+  const tooltip = t("Form submissions and bookings in the last 30 days");
 
-  return { value, sub, color, tooltip };
+  return {
+    value,
+    sub: renderConversionTags(forms, bookings, hasAny, t),
+    color,
+    tooltip,
+  };
 }
 
 export function SummaryTiles({
@@ -275,8 +273,7 @@ export function SummaryTiles({
   health,
   speed,
   updates,
-  seo,
-  seoBasics,
+  submissionStats,
   total30Views,
   viewTrend,
   hasUpdates,
@@ -291,7 +288,7 @@ export function SummaryTiles({
   const visitorsProps = getVisitorsProps(total30Views, viewTrend, intlLocale, t, token);
   const updatesProps = getUpdatesProps(updates, hasUpdates, intlLocale, t, token);
   const speedProps = getSpeedProps(isSiteDown, speed, t, token);
-  const seoProps = getSeoProps(seo, seoBasics, t, token);
+  const conversionsProps = getConversionsProps(submissionStats, t, token);
 
   return (
     <div
@@ -319,7 +316,7 @@ export function SummaryTiles({
 
       <StatTile
         icon={<LineChartOutlined />}
-        label={t("Visitors 30d")}
+        label={t("Visitors (last 30 days)")}
         value={total30Views > 0 ? total30Views.toLocaleString(intlLocale) : "\u2014"}
         sub={visitorsProps.sub}
         color={token.colorPrimary}
@@ -346,13 +343,12 @@ export function SummaryTiles({
       />
 
       <StatTile
-        icon={<SearchOutlined />}
-        label={t("SEO")}
-        value={seoProps.value}
-        sub={seoProps.sub}
-        color={seoProps.color}
-        tooltip={seoProps.tooltip}
-        onClick={() => navigate("edit.php?post_type=page", adminUrl)}
+        icon={<FormOutlined />}
+        label={t("Conversions (30d)")}
+        value={conversionsProps.value}
+        sub={conversionsProps.sub}
+        color={conversionsProps.color}
+        tooltip={conversionsProps.tooltip}
       />
     </div>
   );

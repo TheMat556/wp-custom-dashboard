@@ -30,7 +30,7 @@ describe("SidebarProvider / useSidebar", () => {
 
   it("renders desktop sidebar state without unstable snapshot loops", async () => {
     const { useSidebar } = await import("../context/SidebarContext");
-    const { bootstrapSidebarStore } = await import("../store/sidebarStore");
+    const { bootstrapSidebarStore } = await import("../features/shell/store/sidebarStore");
     bootstrapSidebarStore();
 
     function Consumer() {
@@ -58,7 +58,7 @@ describe("SidebarProvider / useSidebar", () => {
 
   it("toggles desktop collapsed state and persists the new width", async () => {
     const { useSidebar } = await import("../context/SidebarContext");
-    const { bootstrapSidebarStore } = await import("../store/sidebarStore");
+    const { bootstrapSidebarStore } = await import("../features/shell/store/sidebarStore");
     bootstrapSidebarStore();
 
     function ToggleButton() {

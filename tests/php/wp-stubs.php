@@ -13,11 +13,14 @@ global $wp_test_state;
 $wp_test_state = array(
 	'options'    => array(),
 	'transients' => array(),
+	'transient_expirations' => array(),
 	'user_meta'  => array(),
 	'posts'      => array(),
 	'actions'    => array(),
+	'filters'    => array(),
 	'rest_routes' => array(),
 	'localized_scripts' => array(),
+	'cron'       => array(),
 	'capabilities' => array(
 		'read'           => true,
 		'manage_options' => true,
@@ -25,6 +28,7 @@ $wp_test_state = array(
 	'is_user_logged_in' => true,
 	'update_option_result' => true,
 	'update_user_meta_result' => true,
+	'remote_post_handler' => null,
 	'user_id'    => 1,
 	'settings_errors' => array(),
 );
@@ -37,11 +41,14 @@ function wp_test_reset_state(): void {
 	$wp_test_state = array(
 		'options'    => array(),
 		'transients' => array(),
+		'transient_expirations' => array(),
 		'user_meta'  => array(),
 		'posts'      => array(),
 		'actions'    => array(),
+		'filters'    => array(),
 		'rest_routes' => array(),
 		'localized_scripts' => array(),
+		'cron'       => array(),
 		'capabilities' => array(
 			'read'           => true,
 			'manage_options' => true,
@@ -49,6 +56,7 @@ function wp_test_reset_state(): void {
 		'is_user_logged_in' => true,
 		'update_option_result' => true,
 		'update_user_meta_result' => true,
+		'remote_post_handler' => null,
 		'user_id'    => 1,
 		'settings_errors' => array(),
 	);
@@ -85,6 +93,19 @@ function wp_test_get_rest_routes(): array {
 function wp_test_get_localized_script( string $handle, string $object_name ) {
 	global $wp_test_state;
 	return $wp_test_state['localized_scripts'][ $handle ][ $object_name ] ?? null;
+}
+
+/**
+ * Returns the stored transient expiration for assertions.
+ *
+ * @param string $key Transient key.
+ * @return int|null
+ */
+function wp_test_get_transient_expiration( string $key ): ?int {
+	global $wp_test_state;
+	return isset( $wp_test_state['transient_expirations'][ $key ] )
+		? (int) $wp_test_state['transient_expirations'][ $key ]
+		: null;
 }
 
 /**
@@ -144,6 +165,7 @@ if ( ! function_exists( 'set_transient' ) ) {
 	function set_transient( string $key, $value, int $expiration = 0 ): bool {
 		global $wp_test_state;
 		$wp_test_state['transients'][ $key ] = $value;
+		$wp_test_state['transient_expirations'][ $key ] = $expiration;
 		return true;
 	}
 }
@@ -152,6 +174,7 @@ if ( ! function_exists( 'delete_transient' ) ) {
 	function delete_transient( string $key ): bool {
 		global $wp_test_state;
 		unset( $wp_test_state['transients'][ $key ] );
+		unset( $wp_test_state['transient_expirations'][ $key ] );
 		return true;
 	}
 }
@@ -275,6 +298,8 @@ if ( ! function_exists( 'wp_parse_args' ) ) {
 
 if ( ! function_exists( 'sanitize_text_field' ) ) {
 	function sanitize_text_field( string $str ): string {
+		// Strip script/style tag content (matches wp_strip_all_tags behavior).
+		$str = preg_replace( '@<(script|style)[^>]*?>.*?</\\1>@si', '', $str );
 		return trim( strip_tags( $str ) );
 	}
 }
@@ -299,14 +324,46 @@ if ( ! function_exists( 'add_settings_error' ) ) {
 
 if ( ! function_exists( 'apply_filters' ) ) {
 	function apply_filters( string $hook, ...$args ) {
-		return $args[0] ?? null;
+		global $wp_test_state;
+
+		$value = $args[0] ?? null;
+		$filters = $wp_test_state['filters'][ $hook ] ?? array();
+
+		usort(
+			$filters,
+			static function ( array $left, array $right ): int {
+				$priority_compare = (int) $left['priority'] <=> (int) $right['priority'];
+
+				if ( 0 !== $priority_compare ) {
+					return $priority_compare;
+				}
+
+				return (int) $left['order'] <=> (int) $right['order'];
+			}
+		);
+
+		foreach ( $filters as $registered ) {
+			$filter_args = array_merge(
+				array( $value ),
+				array_slice( $args, 1, (int) $registered['accepted_args'] - 1 )
+			);
+			$value       = call_user_func_array( $registered['callback'], $filter_args );
+		}
+
+		return $value;
+	}
+}
+
+if ( ! function_exists( '__return_true' ) ) {
+	function __return_true(): bool {
+		return true;
 	}
 }
 
 if ( ! function_exists( 'current_user_can' ) ) {
 	function current_user_can( string $capability ): bool {
 		global $wp_test_state;
-		return $wp_test_state['capabilities'][ $capability ] ?? true;
+		return $wp_test_state['capabilities'][ $capability ] ?? false;
 	}
 }
 
@@ -326,6 +383,28 @@ if ( ! function_exists( 'add_action' ) ) {
 			'accepted_args' => $accepted_args,
 		);
 		return true;
+	}
+}
+
+if ( ! function_exists( 'register_activation_hook' ) ) {
+	function register_activation_hook( string $file, $callback ): bool {
+		return add_action( 'activate_' . basename( $file ), $callback, 10, 0 );
+	}
+}
+
+if ( ! function_exists( 'register_deactivation_hook' ) ) {
+	function register_deactivation_hook( string $file, $callback ): bool {
+		return add_action( 'deactivate_' . basename( $file ), $callback, 10, 0 );
+	}
+}
+
+if ( ! function_exists( 'do_action' ) ) {
+	function do_action( string $hook, ...$args ): void {
+		global $wp_test_state;
+
+		foreach ( $wp_test_state['actions'][ $hook ] ?? array() as $registered ) {
+			call_user_func_array( $registered['callback'], array_slice( $args, 0, (int) $registered['accepted_args'] ) );
+		}
 	}
 }
 
@@ -498,6 +577,18 @@ if ( ! function_exists( 'wp_remote_get' ) ) {
 	}
 }
 
+if ( ! function_exists( 'wp_remote_post' ) ) {
+	function wp_remote_post( string $url, array $args = array() ) {
+		global $wp_test_state;
+
+		if ( isset( $wp_test_state['remote_post_handler'] ) && is_callable( $wp_test_state['remote_post_handler'] ) ) {
+			return call_user_func( $wp_test_state['remote_post_handler'], $url, $args );
+		}
+
+		return new WP_Error( 'stubbed_remote_post', 'Remote POST disabled in tests' );
+	}
+}
+
 if ( ! function_exists( 'wp_remote_head' ) ) {
 	function wp_remote_head( string $url, array $args = array() ) {
 		return new WP_Error( 'stubbed_remote_head', 'Remote HEAD disabled in tests' );
@@ -510,6 +601,16 @@ if ( ! function_exists( 'wp_remote_retrieve_response_code' ) ) {
 			return (int) $response['response']['code'];
 		}
 		return 0;
+	}
+}
+
+if ( ! function_exists( 'wp_remote_retrieve_body' ) ) {
+	function wp_remote_retrieve_body( $response ): string {
+		if ( is_array( $response ) && isset( $response['body'] ) && is_string( $response['body'] ) ) {
+			return $response['body'];
+		}
+
+		return '';
 	}
 }
 
@@ -594,6 +695,14 @@ if ( ! function_exists( 'wp_enqueue_script' ) ) {
 
 if ( ! function_exists( 'add_filter' ) ) {
 	function add_filter( string $hook, $callback, int $priority = 10, int $accepted_args = 1 ): bool {
+		global $wp_test_state;
+		$order = isset( $wp_test_state['filters'][ $hook ] ) ? count( $wp_test_state['filters'][ $hook ] ) : 0;
+		$wp_test_state['filters'][ $hook ][] = array(
+			'callback'      => $callback,
+			'priority'      => $priority,
+			'accepted_args' => $accepted_args,
+			'order'         => $order,
+		);
 		return true;
 	}
 }
@@ -622,9 +731,66 @@ if ( ! function_exists( 'wp_parse_url' ) ) {
 	}
 }
 
+if ( ! function_exists( 'wp_salt' ) ) {
+	function wp_salt( string $scheme = 'auth' ): string {
+		return 'wp-react-ui-test-salt-' . $scheme;
+	}
+}
+
 if ( ! function_exists( 'untrailingslashit' ) ) {
 	function untrailingslashit( string $value ): string {
 		return rtrim( $value, '/' );
+	}
+}
+
+if ( ! function_exists( 'trailingslashit' ) ) {
+	function trailingslashit( string $value ): string {
+		return rtrim( $value, '/' ) . '/';
+	}
+}
+
+if ( ! function_exists( 'wp_json_encode' ) ) {
+	function wp_json_encode( $value, int $flags = 0, int $depth = 512 ) {
+		return json_encode( $value, $flags, $depth );
+	}
+}
+
+if ( ! function_exists( 'wp_http_validate_url' ) ) {
+	function wp_http_validate_url( string $url ) {
+		return filter_var( $url, FILTER_VALIDATE_URL );
+	}
+}
+
+if ( ! function_exists( 'rest_is_boolean' ) ) {
+	function rest_is_boolean( $value ): bool {
+		return is_bool( $value ) || 'true' === $value || 'false' === $value || 0 === $value || 1 === $value;
+	}
+}
+
+if ( ! function_exists( 'wp_schedule_event' ) ) {
+	function wp_schedule_event( int $timestamp, string $recurrence, string $hook, array $args = array(), bool $wp_error = false ): bool {
+		global $wp_test_state;
+		$wp_test_state['cron'][ $hook ] = array(
+			'timestamp'  => $timestamp,
+			'recurrence' => $recurrence,
+			'args'       => $args,
+		);
+		return true;
+	}
+}
+
+if ( ! function_exists( 'wp_next_scheduled' ) ) {
+	function wp_next_scheduled( string $hook, array $args = array() ) {
+		global $wp_test_state;
+		return $wp_test_state['cron'][ $hook ]['timestamp'] ?? false;
+	}
+}
+
+if ( ! function_exists( 'wp_clear_scheduled_hook' ) ) {
+	function wp_clear_scheduled_hook( string $hook, array $args = array(), bool $wp_error = false ) {
+		global $wp_test_state;
+		unset( $wp_test_state['cron'][ $hook ] );
+		return true;
 	}
 }
 
@@ -636,9 +802,25 @@ if ( ! class_exists( 'WP_REST_Request' ) ) {
 		/** @var mixed */
 		private $json_params;
 
-		public function __construct( array $params = array(), $json_params = array() ) {
-			$this->params      = $params;
-			$this->json_params = $json_params;
+		/** @var array<string, string> */
+		private array $headers;
+
+		private string $body;
+
+		/**
+		 * @param mixed $arg1 Route params or HTTP method.
+		 * @param mixed $arg2 JSON params or route path.
+		 */
+		public function __construct( $arg1 = array(), $arg2 = array() ) {
+			$this->params      = array();
+			$this->json_params = array();
+			$this->headers     = array();
+			$this->body        = '';
+
+			if ( is_array( $arg1 ) ) {
+				$this->params      = $arg1;
+				$this->json_params = $arg2;
+			}
 		}
 
 		public function get_param( string $key ) {
@@ -647,6 +829,29 @@ if ( ! class_exists( 'WP_REST_Request' ) ) {
 
 		public function get_json_params() {
 			return $this->json_params;
+		}
+
+		public function set_header( string $key, string $value ): void {
+			$this->headers[ strtolower( $key ) ] = $value;
+		}
+
+		public function get_header( string $key ): string {
+			return $this->headers[ strtolower( $key ) ] ?? '';
+		}
+
+		public function set_body( string $body ): void {
+			$this->body = $body;
+		}
+
+		public function get_body(): string {
+			return $this->body;
+		}
+
+		/**
+		 * @param mixed $json_params Parsed JSON value.
+		 */
+		public function set_json_params( $json_params ): void {
+			$this->json_params = $json_params;
 		}
 	}
 }

@@ -29,12 +29,12 @@ final class BrandingSettingsManager {
 	public function save_from_rest( array $input ) {
 		$sanitized = $this->sanitizer->sanitize_settings(
 			array(
-				'light_logo_id'          => $input['light_logo_id'] ?? 0,
-				'dark_logo_id'           => $input['dark_logo_id'] ?? 0,
-				'long_logo_id'           => $input['long_logo_id'] ?? 0,
-				'use_long_logo'          => $input['use_long_logo'] ?? false,
-				'primary_color'          => $input['primary_color'] ?? BrandingSettingsRepository::DEFAULT_PRIMARY_COLOR,
-				'font_preset'            => $input['font_preset'] ?? BrandingSettingsRepository::DEFAULT_FONT_PRESET,
+				'light_logo_id'            => $input['light_logo_id'] ?? 0,
+				'dark_logo_id'             => $input['dark_logo_id'] ?? 0,
+				'long_logo_id'             => $input['long_logo_id'] ?? 0,
+				'use_long_logo'            => $input['use_long_logo'] ?? false,
+				'primary_color'            => $input['primary_color'] ?? BrandingSettingsRepository::DEFAULT_PRIMARY_COLOR,
+				'font_preset'              => $input['font_preset'] ?? BrandingSettingsRepository::DEFAULT_FONT_PRESET,
 				'open_in_new_tab_patterns' => $input['open_in_new_tab_patterns'] ?? array(),
 			)
 		);

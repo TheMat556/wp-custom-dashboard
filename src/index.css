@@ -67,6 +67,11 @@
   background: var(--color-bg-app);
 }
 
+/* Variables scoped to #react-shell-root so they activate the moment
+   applyThemeToDOM() sets data-theme on the root, and can't be stripped
+   by esbuild's `:root` deduplication heuristic. body[data-theme] is
+   kept as a parallel scope for Ant Design portals appended to <body>. */
+#react-shell-root[data-theme="light"],
 body[data-theme="light"] {
   --color-bg-app: #f4f6fa;
   --color-bg-surface: #ffffff;
@@ -107,6 +112,7 @@ body[data-theme="light"] {
   --wp-react-ui-shell-accent-soft: var(--color-accent-soft);
 }
 
+#react-shell-root[data-theme="dark"],
 body[data-theme="dark"] {
   --color-bg-app: #0f1723;
   --color-bg-surface: #131c2b;
@@ -153,7 +159,7 @@ body[data-theme="dark"] {
 .wp-react-ui-shell {
   display: grid;
   grid-template-columns: var(--sidebar-width, var(--shell-sidebar-width, 240px)) minmax(0, 1fr);
-  grid-template-rows: var(--shell-navbar-height, 64px) 1fr;
+  grid-template-rows: var(--shell-navbar-height, 65px) minmax(0, 1fr);
   grid-template-areas: "sidebar navbar" "sidebar content";
   transition: grid-template-columns var(--motion-base) var(--ease-standard);
   width: 100%;
@@ -196,10 +202,37 @@ body[data-theme="dark"] {
   background: transparent;
 }
 
+.wp-react-ui-shell-content-slot--overlay {
+  z-index: 100220;
+  overflow: visible;
+  isolation: isolate;
+}
+
+.wp-react-ui-shell-content-slot--overlay::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  background: var(--color-bg-overlay);
+  z-index: 0;
+}
+
+.wp-react-ui-shell-content-slot--overlay iframe {
+  position: relative;
+  z-index: 1;
+}
+
 .wp-react-ui-shell-sidebar-frame {
   border-right: 1px solid var(--color-border-subtle);
   background: var(--shell-chrome-bg);
   box-shadow: none;
+}
+
+/* Ensure AntD's inner wrapper fills the Sider height so the flex scroll chain works. */
+.wp-react-ui-shell-sidebar-frame > .ant-layout-sider-children {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
 }
 
 .wp-react-ui-page-canvas {
@@ -340,6 +373,196 @@ body[data-theme="dark"] {
 .wp-react-ui-surface-panel__body {
   flex: 1 1 auto;
   min-height: 0;
+}
+
+.wp-react-ui-license-settings-panel .wp-react-ui-surface-panel__header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  gap: var(--space-5);
+}
+
+.wp-react-ui-license-summary-grid {
+  align-items: stretch;
+}
+
+.wp-react-ui-license-settings-panel .wp-react-ui-surface-panel__lead {
+  flex: 1 1 320px;
+}
+
+.wp-react-ui-license-settings-panel .wp-react-ui-surface-panel__extra {
+  flex: 0 1 420px;
+  width: min(100%, 420px);
+  min-width: min(100%, 320px);
+  margin-left: auto;
+}
+
+.wp-react-ui-license-settings-stack,
+.wp-react-ui-license-status-stack,
+.wp-react-ui-license-guidance-list {
+  display: grid;
+  gap: 18px;
+}
+
+.wp-react-ui-license-settings-footer,
+.wp-react-ui-license-status-highlight,
+.wp-react-ui-license-status-item,
+.wp-react-ui-license-guidance-item,
+.wp-react-ui-license-feature-cloud {
+  padding: 18px 20px;
+}
+
+.wp-react-ui-license-form-block {
+  padding: 0;
+  display: grid;
+  gap: 12px;
+}
+
+.wp-react-ui-license-form-label {
+  display: block;
+  font-size: 13px;
+  font-weight: 800;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--color-text-muted) !important;
+}
+
+.wp-react-ui-license-form-description.ant-typography,
+.wp-react-ui-license-form-note.ant-typography {
+  margin: 0;
+}
+
+.wp-react-ui-license-form-description.ant-typography {
+  font-size: 14px;
+}
+
+.wp-react-ui-license-form-note.ant-typography {
+  font-size: 12px;
+}
+
+.wp-react-ui-license-settings-footer {
+  display: grid;
+  gap: 16px;
+}
+
+.wp-react-ui-license-settings-footer__copy {
+  display: grid;
+  gap: 8px;
+}
+
+.wp-react-ui-license-settings-actions {
+  display: grid !important;
+  grid-template-columns: repeat(auto-fit, minmax(132px, 1fr));
+  align-items: stretch;
+  gap: 12px;
+  width: 100%;
+}
+
+.wp-react-ui-license-settings-actions .ant-btn {
+  width: 100%;
+  min-width: 0;
+}
+
+.wp-react-ui-license-field.ant-input-outlined,
+.wp-react-ui-license-field.ant-input {
+  border-radius: 14px !important;
+  border-color: var(--color-border-subtle) !important;
+  background: var(--surface-inset) !important;
+  color: var(--color-text-primary) !important;
+  box-shadow: none !important;
+  min-width: 0;
+  min-height: 52px;
+  padding-inline: 16px;
+  font-size: 15px;
+}
+
+.wp-react-ui-license-field.ant-input-outlined:hover,
+.wp-react-ui-license-field.ant-input-outlined:focus,
+.wp-react-ui-license-field.ant-input-outlined:focus-within,
+.wp-react-ui-license-field.ant-input:focus {
+  border-color: var(--color-accent-primary) !important;
+  background: var(--color-bg-surface) !important;
+}
+
+.wp-react-ui-license-field.ant-input::placeholder {
+  color: var(--color-text-muted) !important;
+}
+
+.wp-react-ui-license-field--masked.ant-input-outlined,
+.wp-react-ui-license-field--masked.ant-input {
+  color: var(--color-text-primary);
+  font-family: var(--font-mono);
+  letter-spacing: 0.02em;
+}
+
+.wp-react-ui-license-status-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+}
+
+.wp-react-ui-license-status-item {
+  display: grid;
+  gap: 10px;
+}
+
+.wp-react-ui-license-status-value {
+  color: var(--color-text-primary);
+  font-size: 15px;
+  font-weight: 700;
+  line-height: 1.35;
+}
+
+.wp-react-ui-license-feature-cloud {
+  min-height: 100%;
+}
+
+.wp-react-ui-license-feature-cloud .ant-tag {
+  padding: 6px 12px;
+  border-radius: 999px;
+  font-weight: 700;
+}
+
+.wp-react-ui-chat-stack {
+  position: fixed;
+  right: 24px;
+  bottom: 24px;
+  z-index: 1200;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 12px;
+  pointer-events: auto;
+}
+
+.wp-react-ui-chat-stack__panel {
+  width: min(320px, calc(100vw - 32px));
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--color-border-subtle);
+  background: var(--color-bg-surface);
+  box-shadow: var(--shadow-lg);
+  padding: 16px;
+}
+
+.wp-react-ui-chat-stack__notice {
+  margin-bottom: 12px;
+}
+
+.wp-react-ui-chat-stack__button {
+  width: 56px;
+  height: 56px;
+  box-shadow: var(--shadow-md);
+}
+
+@media (max-width: 782px) {
+  .wp-react-ui-chat-stack {
+    right: 16px;
+    bottom: 16px;
+  }
+
+  .wp-react-ui-chat-stack__panel {
+    width: min(320px, calc(100vw - 24px));
+  }
 }
 
 .wp-react-ui-inset-panel {
@@ -541,6 +764,10 @@ body[data-theme="dark"] {
   justify-content: center;
 }
 
+.wp-react-ui-navbar {
+  border-bottom: 1px solid var(--color-border-strong);
+}
+
 .wp-react-ui-navbar-icon-button,
 .wp-react-ui-navbar-toggle {
   min-width: 44px;
@@ -566,6 +793,40 @@ body[data-theme="dark"] {
 
   .wp-react-ui-metric-tile {
     min-height: 152px;
+  }
+
+  .wp-react-ui-metric-tile__hint {
+    min-width: 44px;
+    min-height: 44px;
+    width: 44px;
+    height: 44px;
+  }
+}
+
+@media (max-width: 767px) {
+  .wp-react-ui-license-settings-panel .wp-react-ui-surface-panel__header {
+    align-items: stretch;
+  }
+
+  .wp-react-ui-license-summary-grid,
+  .wp-react-ui-license-status-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .wp-react-ui-license-settings-panel .wp-react-ui-surface-panel__lead,
+  .wp-react-ui-license-settings-panel .wp-react-ui-surface-panel__extra,
+  .wp-react-ui-license-settings-actions {
+    width: 100%;
+    min-width: 0;
+  }
+
+  .wp-react-ui-license-settings-panel .wp-react-ui-surface-panel__extra {
+    flex-basis: 100%;
+    margin-left: 0;
+  }
+
+  .wp-react-ui-license-settings-actions .ant-btn {
+    min-height: 42px;
   }
 }
 
@@ -780,17 +1041,42 @@ body[data-theme="dark"] {
   color: var(--color-text-muted) !important;
 }
 
+/* ── Command Palette item interactions ── */
+
+.wp-react-ui-palette-item {
+  transition: background-color 120ms ease;
+}
+
+.wp-react-ui-palette-item:hover {
+  background: var(--wp-react-ui-command-item-hover) !important;
+}
+
+.wp-react-ui-palette-item:focus-visible {
+  outline: 2px solid var(--wp-react-ui-command-item-active);
+  outline-offset: -2px;
+}
+
+.wp-react-ui-palette-star {
+  opacity: 0;
+  transition: opacity 120ms ease;
+}
+
+.wp-react-ui-palette-star--active,
+.wp-react-ui-palette-item:hover .wp-react-ui-palette-star,
+.wp-react-ui-palette-item:focus-within .wp-react-ui-palette-star {
+  opacity: 1;
+}
+
 .wp-react-ui-sidebar-shell {
-  background:
-    radial-gradient(circle at top left, var(--color-accent-soft), transparent 42%),
-    linear-gradient(180deg, var(--shell-chrome-bg) 0%, var(--color-bg-app) 100%);
+  background: var(--shell-chrome-bg);
 }
 
 /* ── Sidebar brand / logo ── */
 
 .wp-react-ui-sidebar-brand {
+  box-sizing: border-box;
   flex-shrink: 0;
-  height: 64px;
+  height: var(--shell-navbar-height, 65px);
   border-bottom: 1px solid var(--color-border-subtle);
 }
 
@@ -1053,8 +1339,8 @@ body[data-theme="dark"] {
   width: 100%;
   min-height: var(--shell-menu-item-height, 42px);
   padding: 0 12px;
-  border: 0;
-  border-radius: 12px;
+  border: 1px solid transparent;
+  border-radius: 14px;
   background: transparent;
   color: var(--color-text-secondary);
   font-size: var(--text-sm);
@@ -1065,11 +1351,13 @@ body[data-theme="dark"] {
   transition:
     background-color 160ms ease,
     color 160ms ease,
+    border-color 140ms ease,
     box-shadow 160ms ease;
 }
 
 .wp-react-ui-nav-item__button:hover {
   background: var(--wp-react-ui-shell-surface-soft);
+  border-color: var(--color-border-subtle);
   color: var(--color-text-primary);
 }
 
@@ -1078,8 +1366,9 @@ body[data-theme="dark"] {
 }
 
 .wp-react-ui-nav-item__button--active {
-  background: linear-gradient(135deg, var(--wp-react-ui-shell-accent-soft) 0%, transparent 100%);
-  box-shadow: inset 0 0 0 1px var(--wp-react-ui-shell-border-strong);
+  background: var(--color-accent-soft);
+  border-color: var(--color-accent-primary);
+  box-shadow: none;
   color: var(--color-text-primary);
   font-weight: 600;
 }
@@ -1272,6 +1561,7 @@ body[data-theme="dark"] {
 
 .wp-react-ui-nav-footer {
   padding: 6px 10px;
+  border-top: 1px solid var(--color-border-subtle);
 }
 
 /* Nav badges */
@@ -1316,14 +1606,14 @@ body[data-theme="dark"] {
 /* High contrast overrides */
 
 .wp-react-ui-high-contrast .wp-react-ui-nav-item__button--active {
-  background: var(--wp-react-ui-shell-accent-soft);
-  box-shadow: inset 0 0 0 2px var(--wp-react-ui-shell-border-strong);
+  background: var(--color-accent-soft);
+  box-shadow: inset 0 0 0 2px var(--color-accent-primary);
 }
 
 /* ── End nav tree ── */
 
 .wp-react-ui-sidebar-bottom-actions {
-  background: linear-gradient(180deg, transparent 0%, var(--shell-chrome-raised) 100%);
+  background: transparent;
 }
 
 .wp-react-ui-sidebar-bottom-actions .ant-btn {
@@ -1332,7 +1622,7 @@ body[data-theme="dark"] {
 
 .wp-react-ui-sidebar-bottom-actions .ant-btn:hover {
   background: var(--wp-react-ui-shell-surface-soft) !important;
-  border-color: var(--wp-react-ui-shell-border-strong) !important;
+  border-color: var(--color-border-subtle) !important;
 }
 
 .wp-react-ui-content-loading-overlay {

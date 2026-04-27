@@ -1,14 +1,21 @@
 <?php
+
+declare(strict_types=1);
+
 /**
  * AUTO-GENERATED from contracts/source. Do not edit.
  */
 
-declare(strict_types=1);
-
 namespace WpReactUi\Contracts\Generated;
+
+defined( 'ABSPATH' ) || exit;
 
 final class Permissions {
 	public const MAP = array(
+		'public' => array(
+			'kind' => 'public',
+			'description' => 'Accessible without authentication.'
+		),
 		'authenticated' => array(
 			'kind' => 'authenticated',
 			'description' => 'Any logged-in WordPress user.'

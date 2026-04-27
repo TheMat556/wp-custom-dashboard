@@ -1,0 +1,24 @@
+/* Matches the Ant Design input style used on the license server admin page:
+   - surface (not inset) background
+   - 12px border-radius (same as toolbar inputs in admin.css)
+   - subtle border that highlights on focus */
+.urlInput:global(.ant-input-outlined),
+.urlInput:global(.ant-input) {
+  background: var(--color-bg-surface) !important;
+  border-color: var(--color-border-subtle) !important;
+  border-radius: 12px !important;
+  color: var(--color-text-primary) !important;
+  box-shadow: none !important;
+  min-height: 40px;
+}
+
+.urlInput:global(.ant-input-outlined):hover,
+.urlInput:global(.ant-input-outlined):focus,
+.urlInput:global(.ant-input-outlined):focus-within,
+.urlInput:global(.ant-input):focus {
+  border-color: var(--color-accent-primary) !important;
+}
+
+.urlInput:global(.ant-input)::placeholder {
+  color: var(--color-text-muted) !important;
+}

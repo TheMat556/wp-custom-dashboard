@@ -1,6 +1,8 @@
+import { createPluginApiError } from "../../../shared/services/pluginApiError";
 import { createPluginRouteApi } from "../../../shared/services/pluginRouteApi";
-import { notifyApiError } from "../../../store/notificationStore";
 import type { WpReactUiConfig } from "../../../types/wp";
+import { logger } from "../../../utils/logger";
+import { DashboardDataSchema } from "./dashboardSchema";
 
 export interface AtAGlanceData {
   posts: number;
@@ -10,6 +12,7 @@ export interface AtAGlanceData {
   users: number;
   wpVersion: string;
   phpVersion: string;
+  lastBackupDate?: string | null;
 }
 
 export interface SiteHealthData {
@@ -217,6 +220,12 @@ export interface BusinessFunctions {
   emailDelivery: BusinessEmail;
 }
 
+export interface SubmissionStats {
+  formSubmissions30d: number | null;
+  bookings30d: number | null;
+  formPlugin: string | null;
+}
+
 export interface DashboardData {
   atAGlance: AtAGlanceData;
   siteHealth: SiteHealthData;
@@ -233,6 +242,7 @@ export interface DashboardData {
   onboardingChecklist?: OnboardingItem[];
   siteReadinessScore?: number;
   calendarPreview?: CalendarPreview | null;
+  submissionStats?: SubmissionStats;
 }
 
 export interface DashboardService {
@@ -249,10 +259,16 @@ export function createDashboardService(
       const response = await api.fetchDashboard();
 
       if (!response.ok) {
-        throw new Error(notifyApiError(response, "Dashboard data"));
+        throw await createPluginApiError(response, "Dashboard data");
       }
 
-      return response.json();
+      const raw = await response.json();
+      // Validate for monitoring purposes — use safeParse so minor shape deviations
+      // don't crash the dashboard page entirely.
+      const result = DashboardDataSchema.safeParse(raw);
+      if (result.success) return result.data as unknown as DashboardData;
+      logger.warn("[dashboard] DashboardData validation failed", result.error);
+      return raw as DashboardData;
     },
   };
 }

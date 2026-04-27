@@ -32,7 +32,9 @@ describe("useMenu", () => {
 
     const { useMenu } = await import("./useMenu");
     const { ShellConfigProvider } = await import("../context/ShellConfigContext");
-    const { bootstrapMenuStore, resetMenuStore } = await import("../store/menuStore");
+    const { bootstrapMenuStore, resetMenuStore } = await import(
+      "../features/navigation/store/menuStore"
+    );
     const { normalizeWpReactUiConfig } = await import("../types/wp");
     resetMenuStore();
     bootstrapMenuStore({
@@ -90,7 +92,9 @@ describe("useMenu", () => {
 
     const { useMenu } = await import("./useMenu");
     const { ShellConfigProvider } = await import("../context/ShellConfigContext");
-    const { bootstrapMenuStore, resetMenuStore } = await import("../store/menuStore");
+    const { bootstrapMenuStore, resetMenuStore } = await import(
+      "../features/navigation/store/menuStore"
+    );
     const { normalizeWpReactUiConfig } = await import("../types/wp");
     resetMenuStore();
     bootstrapMenuStore({

@@ -1,9 +1,13 @@
 import { renderHook } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { getShellRoute, useContentFrameController } from "./useContentFrameController";
+import {
+  getShellRoute,
+  isSameOrigin,
+  useContentFrameController,
+} from "./useContentFrameController";
 
 vi.mock("../../context/ShellConfigContext", () => ({
-  useShellConfig: () => ({ shellRoutes: [] }),
+  useShellConfig: () => ({ shellRoutes: [], user: { canManageOptions: true } }),
 }));
 
 const mockHandleIframeLoad = vi.fn();
@@ -44,8 +48,17 @@ describe("getShellRoute", () => {
 
   it("returns BrandingSettings for ?page=wp-react-ui-branding", () => {
     expect(
-      getShellRoute("http://localhost/wp-admin/?page=wp-react-ui-branding", [])
+      getShellRoute("http://localhost/wp-admin/?page=wp-react-ui-branding", [], true)
     ).not.toBeNull();
+  });
+
+  it("returns null for built-in settings pages without manage_options", () => {
+    expect(
+      getShellRoute("http://localhost/wp-admin/?page=wp-react-ui-license", [], false)
+    ).toBeNull();
+    expect(
+      getShellRoute("http://localhost/wp-admin/?page=wp-react-ui-branding", [], false)
+    ).toBeNull();
   });
 
   it("returns null for an ordinary admin page URL", () => {
@@ -59,6 +72,55 @@ describe("getShellRoute", () => {
   it("returns a lazy component for a registered plugin route", () => {
     const route = { slug: "my-plugin", label: "My Plugin", entrypoint_url: "/my-plugin.js" };
     expect(getShellRoute("http://localhost/wp-admin/?page=my-plugin", [route])).not.toBeNull();
+  });
+});
+
+// ── isSameOrigin unit tests ──────────────────────────────────────────────────
+
+describe("isSameOrigin", () => {
+  it("returns true for a relative URL", () => {
+    expect(isSameOrigin("/my-plugin.js")).toBe(true);
+  });
+
+  it("returns true for same-origin absolute URL", () => {
+    expect(isSameOrigin(`${window.location.origin}/my-plugin.js`)).toBe(true);
+  });
+
+  it("returns false for a cross-origin URL", () => {
+    expect(isSameOrigin("https://evil.com/malicious.js")).toBe(false);
+  });
+
+  it("returns false for a protocol-relative cross-origin URL", () => {
+    expect(isSameOrigin("//evil.com/malicious.js")).toBe(false);
+  });
+
+  it("returns true for empty string (resolves to current page)", () => {
+    expect(isSameOrigin("")).toBe(true);
+  });
+});
+
+// ── Cross-origin entrypoint blocking ────────────────────────────────────────
+
+describe("cross-origin entrypoint blocking", () => {
+  it("returns null for a plugin route with a cross-origin entrypoint_url", () => {
+    const route = {
+      slug: "evil-plugin",
+      label: "Evil",
+      entrypoint_url: "https://evil.com/payload.js",
+    };
+    // getDynamicComponent throws internally; getShellRoute catches and returns null
+    const result = getShellRoute("http://localhost/wp-admin/?page=evil-plugin", [route]);
+    expect(result).toBeNull();
+  });
+
+  it("returns a component for a same-origin entrypoint_url", () => {
+    const route = {
+      slug: "good-plugin",
+      label: "Good",
+      entrypoint_url: "/good-plugin.js",
+    };
+    const result = getShellRoute("http://localhost/wp-admin/?page=good-plugin", [route]);
+    expect(result).not.toBeNull();
   });
 });
 
@@ -97,10 +159,12 @@ describe("useContentFrameController", () => {
     expect(result.current.ShellPage).not.toBeNull();
   });
 
-  it("forwards message events to handleIframeMessage", () => {
+  it("does NOT forward message events to handleIframeMessage when source is not the trusted iframe", () => {
+    // iframeRef.current is null in tests (no real iframe mounted), so all postMessage
+    // sources are rejected — this verifies the source-pinning guard is active.
     renderHook(() => useContentFrameController());
     window.dispatchEvent(new MessageEvent("message", { data: { type: "test" } }));
-    expect(mockHandleIframeMessage).toHaveBeenCalled();
+    expect(mockHandleIframeMessage).not.toHaveBeenCalled();
   });
 
   it("returns an iframeRef object", () => {

@@ -59,12 +59,32 @@ final class ShellPreferencesService {
 
 		foreach ( $array_keys as $key ) {
 			if ( isset( $input[ $key ] ) && is_array( $input[ $key ] ) ) {
-				$prefs[ $key ] = $input[ $key ];
+				$prefs[ $key ] = self::sanitize_string_array( $input[ $key ] );
 			}
 		}
 
 		update_user_meta( $user_id, self::META_KEY, $prefs );
 
 		return array( 'preferences' => $prefs );
+	}
+
+	/**
+	 * Recursively sanitizes all string values in a nested array.
+	 *
+	 * @param array $values The input array.
+	 * @return array Sanitized copy.
+	 */
+	private static function sanitize_string_array( array $values ): array {
+		$clean = array();
+		foreach ( $values as $k => $v ) {
+			if ( is_array( $v ) ) {
+				$clean[ $k ] = self::sanitize_string_array( $v );
+			} elseif ( is_string( $v ) ) {
+				$clean[ $k ] = sanitize_text_field( $v );
+			} else {
+				$clean[ $k ] = $v;
+			}
+		}
+		return $clean;
 	}
 }

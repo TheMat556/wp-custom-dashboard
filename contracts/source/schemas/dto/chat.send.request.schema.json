@@ -1,0 +1,17 @@
+{
+  "$id": "dto/chat.send.request",
+  "title": "ChatSendRequest",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["selectedThreadId", "message"],
+  "properties": {
+    "selectedThreadId": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "message": {
+      "type": "string",
+      "minLength": 1
+    }
+  }
+}

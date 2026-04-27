@@ -123,6 +123,27 @@ describe("normalizeToMenuKey", () => {
     expect(normalizeToMenuKey("http://localhost/wp-admin/users.php")).toBe("users.php");
   });
 
+  it("includes post_type param so CPT screens match WP menu slugs", () => {
+    expect(normalizeToMenuKey("http://localhost/wp-admin/edit.php?post_type=page")).toBe(
+      "edit.php?post_type=page"
+    );
+    expect(normalizeToMenuKey("http://localhost/wp-admin/edit.php?post_type=page&paged=2")).toBe(
+      "edit.php?post_type=page"
+    );
+    expect(normalizeToMenuKey("http://localhost/wp-admin/edit.php")).toBe("edit.php");
+  });
+
+  it("includes taxonomy param so taxonomy screens match WP menu slugs", () => {
+    expect(normalizeToMenuKey("http://localhost/wp-admin/edit-tags.php?taxonomy=category")).toBe(
+      "edit-tags.php?taxonomy=category"
+    );
+    expect(
+      normalizeToMenuKey(
+        "http://localhost/wp-admin/edit-tags.php?taxonomy=category&tag_ID=5&orderby=name"
+      )
+    ).toBe("edit-tags.php?taxonomy=category");
+  });
+
   it("treats the wp-admin root as index.php", () => {
     expect(normalizeToMenuKey("http://localhost/wp-admin/")).toBe("index.php");
   });

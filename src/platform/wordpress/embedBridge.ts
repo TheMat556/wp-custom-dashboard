@@ -162,7 +162,22 @@ function patchLinks(root: ParentNode) {
 
   root.querySelectorAll<HTMLFormElement>("form").forEach((form) => {
     const rawAction = form.getAttribute("action");
-    form.setAttribute("action", addEmbedParam(rawAction || window.location.href));
+    const method = (form.getAttribute("method") || "get").toLowerCase();
+
+    if (method === "get") {
+      // GET forms replace the action URL's query string with the submitted inputs,
+      // so adding the param to the action URL is not enough — inject a hidden input.
+      if (!form.querySelector('input[name="wp_shell_embed"]')) {
+        const input = document.createElement("input");
+        input.type = "hidden";
+        input.name = "wp_shell_embed";
+        input.value = "1";
+        form.appendChild(input);
+      }
+    } else {
+      // POST forms keep action URL params in $_GET, so patching the action works.
+      form.setAttribute("action", addEmbedParam(rawAction || window.location.href));
+    }
   });
 }
 
@@ -189,20 +204,6 @@ document.addEventListener(
   },
   true
 );
-
-// Intercept fetch 401/403 responses to notify parent of session expiry.
-const originalFetch = window.fetch;
-window.fetch = async function (...args) {
-  const response = await originalFetch.apply(this, args);
-  if (response.status === 401 || response.status === 403) {
-    postToParent({
-      source: EMBED_MESSAGE_SOURCE,
-      version: EMBED_MESSAGE_VERSION,
-      type: "session-expired",
-    });
-  }
-  return response;
-};
 
 if (isShellRouteUrl(window.location.href, window.wpReactUiEmbed?.shellRouteSlugs)) {
   breakoutToParent(fromEmbedUrl(window.location.href));

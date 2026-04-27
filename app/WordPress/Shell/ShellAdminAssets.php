@@ -115,6 +115,10 @@ class WP_React_UI_Shell_Admin_Assets {
 			return;
 		}
 
-		echo '<div class="notice notice-error"><p><strong>WP React UI:</strong> Shell assets are unavailable, so native WordPress admin is being shown. Run <code>bun run build</code> and deploy the <code>dist/</code> directory.</p></div>';
+		echo '<div class="notice notice-error"><p>' . sprintf(
+			/* translators: %s: build command */
+			esc_html__( 'WP React UI: Shell assets are unavailable, so native WordPress admin is being shown. Run %s and deploy the dist/ directory.', 'wp-custom-dashboard' ),
+			'<code>bun run build</code>'
+		) . '</p></div>';
 	}
 }

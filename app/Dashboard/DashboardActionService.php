@@ -138,10 +138,10 @@ final class DashboardActionService {
 
 		$exclude_ids  = ! empty( $legal_ids ) ? $legal_ids : array( 0 );
 		$placeholders = implode( ',', array_fill( 0, count( $exclude_ids ), '%d' ) );
-		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching
 		$old_count = (int) $wpdb->get_var(
 			$wpdb->prepare(
-				// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+				// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared,WordPress.DB.PreparedSQLPlaceholders.ReplacementsWrongNumber
 				"SELECT COUNT(*) FROM %i
 				 WHERE post_type = 'page' AND post_status = 'draft'
 				   AND post_modified < %s

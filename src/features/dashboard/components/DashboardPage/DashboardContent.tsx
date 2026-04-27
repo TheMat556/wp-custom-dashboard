@@ -76,8 +76,7 @@ export function DashboardContent({
           health={viewModel.health}
           speed={viewModel.speed}
           updates={viewModel.updates}
-          seo={viewModel.seo}
-          seoBasics={viewModel.seoBasics}
+          submissionStats={viewModel.submissionStats}
           total30Views={viewModel.total30Views}
           viewTrend={viewModel.viewTrend}
           hasUpdates={viewModel.hasUpdates}

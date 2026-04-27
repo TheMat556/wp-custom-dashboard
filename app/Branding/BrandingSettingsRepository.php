@@ -15,9 +15,9 @@ defined( 'ABSPATH' ) || exit;
  * Handles branding settings persistence and option defaults.
  */
 final class BrandingSettingsRepository {
-	public const OPTION_NAME = 'wp_react_ui_branding';
+	public const OPTION_NAME           = 'wp_react_ui_branding';
 	public const DEFAULT_PRIMARY_COLOR = '#4f46e5';
-	public const DEFAULT_FONT_PRESET = 'inter';
+	public const DEFAULT_FONT_PRESET   = 'inter';
 
 	/**
 	 * Returns the default branding settings.
@@ -26,12 +26,12 @@ final class BrandingSettingsRepository {
 	 */
 	public function get_default_settings(): array {
 		return array(
-			'light_logo_id'          => 0,
-			'dark_logo_id'           => 0,
-			'long_logo_id'           => 0,
-			'use_long_logo'          => false,
-			'primary_color'          => self::DEFAULT_PRIMARY_COLOR,
-			'font_preset'            => self::DEFAULT_FONT_PRESET,
+			'light_logo_id'            => 0,
+			'dark_logo_id'             => 0,
+			'long_logo_id'             => 0,
+			'use_long_logo'            => false,
+			'primary_color'            => self::DEFAULT_PRIMARY_COLOR,
+			'font_preset'              => self::DEFAULT_FONT_PRESET,
 			'open_in_new_tab_patterns' => array(),
 		);
 	}

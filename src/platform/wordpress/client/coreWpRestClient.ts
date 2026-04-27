@@ -1,4 +1,5 @@
 import type { WpReactUiConfig } from "../../../types/wp";
+import { shellFetch } from "../../../utils/shellFetch";
 
 export type CoreWpRestConfig = Pick<WpReactUiConfig, "nonce"> & {
   apiRoot?: string;
@@ -81,7 +82,7 @@ export function createCoreWpRestClient(config: CoreWpRestConfig): CoreWpRestClie
         init.body = JSON.stringify(body);
       }
 
-      return fetch(buildCoreWpRestUrl(apiRoot, path, query), init);
+      return shellFetch(buildCoreWpRestUrl(apiRoot, path, query), init);
     },
 
     async get(path, query) {

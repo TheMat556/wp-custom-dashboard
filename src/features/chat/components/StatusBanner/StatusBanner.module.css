@@ -1,0 +1,97 @@
+.banner {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 16px;
+  font-size: 13px;
+  line-height: 1.5;
+  border-bottom: 1px solid transparent;
+  position: relative;
+  z-index: 10;
+  backdrop-filter: blur(12px);
+}
+
+@keyframes slideBannerDown {
+  from {
+    transform: translateY(-100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .banner {
+    animation: slideBannerDown 0.25s ease-out forwards;
+  }
+}
+
+.bannerError {
+  background: rgba(239, 68, 68, 0.15);
+  border-color: rgba(239, 68, 68, 0.3);
+  color: #fca5a5;
+}
+
+.bannerWarning {
+  background: rgba(245, 158, 11, 0.15);
+  border-color: rgba(245, 158, 11, 0.3);
+  color: #fcd34d;
+}
+
+.bannerInfo {
+  background: rgba(99, 102, 241, 0.15);
+  border-color: rgba(99, 102, 241, 0.3);
+  color: #a5b4fc;
+}
+
+.icon {
+  flex-shrink: 0;
+  font-size: 15px;
+  display: flex;
+  align-items: center;
+  line-height: 1;
+}
+
+.message {
+  flex: 1;
+  min-width: 0;
+}
+
+.retryBtn {
+  flex-shrink: 0;
+  padding: 3px 10px;
+  border-radius: 4px;
+  border: 1px solid currentColor;
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
+  font-size: 12px;
+  font-family: inherit;
+  opacity: 0.85;
+  transition: opacity 0.15s ease;
+}
+
+.retryBtn:hover {
+  opacity: 1;
+}
+
+.dismissBtn {
+  flex-shrink: 0;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  color: inherit;
+  padding: 4px;
+  opacity: 0.6;
+  display: flex;
+  align-items: center;
+  line-height: 0;
+  transition: opacity 0.15s ease;
+  border-radius: 4px;
+}
+
+.dismissBtn:hover {
+  opacity: 1;
+}

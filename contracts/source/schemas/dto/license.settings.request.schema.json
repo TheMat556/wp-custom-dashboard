@@ -1,0 +1,12 @@
+{
+  "$id": "dto/license.settings.request",
+  "title": "LicenseSettingsRequest",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["serverUrl"],
+  "properties": {
+    "serverUrl": {
+      "type": ["string", "null"]
+    }
+  }
+}

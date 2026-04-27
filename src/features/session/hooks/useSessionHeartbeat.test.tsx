@@ -38,6 +38,17 @@ const TEST_CONFIG: Readonly<WpReactUiConfig> = Object.freeze({
     name: "Admin",
     role: "administrator",
   },
+  license: {
+    status: "disabled" as const,
+    role: null,
+    tier: null,
+    expiresAt: null,
+    features: [],
+    graceDaysRemaining: 0,
+    hasKey: false,
+    keyPrefix: null,
+    serverConfigured: true,
+  },
   shellRoutes: [],
   locale: "en_US",
 });
@@ -84,11 +95,9 @@ describe("useSessionHeartbeat", () => {
     });
 
     expect(fetchMock).toHaveBeenCalledTimes(1);
-    expect(fetchMock).toHaveBeenCalledWith("/wp-json/wp/v2/users/me", {
-      headers: {
-        "X-WP-Nonce": "test-nonce",
-      },
-    });
+    const [hbUrl, hbInit] = fetchMock.mock.calls[0] as [string, RequestInit];
+    expect(hbUrl).toBe("/wp-json/wp/v2/users/me");
+    expect(new Headers(hbInit.headers).get("X-WP-Nonce")).toBe("test-nonce");
 
     setDocumentHidden(true);
     document.dispatchEvent(new Event("visibilitychange"));

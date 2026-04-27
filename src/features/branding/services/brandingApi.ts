@@ -1,5 +1,6 @@
+import { z } from "zod";
+import { createPluginApiError } from "../../../shared/services/pluginApiError";
 import { createPluginRouteApi } from "../../../shared/services/pluginRouteApi";
-import { notifyApiError } from "../../../store/notificationStore";
 import type { WpReactUiConfig } from "../../../types/wp";
 
 export interface BrandingData {
@@ -31,6 +32,19 @@ export interface BrandingService {
   saveBranding(data: BrandingSaveInput): Promise<BrandingData>;
 }
 
+const brandingDataSchema = z.object({
+  lightLogoId: z.number(),
+  lightLogoUrl: z.string().nullable(),
+  darkLogoId: z.number(),
+  darkLogoUrl: z.string().nullable(),
+  longLogoId: z.number(),
+  longLogoUrl: z.string().nullable(),
+  useLongLogo: z.boolean(),
+  primaryColor: z.string(),
+  fontPreset: z.string(),
+  openInNewTabPatterns: z.array(z.string()),
+});
+
 export function createBrandingService(
   config: Pick<WpReactUiConfig, "restUrl" | "nonce">
 ): BrandingService {
@@ -41,20 +55,22 @@ export function createBrandingService(
       const res = await api.fetchBranding();
 
       if (!res.ok) {
-        throw new Error(notifyApiError(res, "Branding fetch"));
+        throw await createPluginApiError(res, "Branding fetch");
       }
 
-      return res.json();
+      const data = await res.json();
+      return brandingDataSchema.parse(data);
     },
 
-    async saveBranding(data) {
-      const res = await api.saveBranding(data);
+    async saveBranding(input) {
+      const res = await api.saveBranding(input);
 
       if (!res.ok) {
-        throw new Error(notifyApiError(res, "Branding save"));
+        throw await createPluginApiError(res, "Branding save");
       }
 
-      return res.json();
+      const data = await res.json();
+      return brandingDataSchema.parse(data);
     },
   };
 }

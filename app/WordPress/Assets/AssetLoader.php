@@ -350,7 +350,7 @@ class WP_React_UI_Asset_Loader {
 			}
 
 			$seen[ $import_key ] = true;
-			$import             = $manifest[ $import_key ] ?? null;
+			$import              = $manifest[ $import_key ] ?? null;
 
 			if ( ! is_array( $import ) ) {
 				continue;

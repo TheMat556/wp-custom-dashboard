@@ -5,14 +5,14 @@
  */
 
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { EMBED_MESSAGE_SOURCE, EMBED_MESSAGE_VERSION } from "../types/embedMessages";
-import { toEmbedUrl } from "../utils/embedUrl";
 import {
   activeKeyStore,
   bootstrapNavigationStore,
   navigationStore,
   resetNavigationStore,
-} from "./navigationStore";
+} from "../features/navigation/store/navigationStore";
+import { EMBED_MESSAGE_SOURCE, EMBED_MESSAGE_VERSION } from "../types/embedMessages";
+import { toEmbedUrl } from "../utils/embedUrl";
 
 beforeEach(() => {
   resetNavigationStore();
@@ -38,6 +38,12 @@ describe("initial state", () => {
   it("sets pageUrl to current URL without embed param", () => {
     const state = navigationStore.getState();
     expect(new URL(state.pageUrl).searchParams.has("wp_shell_embed")).toBe(false);
+  });
+
+  it("resets iframe overlay state during bootstrap", () => {
+    navigationStore.setState({ iframeOverlayActive: true });
+    resetNavigationStore();
+    expect(navigationStore.getState().iframeOverlayActive).toBe(false);
   });
 });
 
@@ -102,6 +108,29 @@ describe("navigate()", () => {
     expect(history.pushState).not.toHaveBeenCalled();
 
     // Restore
+    (window as unknown as Record<string, unknown>).location = originalLocation;
+  });
+
+  it("blocks navigate() for cross-origin breakout URLs", () => {
+    const originalLocation = window.location;
+    delete (window as unknown as Record<string, unknown>).location;
+    const hrefSetter = vi.fn();
+    (window as unknown as Record<string, unknown>).location = {
+      origin: "http://localhost",
+      get href() {
+        return "http://localhost/wp-admin/admin.php";
+      },
+      set href(v: string) {
+        hrefSetter(v);
+      },
+    };
+
+    // A URL that matches a breakout pagenow but is on a different host.
+    navigationStore.getState().navigate("https://evil.com/wp-admin/post-new.php");
+
+    expect(hrefSetter).not.toHaveBeenCalled();
+    expect(history.pushState).not.toHaveBeenCalled();
+
     (window as unknown as Record<string, unknown>).location = originalLocation;
   });
 
@@ -236,6 +265,22 @@ describe("handleIframeMessage()", () => {
     expect(navigationStore.getState().pageTitle).toBe("New Title");
   });
 
+  it("tracks iframe overlay state from overlay-state messages", () => {
+    const event = new MessageEvent("message", {
+      origin: "http://localhost",
+      data: {
+        source: EMBED_MESSAGE_SOURCE,
+        version: EMBED_MESSAGE_VERSION,
+        type: "overlay-state",
+        active: true,
+      },
+    });
+
+    navigationStore.getState().handleIframeMessage(event);
+
+    expect(navigationStore.getState().iframeOverlayActive).toBe(true);
+  });
+
   it("accepts page-ready messages as part of the iframe protocol", () => {
     const event = new MessageEvent("message", {
       origin: "http://localhost",
@@ -248,7 +293,11 @@ describe("handleIframeMessage()", () => {
       },
     });
 
-    navigationStore.setState({ status: "loading", pendingNavigationSource: "shell" });
+    navigationStore.setState({
+      status: "loading",
+      iframeOverlayActive: true,
+      pendingNavigationSource: "shell",
+    });
     navigationStore.getState().handleIframeMessage(event);
 
     const state = navigationStore.getState();
@@ -256,7 +305,68 @@ describe("handleIframeMessage()", () => {
     expect(state.iframeUrl).toBe("http://localhost/wp-admin/users.php?wp_shell_embed=1");
     expect(state.pageTitle).toBe("Users");
     expect(state.status).toBe("ready");
+    expect(state.iframeOverlayActive).toBe(false);
     expect(state.pendingNavigationSource).toBe("shell");
+  });
+
+  it("blocks cross-origin breakout navigation", () => {
+    const originalLocation = window.location;
+    delete (window as unknown as Record<string, unknown>).location;
+    const hrefSetter = vi.fn();
+    (window as unknown as Record<string, unknown>).location = {
+      origin: "http://localhost",
+      get href() {
+        return "http://localhost/wp-admin/admin.php";
+      },
+      set href(v: string) {
+        hrefSetter(v);
+      },
+    };
+
+    const event = new MessageEvent("message", {
+      origin: "http://localhost",
+      data: {
+        source: EMBED_MESSAGE_SOURCE,
+        version: EMBED_MESSAGE_VERSION,
+        type: "breakout",
+        url: "https://evil.com/steal-cookies",
+      },
+    });
+    navigationStore.getState().handleIframeMessage(event);
+
+    expect(hrefSetter).not.toHaveBeenCalled();
+
+    (window as unknown as Record<string, unknown>).location = originalLocation;
+  });
+
+  it("allows same-origin breakout navigation", () => {
+    const originalLocation = window.location;
+    delete (window as unknown as Record<string, unknown>).location;
+    const hrefSetter = vi.fn();
+    (window as unknown as Record<string, unknown>).location = {
+      origin: "http://localhost",
+      get href() {
+        return "http://localhost/wp-admin/admin.php";
+      },
+      set href(v: string) {
+        hrefSetter(v);
+      },
+    };
+
+    const event = new MessageEvent("message", {
+      origin: "http://localhost",
+      data: {
+        source: EMBED_MESSAGE_SOURCE,
+        version: EMBED_MESSAGE_VERSION,
+        type: "breakout",
+        url: "http://localhost/wp-admin/post-new.php",
+      },
+    });
+    navigationStore.getState().handleIframeMessage(event);
+
+    expect(hrefSetter).toHaveBeenCalledWith("http://localhost/wp-admin/post-new.php");
+
+    (window as unknown as Record<string, unknown>).location = originalLocation;
   });
 });
 

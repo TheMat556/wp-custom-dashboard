@@ -3,7 +3,7 @@ import {
   bootstrapShellPreferencesStore,
   resetShellPreferencesStore,
   shellPreferencesStore,
-} from "./shellPreferencesStore";
+} from "../features/shell/store/shellPreferencesStore";
 
 describe("shellPreferencesStore", () => {
   beforeEach(() => {

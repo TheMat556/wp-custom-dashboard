@@ -1,11 +1,14 @@
 <?php
+
+declare(strict_types=1);
+
 /**
  * AUTO-GENERATED from contracts/source. Do not edit.
  */
 
-declare(strict_types=1);
-
 namespace WpReactUi\Contracts\Generated;
+
+defined( 'ABSPATH' ) || exit;
 
 final class BootPayload {
 	public const TOP_LEVEL_KEYS = array(
@@ -22,6 +25,7 @@ final class BootPayload {
 		'assetsUrl',
 		'locale',
 		'user',
+		'license',
 		'shellRoutes'
 	);
 	public const BRANDING_KEYS = array(
@@ -45,7 +49,8 @@ final class BootPayload {
 	);
 	public const USER_KEYS = array(
 		'name',
-		'role'
+		'role',
+		'canManageOptions'
 	);
 	public const SHELL_ROUTE_KEYS = array(
 		'slug',

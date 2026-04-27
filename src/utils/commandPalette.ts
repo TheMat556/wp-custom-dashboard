@@ -1,5 +1,6 @@
 import type { MenuItem } from "../types/menu";
 import { normalizeToMenuKey } from "./embedUrl";
+import { isString } from "./typePredicates";
 import { buildAdminUrl } from "./wp";
 
 export interface RecentPageRecord {
@@ -31,7 +32,7 @@ function normalizeText(value: string): string {
 }
 
 function createSearchBlob(item: PaletteItem): string {
-  return normalizeText([item.label, item.subtitle, item.slug, item.url].filter(Boolean).join(" "));
+  return normalizeText([item.label, item.subtitle, item.slug, item.url].filter(isString).join(" "));
 }
 
 function rankPaletteItem(item: PaletteItem, query: string): number {
@@ -185,7 +186,7 @@ export function buildNativeShellCommandDescriptors(options: {
     name: `wp-react-ui/favorite/${item.slug}`,
     label: `Favorite: ${item.label}`,
     searchLabel: `${item.label} favorite pinned`,
-    keywords: ["favorite", "pinned", item.subtitle, item.slug ?? ""].filter(Boolean),
+    keywords: ["favorite", "pinned", item.subtitle, item.slug ?? ""].filter(isString),
     action: "navigate" as const,
     url: item.url,
   }));
@@ -194,7 +195,7 @@ export function buildNativeShellCommandDescriptors(options: {
     name: `wp-react-ui/recent/${index}`,
     label: `Recent: ${item.label}`,
     searchLabel: `${item.label} recent ${item.subtitle}`,
-    keywords: ["recent", "history", item.subtitle, item.slug ?? ""].filter(Boolean),
+    keywords: ["recent", "history", item.subtitle, item.slug ?? ""].filter(isString),
     action: "navigate" as const,
     url: item.url,
   }));

@@ -1,3 +1,4 @@
+import { LicenseGraceBanner } from "../license/components/LicenseGraceBanner";
 import { AriaLiveRegion } from "./components/AriaLiveRegion";
 import ContentFrame from "./components/ContentFrame";
 import Navbar from "./components/navbar";
@@ -17,6 +18,7 @@ export default function App() {
         <Navbar />
       </div>
 
+      <LicenseGraceBanner />
       <ContentFrame />
     </div>
   );

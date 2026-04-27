@@ -1,6 +1,7 @@
 import { createStore } from "zustand/vanilla";
 import { getBootConfig } from "../../../config/bootConfig";
 import type { WpReactUiConfig } from "../../../types/wp";
+import { logger } from "../../../utils/logger";
 import { createThemeService, type ThemeService } from "../services/themeApi";
 
 export type Theme = "light" | "dark";
@@ -29,11 +30,26 @@ function writeStoredTheme(theme: Theme) {
   }
 }
 
+function notifyEmbeddedFrames(theme: Theme) {
+  const payload = { type: THEME_CHANGE_EVENT, detail: { theme } };
+
+  for (const frame of document.querySelectorAll("iframe")) {
+    try {
+      frame.contentWindow?.postMessage(payload, window.location.origin);
+    } catch {
+      // Ignore inaccessible or not-yet-ready frames.
+    }
+  }
+}
+
 export function applyThemeToDOM(theme: Theme) {
+  document.documentElement?.setAttribute("data-theme", theme);
   document.getElementById("react-shell-root")?.setAttribute("data-theme", theme);
   document.body?.setAttribute("data-theme", theme);
+  document.documentElement?.classList.toggle("wp-react-dark", theme === "dark");
   document.body?.classList.toggle("wp-react-dark", theme === "dark");
   writeStoredTheme(theme);
+  notifyEmbeddedFrames(theme);
 }
 
 function getInitialTheme(theme: string): Theme {
@@ -72,7 +88,7 @@ export function bootstrapThemeStore(
   const unsubService = themeStore.subscribe((state, prev) => {
     if (state.theme !== prev.theme && themeService) {
       void themeService.saveTheme(state.theme).catch((error) => {
-        console.warn("[WP React UI] Could not save theme:", error);
+        logger.warn("[WP React UI] Could not save theme:", error);
       });
     }
   });

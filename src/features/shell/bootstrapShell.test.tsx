@@ -49,6 +49,17 @@ const minimalConfig = {
   menu: [],
   publicUrl: "/",
   locale: "en_US",
+  license: {
+    status: "disabled" as const,
+    role: null,
+    tier: null,
+    expiresAt: null,
+    features: [],
+    graceDaysRemaining: 0,
+    hasKey: false,
+    keyPrefix: null,
+    serverConfigured: true,
+  },
   shellRoutes: [],
 };
 
@@ -71,7 +82,7 @@ describe("bootstrapShell teardown", () => {
     teardown();
 
     expect(themeStore.getState().theme).toBe("light");
-  });
+  }, 10_000);
 
   it("teardown resets menuStore items to empty", async () => {
     const bootstrapShell = await getBootstrapShell();

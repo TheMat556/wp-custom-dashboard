@@ -1,0 +1,18 @@
+{
+  "$id": "dto/license.settings.response",
+  "title": "LicenseSettingsResponse",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["serverUrl", "serverConfigured", "storedLicenseKey"],
+  "properties": {
+    "serverUrl": {
+      "type": ["string", "null"]
+    },
+    "serverConfigured": {
+      "type": "boolean"
+    },
+    "storedLicenseKey": {
+      "type": ["string", "null"]
+    }
+  }
+}

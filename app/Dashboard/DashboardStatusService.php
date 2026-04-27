@@ -121,11 +121,11 @@ final class DashboardStatusService {
 
 		$form_plugins = array(
 			'contact-form-7/wp-contact-form-7.php' => 'Contact Form 7 (free)',
-			'gravityforms/gravityforms.php'         => 'Gravity Forms',
-			'wpforms-lite/wpforms.php'              => 'WPForms (free)',
-			'formidable/formidable.php'             => 'Formidable Forms',
-			'ninja-forms/ninja-forms.php'           => 'Ninja Forms (free)',
-			'fluentform/fluentform.php'             => 'FluentForms (free)',
+			'gravityforms/gravityforms.php'        => 'Gravity Forms',
+			'wpforms-lite/wpforms.php'             => 'WPForms (free)',
+			'formidable/formidable.php'            => 'Formidable Forms',
+			'ninja-forms/ninja-forms.php'          => 'Ninja Forms (free)',
+			'fluentform/fluentform.php'            => 'FluentForms (free)',
 		);
 		$active_form  = null;
 
@@ -152,10 +152,10 @@ final class DashboardStatusService {
 		}
 
 		$smtp_plugins = array(
-			'wp-mail-smtp/wp_mail_smtp.php'                      => 'WP Mail SMTP (free)',
-			'post-smtp/postman-smtp.php'                        => 'Post SMTP',
-			'fluent-smtp/fluent-smtp.php'                       => 'FluentSMTP (free)',
-			'easy-wp-smtp/easy-wp-smtp.php'                     => 'Easy WP SMTP (free)',
+			'wp-mail-smtp/wp_mail_smtp.php' => 'WP Mail SMTP (free)',
+			'post-smtp/postman-smtp.php'    => 'Post SMTP',
+			'fluent-smtp/fluent-smtp.php'   => 'FluentSMTP (free)',
+			'easy-wp-smtp/easy-wp-smtp.php' => 'Easy WP SMTP (free)',
 			'sendgrid-email-delivery-simplified/wpsendgrid.php' => 'SendGrid',
 		);
 		$active_smtp  = null;
@@ -176,6 +176,96 @@ final class DashboardStatusService {
 		);
 
 		return $functions;
+	}
+
+	/**
+	 * Returns form submission count and booking count for the last 30 days.
+	 *
+	 * @return array
+	 */
+	public function get_submission_stats(): array {
+		global $wpdb;
+
+		if ( ! function_exists( 'is_plugin_active' ) ) {
+			require_once ABSPATH . 'wp-admin/includes/plugin.php';
+		}
+
+		$since = gmdate( 'Y-m-d H:i:s', strtotime( '-30 days', time() ) );
+
+		$form_count  = null;
+		$form_plugin = null;
+
+		// Gravity Forms — gf_entry table.
+		if ( class_exists( 'GFAPI' ) ) {
+			$table = $wpdb->prefix . 'gf_entry';
+			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching
+			if ( $wpdb->get_var( $wpdb->prepare( 'SHOW TABLES LIKE %s', $table ) ) === $table ) {
+				// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching
+				$form_count  = (int) $wpdb->get_var( $wpdb->prepare( 'SELECT COUNT(*) FROM %i WHERE date_created >= %s AND status = %s', $table, $since, 'active' ) );
+				$form_plugin = 'Gravity Forms';
+			}
+		}
+
+		// WPForms — wpforms_entries table (Pro only).
+		if ( null === $form_count && is_plugin_active( 'wpforms/wpforms.php' ) ) {
+			$table = $wpdb->prefix . 'wpforms_entries';
+			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching
+			if ( $wpdb->get_var( $wpdb->prepare( 'SHOW TABLES LIKE %s', $table ) ) === $table ) {
+				// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching
+				$form_count  = (int) $wpdb->get_var( $wpdb->prepare( 'SELECT COUNT(*) FROM %i WHERE date >= %s', $table, $since ) );
+				$form_plugin = 'WPForms';
+			}
+		}
+
+		// FluentForms — fluentform_submissions table.
+		if ( null === $form_count && ( is_plugin_active( 'fluentform/fluentform.php' ) || defined( 'FLUENTFORM_VERSION' ) ) ) {
+			$table = $wpdb->prefix . 'fluentform_submissions';
+			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching
+			if ( $wpdb->get_var( $wpdb->prepare( 'SHOW TABLES LIKE %s', $table ) ) === $table ) {
+				// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching
+				$form_count  = (int) $wpdb->get_var( $wpdb->prepare( 'SELECT COUNT(*) FROM %i WHERE created_at >= %s', $table, $since ) );
+				$form_plugin = 'FluentForms';
+			}
+		}
+
+		// Ninja Forms — nf_sub table.
+		if ( null === $form_count && is_plugin_active( 'ninja-forms/ninja-forms.php' ) ) {
+			$table = $wpdb->prefix . 'nf_sub';
+			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching
+			if ( $wpdb->get_var( $wpdb->prepare( 'SHOW TABLES LIKE %s', $table ) ) === $table ) {
+				// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching
+				$form_count  = (int) $wpdb->get_var( $wpdb->prepare( 'SELECT COUNT(*) FROM %i WHERE sub_date >= %s', $table, $since ) );
+				$form_plugin = 'Ninja Forms';
+			}
+		}
+
+		// Formidable Forms — frm_items table.
+		if ( null === $form_count && is_plugin_active( 'formidable/formidable.php' ) ) {
+			$table = $wpdb->prefix . 'frm_items';
+			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching
+			if ( $wpdb->get_var( $wpdb->prepare( 'SHOW TABLES LIKE %s', $table ) ) === $table ) {
+				// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching
+				$form_count  = (int) $wpdb->get_var( $wpdb->prepare( 'SELECT COUNT(*) FROM %i WHERE created_at >= %s', $table, $since ) );
+				$form_plugin = 'Formidable';
+			}
+		}
+
+		// Contact Form 7 + Flamingo — flamingo_inbound post type.
+		if ( null === $form_count && is_plugin_active( 'contact-form-7/wp-contact-form-7.php' ) ) {
+			$table = $wpdb->prefix . 'posts';
+			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching
+			$result = $wpdb->get_var( $wpdb->prepare( 'SELECT COUNT(*) FROM %i WHERE post_type = %s AND post_date >= %s', $table, 'flamingo_inbound', $since ) );
+			if ( null !== $result ) {
+				$form_count  = (int) $result;
+				$form_plugin = 'Contact Form 7';
+			}
+		}
+
+		return array(
+			'formSubmissions30d' => $form_count,
+			'bookings30d'        => $this->calendar->get_bookings_30d_count(),
+			'formPlugin'         => $form_plugin,
+		);
 	}
 
 	/**
@@ -216,18 +306,35 @@ final class DashboardStatusService {
 		);
 
 		$sitemap_url      = home_url( '/sitemap.xml' );
-		$sitemap_response = wp_remote_head( $sitemap_url, array( 'timeout' => 5, 'sslverify' => false ) );
-		$sitemap_ok       = ! is_wp_error( $sitemap_response ) && 200 === (int) wp_remote_retrieve_response_code( $sitemap_response );
+		$sitemap_response = wp_remote_head( $sitemap_url, array( 'timeout' => 5 ) );
+
+		if ( is_wp_error( $sitemap_response ) ) {
+			$error_msg     = $sitemap_response->get_error_message();
+			$sitemap_ok    = false;
+			$sitemap_label = ( false !== strpos( $error_msg, 'SSL' ) || false !== strpos( $error_msg, 'ssl' ) )
+				? 'SSL certificate error — sitemap unreachable due to an invalid or expired HTTPS certificate'
+				: 'No sitemap found at /sitemap.xml';
+		} else {
+			$sitemap_ok    = 200 === (int) wp_remote_retrieve_response_code( $sitemap_response );
+			$sitemap_label = $sitemap_ok ? 'Sitemap found at /sitemap.xml' : 'No sitemap found at /sitemap.xml';
+		}
 
 		$checks['sitemap'] = array(
 			'ok'    => $sitemap_ok,
-			'label' => $sitemap_ok ? 'Sitemap found at /sitemap.xml' : 'No sitemap found at /sitemap.xml',
+			'label' => $sitemap_label,
 			'url'   => $sitemap_url,
 		);
 
-		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery
+		// Count published pages whose title is under 10 characters.
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching
 		$short = (int) $wpdb->get_var(
-			"SELECT COUNT(*) FROM {$wpdb->posts} WHERE post_type = 'page' AND post_status = 'publish' AND CHAR_LENGTH(post_title) < 10"
+			$wpdb->prepare(
+				'SELECT COUNT(*) FROM %i WHERE post_type = %s AND post_status = %s AND CHAR_LENGTH(post_title) < %d',
+				$wpdb->posts,
+				'page',
+				'publish',
+				10
+			)
 		);
 
 		$checks['pageTitles'] = array(
@@ -262,9 +369,15 @@ final class DashboardStatusService {
 	public function get_seo_overview(): array {
 		global $wpdb;
 
-		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery
+		// Count all published pages to use as the score denominator.
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching
 		$total_pages = (int) $wpdb->get_var(
-			"SELECT COUNT(*) FROM {$wpdb->posts} WHERE post_type = 'page' AND post_status = 'publish'"
+			$wpdb->prepare(
+				'SELECT COUNT(*) FROM %i WHERE post_type = %s AND post_status = %s',
+				$wpdb->posts,
+				'page',
+				'publish'
+			)
 		);
 
 		$plugin = null;
@@ -280,16 +393,25 @@ final class DashboardStatusService {
 		$issues_count = 0;
 
 		if ( 'yoast' === $plugin && $total_pages > 0 ) {
-			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery
+			// Count published pages that have no Yoast SEO meta description set.
+			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching
 			$missing_meta = (int) $wpdb->get_var(
-				"SELECT COUNT(p.ID) FROM {$wpdb->posts} p
-				 LEFT JOIN {$wpdb->postmeta} pm ON p.ID = pm.post_id AND pm.meta_key = '_yoast_wpseo_metadesc'
-				 WHERE p.post_type = 'page' AND p.post_status = 'publish'
-				   AND (pm.meta_value IS NULL OR pm.meta_value = '')"
+				$wpdb->prepare(
+					'SELECT COUNT(p.ID) FROM %i p
+					 LEFT JOIN %i pm ON p.ID = pm.post_id AND pm.meta_key = %s
+					 WHERE p.post_type = %s AND p.post_status = %s
+					   AND (pm.meta_value IS NULL OR pm.meta_value = %s)',
+					$wpdb->posts,
+					$wpdb->postmeta,
+					'_yoast_wpseo_metadesc',
+					'page',
+					'publish',
+					''
+				)
 			);
 
 			if ( $missing_meta > 0 ) {
-				$issues[] = array(
+				$issues[]      = array(
 					'label' => $missing_meta . ' page' . ( $missing_meta > 1 ? 's' : '' ) . ' missing meta description',
 					'url'   => 'edit.php?post_type=page',
 				);
@@ -298,11 +420,19 @@ final class DashboardStatusService {
 		}
 
 		if ( $total_pages > 0 ) {
-			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery
+			// Fetch up to 5 published pages with very short titles to surface as individual issues.
+			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching
 			$short_pages = $wpdb->get_results(
-				"SELECT ID, post_title FROM {$wpdb->posts}
-				 WHERE post_type = 'page' AND post_status = 'publish' AND CHAR_LENGTH(post_title) < 10
-				 LIMIT 5"
+				$wpdb->prepare(
+					'SELECT ID, post_title FROM %i
+					 WHERE post_type = %s AND post_status = %s AND CHAR_LENGTH(post_title) < %d
+					 LIMIT %d',
+					$wpdb->posts,
+					'page',
+					'publish',
+					10,
+					5
+				)
 			);
 
 			foreach ( $short_pages as $page ) {
@@ -312,7 +442,7 @@ final class DashboardStatusService {
 					'url'     => 'post.php?post=' . $page->ID . '&action=edit',
 					'editUrl' => admin_url( 'post.php?post=' . $page->ID . '&action=edit' ),
 				);
-				$issues_count++;
+				++$issues_count;
 			}
 		}
 
@@ -346,7 +476,7 @@ final class DashboardStatusService {
 			'url'   => 'options-general.php',
 		);
 
-		$page_count = (int) ( wp_count_posts( 'page' )->publish ?? 0 );
+		$page_count  = (int) ( wp_count_posts( 'page' )->publish ?? 0 );
 		$checklist[] = array(
 			'key'   => 'first-page',
 			'label' => 'Create and publish your first page',
@@ -383,8 +513,8 @@ final class DashboardStatusService {
 			'url'   => 'update-core.php',
 		);
 
-		$health    = get_transient( 'health-check-site-status-result' );
-		$health_ok = $health && isset( $health['status'] ) && 'good' === $health['status'];
+		$health      = get_transient( 'health-check-site-status-result' );
+		$health_ok   = $health && isset( $health['status'] ) && 'good' === $health['status'];
 		$checklist[] = array(
 			'key'   => 'site-health',
 			'label' => 'Fix site health issues',
@@ -426,33 +556,48 @@ final class DashboardStatusService {
 	 * @return array|null
 	 */
 	private function find_legal_page( array $keywords ): ?array {
-		$pages = get_posts(
-			array(
-				'post_type'      => 'page',
-				'post_status'    => array( 'publish', 'draft', 'pending' ),
-				'posts_per_page' => 100,
-			)
-		);
+		global $wpdb;
 
-		foreach ( $pages as $page ) {
-			$lower = strtolower( $page->post_title );
-			foreach ( $keywords as $keyword ) {
-				if ( false !== strpos( $lower, $keyword ) ) {
-					$days_old = (int) ceil( ( time() - strtotime( $page->post_modified_gmt ) ) / DAY_IN_SECONDS );
-
-					return array(
-						'exists'    => true,
-						'published' => 'publish' === $page->post_status,
-						'status'    => $page->post_status,
-						'title'     => $page->post_title,
-						'daysOld'   => $days_old,
-						'editUrl'   => admin_url( 'post.php?post=' . $page->ID . '&action=edit' ),
-						'viewUrl'   => 'publish' === $page->post_status ? get_permalink( $page->ID ) : null,
-					);
-				}
-			}
+		if ( empty( $keywords ) ) {
+			return null;
 		}
 
-		return null;
+		// Build one LIKE condition per keyword, combined with OR.
+		$conditions  = implode( ' OR ', array_fill( 0, count( $keywords ), 'LOWER(post_title) LIKE %s' ) );
+		$like_values = array_map(
+			fn( string $k ) => '%' . $wpdb->esc_like( $k ) . '%',
+			$keywords
+		);
+
+		// phpcs:disable WordPress.DB.PreparedSQL.InterpolatedNotPrepared,WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching,WordPress.DB.PreparedSQLPlaceholders.ReplacementsWrongNumber
+		$row = $wpdb->get_row(
+			$wpdb->prepare(
+				"SELECT ID, post_title, post_status, post_modified_gmt
+				 FROM {$wpdb->posts}
+				 WHERE post_type = 'page'
+				   AND post_status IN ('publish', 'draft', 'pending')
+				   AND ({$conditions})
+				 ORDER BY FIELD(post_status, 'publish', 'draft', 'pending')
+				 LIMIT 1",
+				...$like_values
+			)
+		);
+		// phpcs:enable WordPress.DB.PreparedSQL.InterpolatedNotPrepared,WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching
+
+		if ( ! $row ) {
+			return null;
+		}
+
+		$days_old = (int) ceil( ( time() - strtotime( $row->post_modified_gmt ) ) / DAY_IN_SECONDS );
+
+		return array(
+			'exists'    => true,
+			'published' => 'publish' === $row->post_status,
+			'status'    => $row->post_status,
+			'title'     => $row->post_title,
+			'daysOld'   => $days_old,
+			'editUrl'   => admin_url( 'post.php?post=' . $row->ID . '&action=edit' ),
+			'viewUrl'   => 'publish' === $row->post_status ? get_permalink( $row->ID ) : null,
+		);
 	}
 }

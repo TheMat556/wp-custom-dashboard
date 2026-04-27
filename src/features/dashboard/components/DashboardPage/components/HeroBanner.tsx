@@ -78,13 +78,18 @@ export function HeroBanner({
             </Text>
           )}
           {stats && (
-            <Flex gap={12} style={{ marginTop: 6 }}>
+            <Flex gap={12} align="center" wrap>
               <Text type="secondary" style={{ fontSize: 12 }}>
                 WordPress {stats.wpVersion}
               </Text>
               <Text type="secondary" style={{ fontSize: 12 }}>
                 PHP {stats.phpVersion}
               </Text>
+              {stats.lastBackupDate && (
+                <Text type="secondary" style={{ fontSize: 12 }}>
+                  Last backup: {stats.lastBackupDate}
+                </Text>
+              )}
             </Flex>
           )}
         </Flex>

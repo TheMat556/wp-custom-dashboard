@@ -6,26 +6,25 @@ import { CUSTOM_PRESET_KEY, THEME_PRESETS } from "../../config/themePresets";
 import { resetNotificationStore } from "../../store/notificationStore";
 import type { WpReactUiConfig } from "../../types/wp";
 import { getFontFamilyForPreset } from "../../utils/fontPresets";
-import { bootstrapActivityStore, resetActivityStore } from "../activity/store/activityStore";
-import {
-  bootstrapBrandingStore,
-  brandingStore,
-  resetBrandingStore,
-} from "../branding/store/brandingStore";
-import { bootstrapDashboardStore, resetDashboardStore } from "../dashboard/store/dashboardStore";
+import { bootstrapActivityStore, resetActivityStore } from "../activity";
+import { bootstrapBrandingStore, brandingStore, resetBrandingStore } from "../branding";
+import { bootstrapDashboardStore, resetDashboardStore } from "../dashboard";
+import { bootstrapLicenseStore, LicenseProvider, resetLicenseStore } from "../license";
 import {
   bootstrapMenuCountsStore,
-  resetMenuCountsStore,
-} from "../navigation/store/menuCountsStore";
-import { bootstrapMenuStore, resetMenuStore } from "../navigation/store/menuStore";
-import {
+  bootstrapMenuStore,
   bootstrapNavigationStore,
   navigationStore,
+  resetMenuCountsStore,
+  resetMenuStore,
   resetNavigationStore,
-} from "../navigation/store/navigationStore";
-import { SessionExpiredModal } from "../session/components/SessionExpiredModal";
-import { SessionHeartbeatEffect } from "../session/components/SessionHeartbeatEffect";
-import { bootstrapSessionStore, resetSessionStore } from "../session/store/sessionStore";
+} from "../navigation";
+import {
+  bootstrapSessionStore,
+  resetSessionStore,
+  SessionExpiredModal,
+  SessionHeartbeatEffect,
+} from "../session";
 import App from "./AppShell";
 import { ErrorBoundary } from "./components/ErrorBoundary";
 import { NativeCommandPaletteEnhancer } from "./components/NativeCommandPaletteEnhancer";
@@ -124,11 +123,14 @@ function AntConfigProvider({ children }: { children: React.ReactNode }) {
 
   return (
     <ConfigProvider
+      getPopupContainer={() => document.body}
+      getTargetContainer={() => document.body}
       theme={{
         algorithm,
         token: {
           fontFamily,
           colorPrimary: primaryColor,
+          zIndexPopupBase: 100100,
           ...darkTokenOverrides,
         },
         components: {
@@ -160,14 +162,16 @@ function ShellRoot({ host, config }: { host: HTMLElement; config: Readonly<WpRea
   return (
     <ErrorBoundary name="react-shell-root">
       <ShellConfigProvider config={config}>
-        <AntConfigProvider>
-          <NotificationRenderer />
-          <SessionHeartbeatEffect />
-          <SessionExpiredModal />
-          <NativeCommandPaletteEnhancer />
-          <ShellMountEffects host={host} />
-          <App />
-        </AntConfigProvider>
+        <LicenseProvider>
+          <AntConfigProvider>
+            <NotificationRenderer />
+            <SessionHeartbeatEffect />
+            <SessionExpiredModal />
+            <NativeCommandPaletteEnhancer />
+            <ShellMountEffects host={host} />
+            <App />
+          </AntConfigProvider>
+        </LicenseProvider>
       </ShellConfigProvider>
     </ErrorBoundary>
   );
@@ -175,6 +179,7 @@ function ShellRoot({ host, config }: { host: HTMLElement; config: Readonly<WpRea
 
 export function bootstrapShell(host: HTMLElement, config: Readonly<WpReactUiConfig>) {
   bootstrapMenuStore(config);
+  bootstrapLicenseStore(config);
   const teardownTheme = bootstrapThemeStore(config);
   bootstrapBrandingStore(config);
   bootstrapActivityStore(config);
@@ -227,6 +232,7 @@ export function bootstrapShell(host: HTMLElement, config: Readonly<WpReactUiConf
     resetBrandingStore();
     resetActivityStore();
     resetDashboardStore();
+    resetLicenseStore();
     resetShellPreferencesStore();
     resetSessionStore();
     resetMenuCountsStore();

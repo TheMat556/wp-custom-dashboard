@@ -89,15 +89,32 @@ export function fromEmbedUrl(url: string): string {
  * Derive a sidebar menu key from an admin URL.
  *
  * Key rules (matching WordPress menu registration):
- *  - `?page=foo`        → "foo"
- *  - `/wp-admin/bar.php` → "bar.php"
+ *  - `?page=foo`                      → "foo"
+ *  - `/wp-admin/edit.php?post_type=X` → "edit.php?post_type=X"
+ *  - `/wp-admin/bar.php`              → "bar.php"
+ *
+ * WordPress registers CPT/taxonomy screens with `post_type` and `taxonomy`
+ * params in the slug (e.g. "edit.php?post_type=page"). We preserve those
+ * identity params so the sidebar can distinguish them from the base screen.
  */
 export function normalizeToMenuKey(url: string): string | undefined {
   try {
     const parsed = new URL(fromEmbedUrl(url), getBaseUrl());
     const page = parsed.searchParams.get("page");
     if (page) return page;
-    return parsed.pathname.split("/").filter(Boolean).pop();
+
+    const filename = parsed.pathname.split("/").filter(Boolean).pop();
+    if (!filename) return undefined;
+
+    // Keep only stable identity params that WordPress uses in menu slugs.
+    const stable = new URLSearchParams();
+    const postType = parsed.searchParams.get("post_type");
+    const taxonomy = parsed.searchParams.get("taxonomy");
+    if (postType) stable.set("post_type", postType);
+    if (taxonomy) stable.set("taxonomy", taxonomy);
+
+    const qs = stable.toString();
+    return qs ? `${filename}?${qs}` : filename;
   } catch {
     return undefined;
   }

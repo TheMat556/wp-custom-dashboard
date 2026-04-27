@@ -1,3 +1,4 @@
+import { logger } from "../../../utils/logger";
 /**
  * Navigation store for the iframe shell architecture.
  *
@@ -8,7 +9,7 @@
  */
 
 import { createStore } from "zustand/vanilla";
-import { type EmbedMessage, isEmbedMessage } from "../../../types/embedMessages";
+import { assertNever, isEmbedMessage } from "../../../types/embedMessages";
 import type { WpReactUiNavigationConfig } from "../../../types/wp";
 import {
   DEFAULT_BREAKOUT_PAGENOW,
@@ -24,6 +25,7 @@ import {
   replaceHistory,
 } from "../../../utils/historyManager";
 import { matchesOpenInNewTabPattern } from "../../../utils/openInNewTab";
+import { isSameOrigin } from "../../../utils/security";
 import { sessionStore } from "../../session/store/sessionStore";
 
 type Listener = () => void;
@@ -42,6 +44,7 @@ export interface NavigationState {
   pageUrl: string;
   pageTitle: string;
   status: "loading" | "ready";
+  iframeOverlayActive: boolean;
   breakoutPagenow: string[];
   openInNewTabPatterns: string[];
   pendingNavigationSource: "shell" | "history" | null;
@@ -75,12 +78,17 @@ export const navigationStore = createStore<NavigationState & NavigationActions>(
   pageUrl: "",
   pageTitle: "",
   status: "loading",
+  iframeOverlayActive: false,
   breakoutPagenow: [...DEFAULT_BREAKOUT_PAGENOW],
   openInNewTabPatterns: [],
   pendingNavigationSource: "shell",
 
   navigate(url: string) {
     if (isBreakoutUrl(url, get().breakoutPagenow)) {
+      if (!isSameOrigin(url)) {
+        logger.error("[shell] Blocked cross-origin breakout navigation:", url);
+        return;
+      }
       window.location.href = url;
       return;
     }
@@ -103,6 +111,7 @@ export const navigationStore = createStore<NavigationState & NavigationActions>(
       iframeUrl: embedUrl,
       pageUrl: cleanUrl,
       status: "loading",
+      iframeOverlayActive: false,
       pendingNavigationSource: "shell",
     });
     pushHistory({ iframeUrl: embedUrl, pageUrl: cleanUrl }, "");
@@ -120,6 +129,7 @@ export const navigationStore = createStore<NavigationState & NavigationActions>(
         pageUrl: cleanUrl,
         pageTitle: title,
         status: "ready",
+        iframeOverlayActive: false,
         pendingNavigationSource: null,
       });
 
@@ -127,7 +137,7 @@ export const navigationStore = createStore<NavigationState & NavigationActions>(
         pushHistory({ iframeUrl: href, pageUrl: cleanUrl }, title);
       }
     } catch {
-      set({ status: "ready", pendingNavigationSource: null });
+      set({ status: "ready", iframeOverlayActive: false, pendingNavigationSource: null });
     }
   },
 
@@ -136,33 +146,57 @@ export const navigationStore = createStore<NavigationState & NavigationActions>(
       return;
     }
 
-    const msg = event.data as EmbedMessage;
+    const msg = event.data;
 
-    if (msg.type === "page-ready") {
-      set({
-        iframeUrl: msg.url,
-        pageUrl: fromEmbedUrl(msg.url),
-        pageTitle: msg.title,
-        status: "ready",
-      });
-      return;
+    switch (msg.type) {
+      case "page-ready": {
+        const url = msg.url;
+        if (!isSameOrigin(url)) {
+          logger.warn("[shell] Blocked page-ready with cross-origin URL:", url);
+          return;
+        }
+        const parsed = new URL(url, window.location.origin);
+        if (!parsed.searchParams.has("wp_shell_embed")) {
+          logger.warn("[shell] Blocked page-ready with non-embed URL:", url);
+          return;
+        }
+        set({
+          iframeUrl: url,
+          pageUrl: fromEmbedUrl(url),
+          pageTitle: msg.title,
+          status: "ready",
+          iframeOverlayActive: false,
+        });
+        break;
+      }
+
+      case "title-change":
+        set({ pageTitle: msg.title });
+        break;
+
+      case "session-expired":
+        sessionStore.getState().markExpired();
+        break;
+
+      case "overlay-state":
+        set({ iframeOverlayActive: msg.active });
+        break;
+
+      case "breakout":
+        if (!isSameOrigin(msg.url)) {
+          logger.error("[shell] Blocked cross-origin breakout navigation:", msg.url);
+          return;
+        }
+        window.location.href = msg.url;
+        break;
+
+      default:
+        assertNever(msg);
     }
-
-    if (msg.type === "title-change") {
-      set({ pageTitle: msg.title });
-      return;
-    }
-
-    if (msg.type === "session-expired") {
-      sessionStore.getState().markExpired();
-      return;
-    }
-
-    window.location.href = msg.url;
   },
 
   markShellPageReady() {
-    set({ status: "ready", pendingNavigationSource: null });
+    set({ status: "ready", iframeOverlayActive: false, pendingNavigationSource: null });
   },
 }));
 
@@ -207,6 +241,7 @@ export function bootstrapNavigationStore(
       iframeUrl: entry.iframeUrl,
       pageUrl: entry.pageUrl,
       status: "loading",
+      iframeOverlayActive: false,
       pendingNavigationSource: "history",
     });
   });
@@ -231,6 +266,7 @@ export function resetNavigationStore(config: Partial<NavigationBootstrapOptions>
     pageUrl,
     pageTitle,
     status: "loading",
+    iframeOverlayActive: false,
     breakoutPagenow: [...breakoutPagenow],
     openInNewTabPatterns: [...openInNewTabPatterns],
     pendingNavigationSource: "shell",

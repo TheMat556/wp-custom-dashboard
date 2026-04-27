@@ -26,11 +26,26 @@ export interface EmbedSessionExpiredMessage extends EmbedMessageBase {
   type: "session-expired";
 }
 
+export interface EmbedOverlayStateMessage extends EmbedMessageBase {
+  type: "overlay-state";
+  active: boolean;
+}
+
 export type EmbedMessage =
   | EmbedPageReadyMessage
   | EmbedTitleChangeMessage
   | EmbedBreakoutMessage
-  | EmbedSessionExpiredMessage;
+  | EmbedSessionExpiredMessage
+  | EmbedOverlayStateMessage;
+
+/**
+ * Compile-time exhaustiveness sentinel. Pass to the `default` branch of a
+ * switch over `EmbedMessage` so TypeScript reports an error when a new
+ * message type is added without a corresponding handler.
+ */
+export function assertNever(value: never): never {
+  throw new Error(`Unhandled EmbedMessage type: ${(value as { type: string }).type}`);
+}
 
 export function isEmbedMessage(value: unknown): value is EmbedMessage {
   if (!value || typeof value !== "object") {
@@ -56,6 +71,8 @@ export function isEmbedMessage(value: unknown): value is EmbedMessage {
       return typeof message.url === "string";
     case "session-expired":
       return true;
+    case "overlay-state":
+      return typeof message.active === "boolean";
     default:
       return false;
   }

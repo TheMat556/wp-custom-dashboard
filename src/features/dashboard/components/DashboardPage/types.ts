@@ -13,6 +13,7 @@ import type {
   SeoOverview,
   SiteHealthData,
   SiteSpeedData,
+  SubmissionStats,
   UpdateItem,
   VisitorTrendData,
   WeekDay,
@@ -33,6 +34,7 @@ export interface StatTileProps {
   label: string;
   value: React.ReactNode;
   sub?: React.ReactNode;
+  description?: string;
   color: string;
   tooltip?: string;
   onClick?: () => void;
@@ -46,6 +48,7 @@ export interface ActionRowProps {
 export interface WeekCalendarProps {
   weekDays: WeekDay[];
   intlLocale: string;
+  isMd: boolean;
 }
 
 export interface LegalSectionProps {
@@ -89,8 +92,7 @@ export interface SummaryTilesProps {
   health: SiteHealthData | null | undefined;
   speed: SiteSpeedData | null | undefined;
   updates: PendingUpdates | null | undefined;
-  seo: SeoOverview | null | undefined;
-  seoBasics: SeoBasics | null | undefined;
+  submissionStats: SubmissionStats | null | undefined;
   total30Views: number;
   viewTrend: number;
   hasUpdates: boolean;
@@ -166,6 +168,7 @@ export type {
   SeoOverview,
   SiteHealthData,
   SiteSpeedData,
+  SubmissionStats,
   UpdateItem,
   VisitorTrendData,
   WeekDay,

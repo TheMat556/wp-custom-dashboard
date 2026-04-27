@@ -40,7 +40,16 @@ class RestRoutePermissionCompatibilityTest extends TestCase {
 
 		$this->assertFalse( $this->invoke_permission( 'wp-react-ui/v1/branding', 'GET' ) );
 		$this->assertFalse( $this->invoke_permission( 'wp-react-ui/v1/branding', 'POST' ) );
+		$this->assertFalse( $this->invoke_permission( 'wp-react-ui/v1/chat-settings', 'GET' ) );
+		$this->assertFalse( $this->invoke_permission( 'wp-react-ui/v1/chat-settings', 'POST' ) );
 		$this->assertFalse( $this->invoke_permission( 'wp-react-ui/v1/activity', 'GET' ) );
+		$this->assertFalse( $this->invoke_permission( 'wp-react-ui/v1/license', 'GET' ) );
+		$this->assertFalse( $this->invoke_permission( 'wp-react-ui/v1/license/settings', 'GET' ) );
+		$this->assertFalse( $this->invoke_permission( 'wp-react-ui/v1/license/settings', 'POST' ) );
+	}
+
+	public function test_public_webhook_route_is_open(): void {
+		$this->assertTrue( $this->invoke_permission( 'wp-react-ui/v1/license-webhook', 'POST' ) );
 	}
 
 	/**
