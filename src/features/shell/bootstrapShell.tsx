@@ -6,28 +6,25 @@ import { CUSTOM_PRESET_KEY, THEME_PRESETS } from "../../config/themePresets";
 import { resetNotificationStore } from "../../store/notificationStore";
 import type { WpReactUiConfig } from "../../types/wp";
 import { getFontFamilyForPreset } from "../../utils/fontPresets";
-import { bootstrapActivityStore, resetActivityStore } from "../activity/store/activityStore";
-import {
-  bootstrapBrandingStore,
-  brandingStore,
-  resetBrandingStore,
-} from "../branding/store/brandingStore";
-import { bootstrapDashboardStore, resetDashboardStore } from "../dashboard/store/dashboardStore";
-import { LicenseProvider } from "../license/context/LicenseContext";
-import { bootstrapLicenseStore, resetLicenseStore } from "../license/store/licenseStore";
+import { bootstrapActivityStore, resetActivityStore } from "../activity";
+import { bootstrapBrandingStore, brandingStore, resetBrandingStore } from "../branding";
+import { bootstrapDashboardStore, resetDashboardStore } from "../dashboard";
+import { bootstrapLicenseStore, LicenseProvider, resetLicenseStore } from "../license";
 import {
   bootstrapMenuCountsStore,
-  resetMenuCountsStore,
-} from "../navigation/store/menuCountsStore";
-import { bootstrapMenuStore, resetMenuStore } from "../navigation/store/menuStore";
-import {
+  bootstrapMenuStore,
   bootstrapNavigationStore,
   navigationStore,
+  resetMenuCountsStore,
+  resetMenuStore,
   resetNavigationStore,
-} from "../navigation/store/navigationStore";
-import { SessionExpiredModal } from "../session/components/SessionExpiredModal";
-import { SessionHeartbeatEffect } from "../session/components/SessionHeartbeatEffect";
-import { bootstrapSessionStore, resetSessionStore } from "../session/store/sessionStore";
+} from "../navigation";
+import {
+  bootstrapSessionStore,
+  resetSessionStore,
+  SessionExpiredModal,
+  SessionHeartbeatEffect,
+} from "../session";
 import App from "./AppShell";
 import { ErrorBoundary } from "./components/ErrorBoundary";
 import { NativeCommandPaletteEnhancer } from "./components/NativeCommandPaletteEnhancer";

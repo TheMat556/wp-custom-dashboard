@@ -15,11 +15,11 @@ interface MessageListProps {
 
 export function MessageList({ messages, thread, viewerRole }: MessageListProps) {
   const bottomRef = useRef<HTMLDivElement>(null);
-  const messageCount = messages.length;
 
+  // biome-ignore lint/correctness/useExhaustiveDependencies: messages is a prop — when parent passes new array, component re-renders and effect re-runs
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [messageCount]);
+  }, [messages]);
 
   if (!thread) {
     return (

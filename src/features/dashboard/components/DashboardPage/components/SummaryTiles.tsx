@@ -208,6 +208,42 @@ function getSpeedProps(
   return { value, sub, color };
 }
 
+function renderConversionTags(
+  forms: number | null,
+  bookings: number | null,
+  hasAny: boolean,
+  t: TFunc
+): React.ReactNode {
+  if (!hasAny) {
+    return (
+      <Typography.Text type="secondary" style={{ fontSize: 12 }}>
+        {t("No plugin detected")}
+      </Typography.Text>
+    );
+  }
+
+  const parts: React.ReactNode[] = [];
+  if (forms !== null) {
+    parts.push(
+      <Tag key="forms" color="blue" style={{ margin: 0, fontSize: 11 }}>
+        {forms} {t("forms")}
+      </Tag>
+    );
+  }
+  if (bookings !== null) {
+    parts.push(
+      <Tag key="bookings" color="purple" style={{ margin: 0, fontSize: 11 }}>
+        {bookings} {t("bookings")}
+      </Tag>
+    );
+  }
+  return (
+    <Flex gap={3} wrap="wrap">
+      {parts}
+    </Flex>
+  );
+}
+
 function getConversionsProps(
   submissionStats: SubmissionStats | null | undefined,
   t: TFunc,
@@ -219,42 +255,17 @@ function getConversionsProps(
 
   const value = hasAny ? (forms ?? 0) + (bookings ?? 0) : "—";
 
-  let sub: React.ReactNode;
-  if (!hasAny) {
-    sub = (
-      <Typography.Text type="secondary" style={{ fontSize: 12 }}>
-        {t("No plugin detected")}
-      </Typography.Text>
-    );
-  } else {
-    const parts: React.ReactNode[] = [];
-    if (forms !== null) {
-      parts.push(
-        <Tag key="forms" color="blue" style={{ margin: 0, fontSize: 11 }}>
-          {forms} {t("forms")}
-        </Tag>
-      );
-    }
-    if (bookings !== null) {
-      parts.push(
-        <Tag key="bookings" color="purple" style={{ margin: 0, fontSize: 11 }}>
-          {bookings} {t("bookings")}
-        </Tag>
-      );
-    }
-    sub = (
-      <Flex gap={3} wrap="wrap">
-        {parts}
-      </Flex>
-    );
-  }
-
   const color =
     hasAny && (forms ?? 0) + (bookings ?? 0) > 0 ? token.colorSuccess : token.colorTextSecondary;
 
   const tooltip = t("Form submissions and bookings in the last 30 days");
 
-  return { value, sub, color, tooltip };
+  return {
+    value,
+    sub: renderConversionTags(forms, bookings, hasAny, t),
+    color,
+    tooltip,
+  };
 }
 
 export function SummaryTiles({
