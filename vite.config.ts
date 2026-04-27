@@ -9,8 +9,10 @@ export default defineConfig(({ mode }) => ({
   // Strip all console.* calls and debugger statements from production bundles.
   // This prevents internal state, store shapes, and error traces from leaking
   // to anyone with browser devtools open.
-  oxc: {
-    drop: mode === "production" ? ["console.debug", "console.log", "console.warn", "debugger"] : [],
+  // Note: `oxc` (Vite 8 default minifier) doesn't support `drop`, but since
+  // we explicitly use esbuild for minification, esbuild.drop works.
+  esbuild: {
+    drop: mode === "production" ? ["console", "debugger"] : [],
   },
 
   publicDir: "public",
