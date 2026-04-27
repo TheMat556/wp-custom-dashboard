@@ -16,7 +16,6 @@ coverage
 
 # Editor directories and files
 .vscode/*
-.vscode/*
 !.vscode/extensions.json
 .idea
 .DS_Store
@@ -27,11 +26,16 @@ coverage
 *.sw?
 
 .phpunit.cache
-coverage
 
-.agents
+# npm lockfile (project uses bun)
+package-lock.json
+
+# Agent/ECC artifacts
+.agents/
 .slim/
+skills-lock.json
+.codex
 
-# Auto-generated codemaps (build artifacts)
+# Auto-generated codemaps
 codemap.md
 **/codemap.md
