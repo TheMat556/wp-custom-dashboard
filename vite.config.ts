@@ -10,7 +10,7 @@ export default defineConfig(({ mode }) => ({
   // This prevents internal state, store shapes, and error traces from leaking
   // to anyone with browser devtools open.
   oxc: {
-    drop: mode === "production" ? (["console.debug", "console.log", "console.warn", "debugger"] as const) : [],
+    drop: mode === "production" ? ["console.debug", "console.log", "console.warn", "debugger"] : [],
   },
 
   publicDir: "public",
