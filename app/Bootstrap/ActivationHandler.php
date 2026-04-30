@@ -17,8 +17,10 @@ defined( 'ABSPATH' ) || exit;
 
 /**
  * Handles plugin activation tasks:
- * - Ensures a non-plain permalink structure so /wp-json/ REST URLs resolve.
- * - Flushes rewrite rules so WordPress generates the .htaccess rewrite rules.
+ * - Flushes rewrite rules so WordPress regenerates the .htaccess rewrite block.
+ *
+ * The admin notice in RestApiNotice handles telling site owners when their
+ * permalink structure is set to "Plain", which breaks REST API pretty URLs.
  */
 final class ActivationHandler {
 
@@ -28,25 +30,7 @@ final class ActivationHandler {
 	 * @return void
 	 */
 	public static function activate(): void {
-		self::ensure_permalink_structure();
 		self::flush_rewrite_rules();
-	}
-
-	/**
-	 * Sets a pretty permalink structure if currently set to "Plain".
-	 *
-	 * WordPress REST API pretty URLs (/wp-json/…) only work with a non-empty
-	 * permalink_structure. When it is empty, the frontend receives 404s from
-	 * Apache because no rewrite rules map /wp-json/ to index.php.
-	 *
-	 * @return void
-	 */
-	private static function ensure_permalink_structure(): void {
-		$structure = get_option( 'permalink_structure', '' );
-
-		if ( '' === $structure || false === $structure ) {
-			update_option( 'permalink_structure', '/%postname%/' );
-		}
 	}
 
 	/**

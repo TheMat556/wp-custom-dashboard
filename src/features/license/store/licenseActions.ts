@@ -24,7 +24,10 @@ export function clearLicenseService() {
   service = null;
 }
 
-export async function loadLicenseStatus(force = false): Promise<boolean> {
+export async function loadLicenseStatus(options?: {
+  force?: boolean;
+  notifyOnSuccess?: boolean;
+}): Promise<boolean> {
   if (!service) {
     return false;
   }
@@ -32,12 +35,14 @@ export async function loadLicenseStatus(force = false): Promise<boolean> {
   licenseStore.setState({ loading: true });
 
   try {
-    const status = await service.fetchLicense(force);
+    const status = await service.fetchLicense(options?.force ?? false);
     licenseStore.setState({ ...status, loading: false });
-    notificationStore.getState().push({
-      type: "info",
-      message: "License status refreshed",
-    });
+    if (options?.notifyOnSuccess) {
+      notificationStore.getState().push({
+        type: "info",
+        message: "License status refreshed",
+      });
+    }
     return true;
   } catch {
     licenseStore.setState({ loading: false });

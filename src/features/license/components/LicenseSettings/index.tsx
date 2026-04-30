@@ -443,7 +443,7 @@ function LicenseKeySurface({
           <Button
             icon={<SyncOutlined />}
             loading={loading}
-            onClick={() => void loadLicenseStatus(true)}
+            onClick={() => void loadLicenseStatus({ force: true, notifyOnSuccess: true })}
             title={t("Re-fetch license status from the server")}
           >
             {t("Refresh")}
