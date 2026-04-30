@@ -433,13 +433,17 @@ function LicenseKeySurface({
         />
       </div>
 
-      <Flex justify="flex-end" gap="small">
+      <Flex
+        justify="flex-start"
+        gap="small"
+        className="wp-react-ui-license-actions-row"
+        style={{ marginBottom: 20 }}
+      >
         {license.hasKey && !licenseKeyDirty && (
           <Button
-            size="large"
             icon={<SyncOutlined />}
             loading={loading}
-            onClick={() => void loadLicenseStatus(true)}
+            onClick={() => void loadLicenseStatus({ force: true, notifyOnSuccess: true })}
             title={t("Re-fetch license status from the server")}
           >
             {t("Refresh")}
@@ -447,7 +451,6 @@ function LicenseKeySurface({
         )}
         {canDeactivate && (
           <Button
-            size="large"
             danger
             icon={<DisconnectOutlined />}
             loading={saving}
@@ -459,7 +462,6 @@ function LicenseKeySurface({
         )}
         <Button
           type={license.status !== "active" || licenseKeyDirty ? "primary" : "default"}
-          size="large"
           loading={saving}
           disabled={!canActivate}
           onClick={() => void handleActivate()}
@@ -547,6 +549,7 @@ export default function LicenseSettings() {
       <LicenseKpiSection license={license} token={token} t={t} locale={config.locale ?? "en_US"} />
 
       <SurfacePanel
+        className="wp-react-ui-license-settings-panel"
         icon={<KeyOutlined />}
         title={
           <Title level={4} style={{ margin: 0 }}>
@@ -589,27 +592,24 @@ export default function LicenseSettings() {
                     >
                       {t("Server URL")}
                     </label>
-                    <Flex gap={8}>
-                      <Input
-                        id={licenseServerFieldId}
-                        size="large"
-                        className="wp-react-ui-license-field"
-                        value={serverUrl}
-                        onChange={(event) => setServerUrl(event.target.value)}
-                        placeholder={t("https://licenses.example.com")}
-                        autoComplete="off"
-                        disabled={settingsLoading}
-                        style={{ flex: 1 }}
-                      />
-                      <Button
-                        size="large"
-                        loading={settingsSaving}
-                        disabled={isBusy || !serverDirty}
-                        onClick={() => void handleSaveSettings()}
-                      >
-                        {t("Save")}
-                      </Button>
-                    </Flex>
+                    <Input
+                      id={licenseServerFieldId}
+                      size="large"
+                      className="wp-react-ui-license-field"
+                      value={serverUrl}
+                      onChange={(event) => setServerUrl(event.target.value)}
+                      placeholder={t("https://licenses.example.com")}
+                      autoComplete="off"
+                      disabled={settingsLoading}
+                    />
+                    <Button
+                      loading={settingsSaving}
+                      disabled={isBusy || !serverDirty}
+                      onClick={() => void handleSaveSettings()}
+                      style={{ justifySelf: "start" }}
+                    >
+                      {t("Save")}
+                    </Button>
                   </div>
                   <div className="wp-react-ui-inset-panel" style={{ padding: "12px 16px" }}>
                     <Flex align="center" gap={10}>
@@ -630,7 +630,11 @@ export default function LicenseSettings() {
                       </div>
                     </Flex>
                   </div>
-                  <Flex gap={8}>
+                  <Flex
+                    gap={8}
+                    className="wp-react-ui-license-actions-row"
+                    style={{ marginBottom: 20 }}
+                  >
                     <Button
                       icon={<SyncOutlined />}
                       loading={loading}
