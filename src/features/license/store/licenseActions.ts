@@ -34,6 +34,10 @@ export async function loadLicenseStatus(force = false): Promise<boolean> {
   try {
     const status = await service.fetchLicense(force);
     licenseStore.setState({ ...status, loading: false });
+    notificationStore.getState().push({
+      type: "info",
+      message: "License status refreshed",
+    });
     return true;
   } catch {
     licenseStore.setState({ loading: false });

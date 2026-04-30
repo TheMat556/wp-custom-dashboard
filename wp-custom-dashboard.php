@@ -18,6 +18,7 @@ if ( file_exists( $wp_react_ui_autoload ) ) {
 register_activation_hook(
 	__FILE__,
 	static function (): void {
+		\WpReactUi\Bootstrap\ActivationHandler::activate();
 		( new \WpReactUi\License\LicenseHeartbeat() )->ensure_scheduled();
 	}
 );
