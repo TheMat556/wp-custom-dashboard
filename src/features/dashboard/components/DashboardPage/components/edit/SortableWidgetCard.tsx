@@ -4,7 +4,6 @@ import { CSS } from "@dnd-kit/utilities";
 import { Segmented, Tooltip } from "antd";
 import { useCallback } from "react";
 import { useStore } from "zustand";
-import { shellPreferencesStore } from "../../../../../shell/store/shellPreferencesStore";
 import { dashboardEditModeStore } from "../../../../store/dashboardEditModeStore";
 import type { DashboardWidgetMeta, WidgetSize } from "../../../../widgets/widgetRegistry";
 
@@ -43,12 +42,12 @@ export function SortableWidgetCard({ widget, children }: SortableWidgetCardProps
     [setDraggableRef, setDroppableRef]
   );
 
-  const setDashboardWidgetSize = useStore(shellPreferencesStore, (s) => s.setDashboardWidgetSize);
-  const widgetOrder = useStore(shellPreferencesStore, (s) => s.dashboardWidgetOrder);
-  const setOrder = useStore(shellPreferencesStore, (s) => s.setDashboardWidgetOrder);
-  const toggleWidgetVisibility = useStore(shellPreferencesStore, (s) => s.toggleWidgetVisibility);
-  const currentSize = useStore(shellPreferencesStore, (s) => s.dashboardWidgetSizes[widget.key]);
-  const hiddenWidgets = useStore(shellPreferencesStore, (s) => s.hiddenWidgets);
+  const setDraftWidgetSize = useStore(dashboardEditModeStore, (s) => s.setDraftWidgetSize);
+  const draftOrder = useStore(dashboardEditModeStore, (s) => s.draft.order);
+  const setDraftOrder = useStore(dashboardEditModeStore, (s) => s.setDraftOrder);
+  const toggleDraftVisibility = useStore(dashboardEditModeStore, (s) => s.toggleDraftVisibility);
+  const currentSize = useStore(dashboardEditModeStore, (s) => s.draft.widgetSizes[widget.key]);
+  const hiddenWidgets = useStore(dashboardEditModeStore, (s) => s.draft.hidden);
   const isEditing = useStore(dashboardEditModeStore, (s) => s.isEditing);
 
   const isDragging = active?.id === widget.key;
@@ -74,19 +73,14 @@ export function SortableWidgetCard({ widget, children }: SortableWidgetCardProps
     event.stopPropagation();
   };
 
-  /** Removes the widget from the dashboard entirely (bin icon). */
+  /** Removes the widget from the dashboard draft (bin icon). */
   const handleDelete = useCallback(() => {
-    // Remove from widget order
-    const next = widgetOrder.filter((k) => k !== widget.key);
-    setOrder(next);
-    // Mark as hidden so mergeWidgetOrder filters it out. Order matters:
-    // mergeWidgetOrder appends registry keys not in order, so removing from
-    // order alone isn't enough — it would just reappear. Adding to
-    // hiddenWidgets ensures getVisibleWidgets filters it out.
-    if (widgetOrder.includes(widget.key) && !hiddenWidgets.includes(widget.key)) {
-      toggleWidgetVisibility(widget.key);
+    const next = draftOrder.filter((k) => k !== widget.key);
+    setDraftOrder(next);
+    if (draftOrder.includes(widget.key) && !hiddenWidgets.includes(widget.key)) {
+      toggleDraftVisibility(widget.key);
     }
-  }, [widget.key, widgetOrder, setOrder, toggleWidgetVisibility, hiddenWidgets]);
+  }, [widget.key, draftOrder, setDraftOrder, toggleDraftVisibility, hiddenWidgets]);
 
   const overClass = isOver ? " wp-react-ui-sortable--over" : "";
   const draggingClass = isDragging ? " wp-react-ui-sortable--dragging" : "";
@@ -122,7 +116,7 @@ export function SortableWidgetCard({ widget, children }: SortableWidgetCardProps
                 size="small"
                 options={widget.allowedSizes.map((s) => ({ value: s, label: SIZE_LABELS[s] }))}
                 value={size}
-                onChange={(val) => setDashboardWidgetSize(widget.key, val as WidgetSize)}
+                onChange={(val) => setDraftWidgetSize(widget.key, val as WidgetSize)}
                 aria-label="Size"
               />
             )}

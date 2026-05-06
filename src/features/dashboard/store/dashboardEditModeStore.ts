@@ -220,18 +220,6 @@ export const dashboardEditModeStore = createStore<DashboardEditModeState>((set, 
   },
 
   resetDraftLayout() {
-    set({
-      draft: {
-        order: [],
-        hidden: [],
-        kpiContainers: {
-          __default__: {
-            order: [...DEFAULT_KPI_CONTAINER_ORDER],
-            columns: 3,
-          },
-        },
-        widgetSizes: {},
-      },
-    });
+    set({ draft: createEmptyDraft() });
   },
 }));

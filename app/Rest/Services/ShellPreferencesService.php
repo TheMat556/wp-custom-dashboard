@@ -52,7 +52,7 @@ final class ShellPreferencesService {
 	public function save_preferences( array $input ): array {
 		$user_id  = get_current_user_id();
 		$existing = get_user_meta( $user_id, self::META_KEY, true );
-		$prefs    = is_array( $existing ) ? $existing : array();
+		$prefs    = is_array( $existing ) ? self::migrate_legacy_keys( $existing ) : array();
 
 		$string_keys = array( 'density', 'themePreset', 'customPresetColor' );
 		$bool_keys   = array( 'sidebarCollapsed', 'highContrast' );
@@ -97,11 +97,11 @@ final class ShellPreferencesService {
 			}
 		}
 
-		// kpiContainerInstances is a nested record — store as-is (sanitize keys/values)
+		// kpiContainerInstances is a nested record — store as-is (sanitize keys/values).
 		if ( isset( $input['kpiContainerInstances'] ) && is_array( $input['kpiContainerInstances'] ) ) {
 			$clean = array();
-			foreach ( $input['kpiContainerInstances'] as $instanceId => $cfg ) {
-				$id = sanitize_text_field( (string) $instanceId );
+			foreach ( $input['kpiContainerInstances'] as $instance_id => $cfg ) {
+				$id = sanitize_text_field( (string) $instance_id );
 				if ( ! is_array( $cfg ) ) {
 					continue;
 				}
@@ -203,8 +203,6 @@ final class ShellPreferencesService {
 				$clean[ $k ] = self::sanitize_string_array( $v );
 			} elseif ( is_string( $v ) ) {
 				$clean[ $k ] = sanitize_text_field( $v );
-			} else {
-				$clean[ $k ] = $v;
 			}
 		}
 		return $clean;

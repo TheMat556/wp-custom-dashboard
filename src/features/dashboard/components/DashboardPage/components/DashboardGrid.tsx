@@ -1,6 +1,7 @@
 import { useDroppable } from "@dnd-kit/core";
 import { useStore } from "zustand";
 import { shellPreferencesStore } from "../../../../shell/store/shellPreferencesStore";
+import { dashboardEditModeStore } from "../../../../store/dashboardEditModeStore";
 import type { DashboardWidgetMeta, WidgetRenderProps } from "../../../widgets/widgetRegistry";
 import { SortableWidgetCard } from "./edit/SortableWidgetCard";
 
@@ -21,7 +22,10 @@ function GridDropZone({ children }: { children: React.ReactNode }) {
 }
 
 export function DashboardGrid({ widgets, isEditing, ...renderProps }: DashboardGridProps) {
-  const sizes = useStore(shellPreferencesStore, (s) => s.dashboardWidgetSizes);
+  const persistedSizes = useStore(shellPreferencesStore, (s) => s.dashboardWidgetSizes);
+  const draftSizes = useStore(dashboardEditModeStore, (s) => s.draft.widgetSizes);
+
+  const sizes = isEditing ? draftSizes : persistedSizes;
 
   const renderWidget = (widget: DashboardWidgetMeta) => {
     const size = sizes[widget.key] ?? widget.defaultSize;

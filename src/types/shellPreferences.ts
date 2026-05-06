@@ -9,8 +9,6 @@ export interface KpiContainerInstanceConfig {
   order: string[];
   /** Number of columns in the sub-grid */
   columns: KpiContainerColumns;
-  /** Optional user-editable label */
-  label?: string;
 }
 
 export interface PersistedShellPreferences {

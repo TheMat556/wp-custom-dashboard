@@ -50,7 +50,9 @@ export function KpiVisitors({ total30Views, viewTrend, t, intlLocale }: KpiVisit
       value={total30Views > 0 ? total30Views.toLocaleString(intlLocale) : "\u2014"}
       sub={getVisitorsSub(total30Views, viewTrend, t, token)}
       color={token.colorPrimary}
-      tooltip={t("Install Yoast SEO (free) to track your search visibility")}
+      tooltip={
+        total30Views === 0 ? t("Install WP Statistics (free) to track your visitors.") : undefined
+      }
     />
   );
 }

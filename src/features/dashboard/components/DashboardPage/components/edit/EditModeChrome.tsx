@@ -67,6 +67,10 @@ function EditModeChrome({ viewModel, children }: EditModeChromeProps) {
     dashboardEditModeStore,
     (s) => s.addDraftKpiContainerInstance
   );
+  const removeDraftKpiContainerInstance = useStore(
+    dashboardEditModeStore,
+    (s) => s.removeDraftKpiContainerInstance
+  );
 
   const [catalogueOpen, setCatalogueOpen] = useState(true);
   const [activeKey, setActiveKey] = useState<string | null>(null);
@@ -85,6 +89,14 @@ function EditModeChrome({ viewModel, children }: EditModeChromeProps) {
     (key: string, overKey: string | null) => {
       // kpi-container is a multi-instance widget — create a new instance on every add
       if (key === "kpi-container") {
+        // Clean up any orphaned container instance state left before the fix
+        const keysToRemove = Object.keys(draftKpiContainers).filter(
+          (id) => id !== "__default__" && !draftOrder.includes(`kpi-container::${id}`)
+        );
+        for (const id of keysToRemove) {
+          removeDraftKpiContainerInstance(id);
+        }
+
         const instanceId = addDraftKpiContainerInstance();
         const instanceKey = `kpi-container::${instanceId}`;
         const target =
@@ -105,17 +117,33 @@ function EditModeChrome({ viewModel, children }: EditModeChromeProps) {
       setDraftOrder(insertKey(draftOrder, key, target));
       announceLive(`${widgetLabel(key)} added.`);
     },
-    [draftHidden, toggleDraftVisibility, setDraftOrder, draftOrder, addDraftKpiContainerInstance]
+    [
+      draftHidden,
+      toggleDraftVisibility,
+      setDraftOrder,
+      draftOrder,
+      addDraftKpiContainerInstance,
+      removeDraftKpiContainerInstance,
+      draftKpiContainers,
+    ]
   );
 
   const handleHideToCatalogue = useCallback(
     (key: string) => {
-      if (!draftHidden.includes(key)) {
+      if (isContainerInstanceKey(key)) {
+        // Fully remove container instance state instead of leaving orphaned state
+        const instanceId = parseContainerInstanceKey(key);
+        if (instanceId) {
+          const nextOrder = draftOrder.filter((k) => k !== key);
+          setDraftOrder(nextOrder);
+          removeDraftKpiContainerInstance(instanceId);
+        }
+      } else if (!draftHidden.includes(key)) {
         toggleDraftVisibility(key);
       }
       announceLive(`${widgetLabel(key)} hidden.`);
     },
-    [draftHidden, toggleDraftVisibility]
+    [draftHidden, toggleDraftVisibility, setDraftOrder, draftOrder, removeDraftKpiContainerInstance]
   );
 
   const handleDragStart = useCallback((event: DragStartEvent) => {

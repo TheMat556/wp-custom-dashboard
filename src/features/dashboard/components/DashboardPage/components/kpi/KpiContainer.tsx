@@ -18,7 +18,7 @@ import { useStore } from "zustand";
 import type { KpiContainerColumns } from "../../../../../../types/shellPreferences";
 import { shellPreferencesStore } from "../../../../../shell/store/shellPreferencesStore";
 import type { DashboardViewModel } from "../../../../dashboardViewModel";
-import { KPI_WIDGET_KEYS } from "../../../../widgets/widgetRegistry";
+import { DASHBOARD_WIDGETS, KPI_WIDGET_KEYS } from "../../../../widgets/widgetRegistry";
 import { KpiBackup } from "./KpiBackup";
 import { KpiBookings } from "./KpiBookings";
 import { KpiContent } from "./KpiContent";
@@ -321,12 +321,24 @@ export function KpiContainer({
   const kpiOrder = instanceCfg?.order ?? [];
   const kpiColumns = instanceCfg?.columns ?? 3;
 
-  // Resolve ordered KPIs
-  const visibleKpis = kpiOrder.map((key) => ALL_KPIS[key]).filter((k): k is KpiDescriptor => !!k);
+  const isKpiEligible = useCallback(
+    (key: string) => {
+      const widget = DASHBOARD_WIDGETS.find((w) => w.key === key);
+      return widget ? widget.isEligible(viewModel) : false;
+    },
+    [viewModel]
+  );
 
-  // Determine which KPIs are NOT in this container (for the "add" picker)
+  // Resolve ordered KPIs (only show eligible ones)
+  const visibleKpis = kpiOrder
+    .map((key) => ALL_KPIS[key])
+    .filter((k): k is KpiDescriptor => !!k && isKpiEligible(k.key));
+
+  // Determine which KPIs are NOT in this container and are eligible (for the "add" picker)
   const kpiKeysInContainer = new Set(kpiOrder);
-  const availableKpiKeys = KPI_WIDGET_KEYS.filter((k) => !kpiKeysInContainer.has(k));
+  const availableKpiKeys = KPI_WIDGET_KEYS.filter(
+    (k) => !kpiKeysInContainer.has(k) && isKpiEligible(k)
+  );
 
   // --- Internal DnD for reordering KPIs inside the container ---
   const sensors = useSensors(

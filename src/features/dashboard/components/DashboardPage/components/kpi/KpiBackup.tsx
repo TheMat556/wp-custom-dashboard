@@ -48,17 +48,17 @@ export function KpiBackup({ lastBackupDate, t }: KpiBackupProps) {
       tooltip = t("Backed up less than 24 hours ago");
     } else if (days <= 7) {
       icon = <CheckCircleOutlined />;
-      value = t(`${days}d ago`);
+      value = t("{n}d ago", { n: days });
       color = token.colorSuccess;
       tooltip = `Last backup: ${lastBackupDate}`;
     } else if (days <= 30) {
       icon = <ClockCircleOutlined />;
-      value = t(`${days}d ago`);
+      value = t("{n}d ago", { n: days });
       color = token.colorWarning;
       tooltip = `Last backup: ${lastBackupDate}`;
     } else {
       icon = <ExclamationCircleOutlined />;
-      value = t(`${days}d ago`);
+      value = t("{n}d ago", { n: days });
       color = token.colorError;
       tooltip = t("Backup is overdue — more than 30 days ago");
     }

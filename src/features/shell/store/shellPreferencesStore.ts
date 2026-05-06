@@ -95,13 +95,31 @@ function readPersistedState(): PersistedShellPreferences {
         typeof parsed.dashboardWidgetSizes === "object" &&
         parsed.dashboardWidgetSizes !== null &&
         !Array.isArray(parsed.dashboardWidgetSizes)
-          ? parsed.dashboardWidgetSizes
+          ? Object.fromEntries(
+              Object.entries(parsed.dashboardWidgetSizes).filter(
+                ([, v]) => typeof v === "string" && ["1x", "2x", "half", "full"].includes(v)
+              )
+            )
           : defaults.dashboardWidgetSizes,
       kpiContainerInstances:
         typeof parsed.kpiContainerInstances === "object" &&
         parsed.kpiContainerInstances !== null &&
         !Array.isArray(parsed.kpiContainerInstances)
-          ? parsed.kpiContainerInstances
+          ? Object.fromEntries(
+              Object.entries(parsed.kpiContainerInstances)
+                .map(([id, cfg]) => {
+                  if (typeof cfg !== "object" || cfg === null) return [id, null] as const;
+                  const c = cfg as Record<string, unknown>;
+                  const order = Array.isArray(c.order)
+                    ? c.order.filter((v): v is string => typeof v === "string")
+                    : [];
+                  const columns = [2, 3, 4, 5].includes(c.columns as number)
+                    ? (c.columns as number)
+                    : 3;
+                  return [id, { order, columns }] as const;
+                })
+                .filter(([, v]) => v !== null)
+            )
           : defaults.kpiContainerInstances,
     };
   } catch {
