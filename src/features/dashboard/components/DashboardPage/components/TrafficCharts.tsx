@@ -1,5 +1,5 @@
 import { GlobalOutlined, LineChartOutlined } from "@ant-design/icons";
-import { Flex, Typography, theme } from "antd";
+import { Typography, theme } from "antd";
 import {
   Area,
   AreaChart,
@@ -42,11 +42,14 @@ export function TrafficCharts({ trend, countries, t, intlLocale, isMd }: Traffic
 
   return (
     <div
+      className="wp-react-ui-traffic-charts"
       style={{
         display: "grid",
         gridTemplateColumns: isMd ? "1fr 1fr" : "1fr",
         gap: 16,
-        marginBottom: 16,
+        border: "1px solid var(--color-border-subtle)",
+        borderRadius: "var(--radius-lg)",
+        overflow: "hidden",
       }}
     >
       {/* Page Views */}
@@ -89,12 +92,12 @@ export function TrafficCharts({ trend, countries, t, intlLocale, isMd }: Traffic
             </ResponsiveContainer>
           </div>
         ) : (
-          <Flex vertical align="center" justify="center" style={{ height: 170 }} gap={10}>
-            <LineChartOutlined style={{ fontSize: 32, color: token.colorTextQuaternary }} />
-            <Text type="secondary" style={{ textAlign: "center", fontSize: 12, maxWidth: 240 }}>
+          <div className="wp-react-ui-empty-state">
+            <LineChartOutlined style={{ fontSize: 28, color: token.colorTextQuaternary }} />
+            <Text type="secondary" style={{ textAlign: "center", fontSize: 13, maxWidth: 260 }}>
               {t("No data yet. Tracking is active — views appear as people visit your site.")}
             </Text>
-          </Flex>
+          </div>
         )}
       </Section>
 
@@ -146,12 +149,12 @@ export function TrafficCharts({ trend, countries, t, intlLocale, isMd }: Traffic
             </ResponsiveContainer>
           </div>
         ) : (
-          <Flex vertical align="center" justify="center" style={{ height: 170 }} gap={10}>
-            <GlobalOutlined style={{ fontSize: 32, color: token.colorTextQuaternary }} />
-            <Text type="secondary" style={{ textAlign: "center", fontSize: 12 }}>
+          <div className="wp-react-ui-empty-state">
+            <GlobalOutlined style={{ fontSize: 28, color: token.colorTextQuaternary }} />
+            <Text type="secondary" style={{ textAlign: "center", fontSize: 13 }}>
               {t("Install WP Statistics (free) to track visitor countries.")}
             </Text>
-          </Flex>
+          </div>
         )}
       </Section>
     </div>

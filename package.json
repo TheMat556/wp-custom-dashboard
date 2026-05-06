@@ -24,6 +24,7 @@
   },
   "dependencies": {
     "@ant-design/icons": "^6.2.2",
+    "@dnd-kit/modifiers": "^9.0.0",
     "antd": "^6.3.7",
     "dompurify": "^3.4.1",
     "geist": "^1.7.0",

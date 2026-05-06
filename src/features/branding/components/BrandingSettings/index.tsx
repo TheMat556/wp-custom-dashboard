@@ -1,4 +1,15 @@
-import { Alert, Button, Flex, Grid, Spin, Switch, Typography, theme } from "antd";
+import {
+  Alert,
+  Button,
+  Card,
+  Flex,
+  Grid,
+  message,
+  Skeleton,
+  Switch,
+  Typography,
+  theme,
+} from "antd";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useStore } from "zustand";
 import { CUSTOM_PRESET_KEY, THEME_PRESETS } from "../../../../config/themePresets";
@@ -19,6 +30,7 @@ import {
 import { loadBranding, saveBranding } from "../../store/brandingActions";
 import { brandingStore } from "../../store/brandingStore";
 import { BrandAssetsSection } from "./BrandAssetsSection";
+import styles from "./BrandingSettings.module.css";
 import { ColorSettingsSection } from "./ColorSettingsSection";
 import { LinkRulesSection } from "./LinkRulesSection";
 import { TypographySection } from "./TypographySection";
@@ -113,14 +125,66 @@ export default function BrandingSettings() {
   );
 
   const handleSave = useCallback(async () => {
-    await saveBranding(buildBrandingSaveInput(draft));
-    shellPreferencesStore.getState().setThemePreset(draft.themePreset, draft.customPresetColor);
-  }, [draft]);
+    try {
+      await saveBranding(buildBrandingSaveInput(draft));
+      shellPreferencesStore.getState().setThemePreset(draft.themePreset, draft.customPresetColor);
+      void message.success(t("Brand assets saved successfully."));
+    } catch {
+      void message.error(t("Failed to save brand assets."));
+    }
+  }, [draft, t]);
 
+  // ── Unsaved changes guard ────────────────────────────────────────────────
+  useEffect(() => {
+    if (!isDirty) return;
+
+    const handler = (e: BeforeUnloadEvent) => {
+      e.preventDefault();
+      e.returnValue = "";
+    };
+
+    window.addEventListener("beforeunload", handler);
+    return () => window.removeEventListener("beforeunload", handler);
+  }, [isDirty]);
+
+  // ── Keyboard shortcut: Ctrl+S / Cmd+S ────────────────────────────────────
+  const handleKeyDown = useCallback(
+    (e: KeyboardEvent) => {
+      if ((e.ctrlKey || e.metaKey) && e.key === "s") {
+        e.preventDefault();
+        if (isDirty && !saving) {
+          void handleSave();
+        }
+      }
+    },
+    [handleSave, isDirty, saving]
+  );
+
+  useEffect(() => {
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [handleKeyDown]);
+
+  // ── Loading skeleton ─────────────────────────────────────────────────────
   if (loading && !settings) {
     return (
-      <PageCanvas centered aria-busy="true">
-        <Spin size="large" />
+      <PageCanvas aria-busy="true">
+        <Skeleton active paragraph={{ rows: 0 }} title={{ width: "40%" }} />
+        <div className={styles.skeletonGrid}>
+          <Card>
+            <Skeleton active paragraph={{ rows: 2 }} />
+            <Skeleton active paragraph={{ rows: 4 }} style={{ marginTop: 16 }} />
+          </Card>
+          <Card>
+            <Skeleton active paragraph={{ rows: 2 }} />
+            <Skeleton active paragraph={{ rows: 4 }} style={{ marginTop: 16 }} />
+          </Card>
+        </div>
+        <div className={styles.skeletonFullWidth}>
+          <Card>
+            <Skeleton active paragraph={{ rows: 4 }} />
+          </Card>
+        </div>
       </PageCanvas>
     );
   }
@@ -220,13 +284,8 @@ export default function BrandingSettings() {
       />
 
       <div
-        style={{
-          display: "grid",
-          gridTemplateColumns: screens.lg ? "repeat(2, minmax(0, 1fr))" : "1fr",
-          gap: 24,
-          alignItems: "stretch",
-          marginTop: 24,
-        }}
+        className={`${styles.twoColumnGrid}${screens.lg ? "" : ` ${styles.twoColumnGridSingle}`}`}
+        style={{ marginTop: 24 }}
       >
         <ColorSettingsSection
           t={t}
@@ -252,7 +311,7 @@ export default function BrandingSettings() {
         />
       </div>
 
-      <div style={{ marginTop: 24 }}>
+      <div className={styles.sectionSpacer}>
         <TypographySection
           t={t}
           fontPreset={draft.fontPreset}
@@ -264,23 +323,16 @@ export default function BrandingSettings() {
         />
       </div>
 
-      <Flex
-        justify="space-between"
-        align="center"
-        gap={16}
-        wrap
-        style={{
-          marginTop: 32,
-          paddingTop: 24,
-          borderTop: `1px solid ${token.colorBorderSecondary}`,
-        }}
+      <div
+        className={styles.footerBar}
+        style={{ borderTop: `1px solid ${token.colorBorderSecondary}` }}
       >
-        <Text type="secondary" style={{ fontSize: 12 }}>
+        <Text type="secondary" className={styles.footerNote}>
           {t("Changes are applied live after saving.")}
         </Text>
 
         <Flex gap={12} wrap />
-      </Flex>
+      </div>
     </PageCanvas>
   );
 }

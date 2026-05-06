@@ -7,6 +7,7 @@ import {
 } from "../../../../utils/adminBar";
 import { useActiveKey } from "../../../../utils/spaNavigate";
 import { navigate, navigateHome } from "../../../../utils/wp";
+import { dashboardEditModeStore } from "../../../dashboard/store/dashboardEditModeStore";
 import { useMenu } from "../../../navigation/hooks/useMenu";
 import { navigationStore } from "../../../navigation/store/navigationStore";
 import { useShellConfig } from "../../context/ShellConfigContext";
@@ -42,6 +43,14 @@ export interface NavbarController {
   closeActivity: () => void;
   triggerAdminBarAction: typeof triggerAdminBarAction;
   triggerAdminBarActionIn: typeof triggerAdminBarActionIn;
+  /** Whether the current page is the WordPress dashboard (index.php) */
+  isOnDashboard: boolean;
+  /** Whether the dashboard is in edit mode */
+  isEditing: boolean;
+  /** Toggle dashboard edit mode on/off */
+  toggleEditing: () => void;
+  /** Exit dashboard edit mode */
+  exitEditing: () => void;
 }
 
 export function useNavbarController(): NavbarController {
@@ -119,6 +128,11 @@ export function useNavbarController(): NavbarController {
 
   const closeActivity = () => setActivityOpen(false);
 
+  const isOnDashboard = activeKey === "index.php";
+  const isEditing = useStore(dashboardEditModeStore, (s) => s.isEditing);
+  const toggleEditing = useStore(dashboardEditModeStore, (s) => s.toggleEditing);
+  const exitEditing = useStore(dashboardEditModeStore, (s) => s.exitEditing);
+
   return {
     adminUrl,
     publicUrl,
@@ -146,5 +160,9 @@ export function useNavbarController(): NavbarController {
     closeActivity,
     triggerAdminBarAction,
     triggerAdminBarActionIn,
+    isOnDashboard,
+    isEditing,
+    toggleEditing,
+    exitEditing,
   };
 }

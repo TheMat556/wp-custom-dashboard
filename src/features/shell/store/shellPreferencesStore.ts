@@ -15,6 +15,14 @@ function canUseDOM(): boolean {
   return typeof window !== "undefined" && typeof localStorage !== "undefined";
 }
 
+const DEFAULT_KPI_CONTAINER_ORDER = [
+  "kpi-website",
+  "kpi-visitors",
+  "kpi-updates",
+  "kpi-speed",
+  "kpi-conversions",
+];
+
 function getDefaultPersistedState(): PersistedShellPreferences {
   return {
     favorites: [],
@@ -25,6 +33,13 @@ function getDefaultPersistedState(): PersistedShellPreferences {
     dashboardWidgetOrder: [],
     hiddenWidgets: [],
     highContrast: false,
+    dashboardWidgetSizes: {},
+    kpiContainerInstances: {
+      __default__: {
+        order: [...DEFAULT_KPI_CONTAINER_ORDER],
+        columns: 3,
+      },
+    },
   };
 }
 
@@ -76,6 +91,18 @@ function readPersistedState(): PersistedShellPreferences {
         : defaults.hiddenWidgets,
       highContrast:
         typeof parsed.highContrast === "boolean" ? parsed.highContrast : defaults.highContrast,
+      dashboardWidgetSizes:
+        typeof parsed.dashboardWidgetSizes === "object" &&
+        parsed.dashboardWidgetSizes !== null &&
+        !Array.isArray(parsed.dashboardWidgetSizes)
+          ? parsed.dashboardWidgetSizes
+          : defaults.dashboardWidgetSizes,
+      kpiContainerInstances:
+        typeof parsed.kpiContainerInstances === "object" &&
+        parsed.kpiContainerInstances !== null &&
+        !Array.isArray(parsed.kpiContainerInstances)
+          ? parsed.kpiContainerInstances
+          : defaults.kpiContainerInstances,
     };
   } catch {
     return getDefaultPersistedState();
@@ -105,6 +132,8 @@ function getPersistedFields(
     | "dashboardWidgetOrder"
     | "hiddenWidgets"
     | "highContrast"
+    | "dashboardWidgetSizes"
+    | "kpiContainerInstances"
   >
 ): PersistedShellPreferences {
   return {
@@ -116,6 +145,8 @@ function getPersistedFields(
     dashboardWidgetOrder: state.dashboardWidgetOrder,
     hiddenWidgets: state.hiddenWidgets,
     highContrast: state.highContrast,
+    dashboardWidgetSizes: state.dashboardWidgetSizes,
+    kpiContainerInstances: state.kpiContainerInstances,
   };
 }
 
@@ -141,6 +172,14 @@ function fallbackTitle(pageUrl: string): string {
   }
 }
 
+/**
+ * Generates a unique container instance ID using a short random hex string.
+ */
+function generateContainerInstanceId(): string {
+  const random = Math.random().toString(36).slice(2, 8);
+  return `instance-${random}`;
+}
+
 export interface ShellPreferencesState extends PersistedShellPreferences {
   paletteOpen: boolean;
   paletteQuery: string;
@@ -154,6 +193,20 @@ export interface ShellPreferencesState extends PersistedShellPreferences {
   setDashboardWidgetOrder: (order: string[]) => void;
   toggleWidgetVisibility: (widgetKey: string) => void;
   setHighContrast: (enabled: boolean) => void;
+  setDashboardWidgetSize: (
+    widgetKey: string,
+    size: import("../../../types/shellPreferences").WidgetSize
+  ) => void;
+  setKpiContainerInstanceConfig: (
+    instanceId: string,
+    config: {
+      order?: string[];
+      columns?: import("../../../types/shellPreferences").KpiContainerColumns;
+    }
+  ) => void;
+  addKpiContainerInstance: () => string;
+  removeKpiContainerInstance: (instanceId: string) => void;
+  resetDashboardLayout: () => void;
   syncFromServer: () => Promise<void>;
 }
 
@@ -168,6 +221,8 @@ export const shellPreferencesStore = createStore<ShellPreferencesState>((set, ge
   dashboardWidgetOrder: [],
   hiddenWidgets: [],
   highContrast: false,
+  dashboardWidgetSizes: {},
+  kpiContainerInstances: {},
 
   openPalette(query = "") {
     set({ paletteOpen: true, paletteQuery: query });
@@ -233,6 +288,46 @@ export const shellPreferencesStore = createStore<ShellPreferencesState>((set, ge
 
   setHighContrast(enabled) {
     set({ highContrast: enabled });
+  },
+
+  setDashboardWidgetSize(widgetKey, size) {
+    const sizes = { ...get().dashboardWidgetSizes, [widgetKey]: size };
+    set({ dashboardWidgetSizes: sizes });
+  },
+
+  setKpiContainerInstanceConfig(instanceId, config) {
+    const instances = { ...get().kpiContainerInstances };
+    const existing = instances[instanceId];
+    if (!existing) return;
+    instances[instanceId] = {
+      order: config.order ?? existing.order,
+      columns: config.columns ?? existing.columns,
+    };
+    set({ kpiContainerInstances: instances });
+  },
+
+  addKpiContainerInstance() {
+    const instanceId = generateContainerInstanceId();
+    const instances = { ...get().kpiContainerInstances };
+    instances[instanceId] = { order: [], columns: 3 };
+    set({ kpiContainerInstances: instances });
+    return instanceId;
+  },
+
+  removeKpiContainerInstance(instanceId) {
+    const instances = { ...get().kpiContainerInstances };
+    delete instances[instanceId];
+    set({ kpiContainerInstances: instances });
+  },
+
+  resetDashboardLayout() {
+    const defaults = getDefaultPersistedState();
+    set({
+      dashboardWidgetOrder: [],
+      hiddenWidgets: [],
+      dashboardWidgetSizes: {},
+      kpiContainerInstances: defaults.kpiContainerInstances,
+    });
   },
 
   async syncFromServer() {
@@ -322,5 +417,7 @@ export function resetShellPreferencesStore() {
     dashboardWidgetOrder: [],
     hiddenWidgets: [],
     highContrast: false,
+    dashboardWidgetSizes: {},
+    kpiContainerInstances: {},
   });
 }

@@ -1,7 +1,9 @@
-import { LinkOutlined, PlusOutlined } from "@ant-design/icons";
+import { EditOutlined, LinkOutlined, PlusOutlined } from "@ant-design/icons";
 import { Button, Flex, Tag, Tooltip, Typography, theme } from "antd";
 import { Line, LineChart, ResponsiveContainer } from "recharts";
+import { useStore } from "zustand";
 import { navigate } from "../../../../../utils/wp";
+import { dashboardEditModeStore } from "../../../store/dashboardEditModeStore";
 import type { HeroBannerProps } from "../types";
 
 const { Title, Text } = Typography;
@@ -20,13 +22,13 @@ export function HeroBanner({
   isMd,
 }: HeroBannerProps) {
   const { token } = theme.useToken();
+  const isEditing = useStore(dashboardEditModeStore, (s) => s.isEditing);
 
   return (
     <div
       className="wp-react-ui-page-intro"
       style={{
         padding: isMd ? "22px 28px" : undefined,
-        marginBottom: 16,
       }}
     >
       <Flex
@@ -135,6 +137,25 @@ export function HeroBanner({
           >
             {t("New Post")}
           </Button>
+          {!isEditing && (
+            <>
+              <div
+                style={{
+                  width: 1,
+                  height: 28,
+                  background: "var(--color-border-subtle)",
+                  flexShrink: 0,
+                }}
+              />
+              <Button
+                icon={<EditOutlined />}
+                onClick={() => dashboardEditModeStore.getState().toggleEditing()}
+                aria-label={t("Edit dashboard")}
+              >
+                {t("Edit dashboard")}
+              </Button>
+            </>
+          )}
         </Flex>
       </Flex>
     </div>

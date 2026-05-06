@@ -296,12 +296,498 @@ body[data-theme="dark"] {
 @keyframes wp-react-ui-dashboard-reveal {
   from {
     opacity: 0;
-    transform: translateY(14px);
+    transform: translateY(14px) scale(0.98);
   }
   to {
     opacity: 1;
-    transform: translateY(0);
+    transform: translateY(0) scale(1);
   }
+}
+
+/* Dashboard layout */
+
+.wp-react-ui-dashboard {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 0;
+  /* Subtle dot-grid atmosphere — intentional but unobtrusive */
+  background-image: radial-gradient(circle, var(--color-border-subtle) 0.5px, transparent 0.5px);
+  background-size: 24px 24px;
+  background-position: 0 0;
+  border-radius: var(--radius-lg);
+}
+
+/* Hero section — no card border/padding, full-width */
+.wp-react-ui-dashboard__hero {
+  margin: 0;
+  width: 100%;
+}
+
+.wp-react-ui-dashboard__hero .wp-react-ui-page-intro {
+  margin-bottom: 0;
+}
+
+/* Dashboard widget grid */
+
+.wp-react-ui-dashboard-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 16px;
+  padding: 0;
+}
+
+/* Edit mode: extra room at the top for the floating handle/controls overlays
+   so they never collide with the page-intro, and bottom padding so the fixed
+   EditModeBar doesn't cover the last widget. */
+.wp-react-ui-dashboard-grid.wp-react-ui-edit-mode {
+  padding-top: 4px;
+  padding-bottom: 96px;
+  row-gap: 14px;
+  column-gap: 16px;
+}
+
+/* Empty state — used inside widget cards when there's no data to display.
+   Centered icon + message with a subtle inset panel treatment. */
+.wp-react-ui-empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 170px;
+  gap: 14px;
+  padding: 24px 20px;
+  border-radius: var(--radius-md);
+  background: var(--surface-inset);
+  border: 1px dashed var(--color-border-subtle);
+  text-align: center;
+}
+
+/* Sortable widget card — wrapper used in edit mode. The wrapper is intentionally
+   transparent so the rendered widget keeps its own surface treatment; the wrapper
+   only adds an outline and floating chrome (drag handle + controls). */
+.wp-react-ui-sortable-widget {
+  position: relative;
+  border-radius: var(--radius-lg);
+  transition:
+    box-shadow 180ms ease,
+    outline-color 180ms ease,
+    transform 180ms ease;
+}
+
+.wp-react-ui-sortable-widget.wp-react-ui-sortable--dragging {
+  opacity: 0.4;
+}
+
+.wp-react-ui-sortable-widget.wp-react-ui-sortable--over {
+  outline: 2px solid var(--color-accent-primary);
+  outline-offset: 2px;
+}
+
+/* Edit mode: dashed accent outline that does NOT shift inner layout. */
+.wp-react-ui-sortable-widget--editing {
+  outline: 2px dashed color-mix(in srgb, var(--color-accent-primary) 60%, transparent);
+  outline-offset: 1px;
+  cursor: grab;
+}
+
+.wp-react-ui-sortable-widget--editing:hover {
+  outline-color: var(--color-accent-primary);
+}
+
+.wp-react-ui-sortable-widget--editing:active {
+  cursor: grabbing;
+}
+
+/* Drag handle — absolutely positioned floating chip, doesn't affect layout. */
+.wp-react-ui-sortable-widget > .wp-react-ui-drag-handle {
+  position: absolute;
+  top: 8px;
+  left: 8px;
+  z-index: 5;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 26px;
+  height: 26px;
+  border-radius: 8px;
+  background: color-mix(in srgb, var(--color-bg-surface) 88%, transparent);
+  backdrop-filter: blur(8px);
+  border: 1px solid var(--color-border-subtle);
+  color: var(--color-text-tertiary);
+  cursor: grab;
+  font-size: 13px;
+  transition:
+    color 180ms ease,
+    background 180ms ease,
+    border-color 180ms ease,
+    opacity 180ms ease;
+  opacity: 0.85;
+}
+
+.wp-react-ui-sortable-widget:hover > .wp-react-ui-drag-handle {
+  opacity: 1;
+}
+
+.wp-react-ui-sortable-widget > .wp-react-ui-drag-handle:hover {
+  color: var(--color-text-primary);
+  border-color: var(--color-border-hover);
+}
+
+.wp-react-ui-sortable-widget > .wp-react-ui-drag-handle:active {
+  cursor: grabbing;
+}
+
+/* Widget controls — floating panel anchored to the top-right corner. Does not
+   take layout space, doesn't add a border-top, doesn't fight with the widget
+   content. */
+.wp-react-ui-widget-controls {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  z-index: 20;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px;
+  border-radius: 10px;
+  background: var(--color-bg-surface);
+  backdrop-filter: blur(8px);
+  border: 1px solid var(--color-accent-primary);
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.12);
+  opacity: 1;
+  transition: transform 180ms ease;
+}
+
+.wp-react-ui-sortable-widget:hover .wp-react-ui-widget-controls,
+.wp-react-ui-sortable-widget:focus-within .wp-react-ui-widget-controls {
+  transform: scale(1.05);
+}
+
+.wp-react-ui-widget-controls .ant-segmented {
+  font-size: 12px;
+  background: transparent;
+}
+
+.wp-react-ui-widget-controls .ant-segmented-item-label {
+  min-width: 28px;
+  text-align: center;
+  font-size: 11px;
+  font-weight: 600;
+  line-height: 22px;
+  padding-inline: 8px;
+}
+
+.wp-react-ui-delete-btn {
+  width: 30px;
+  height: 30px;
+  border-radius: 8px;
+  border: none;
+  background: color-mix(in srgb, var(--color-error, #d4380d) 12%, transparent);
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--color-error, #d4380d);
+  transition:
+    color 180ms ease,
+    background 180ms ease,
+    transform 180ms ease;
+  font-size: 15px;
+}
+
+.wp-react-ui-delete-btn:hover {
+  color: #fff;
+  background: var(--color-error, #d4380d);
+  transform: scale(1.08);
+}
+
+/* Drag overlay (preview while dragging) */
+.wp-react-ui-drag-overlay {
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  background: var(--color-surface-primary);
+  box-shadow:
+    0 8px 32px rgba(0, 0, 0, 0.18),
+    0 0 0 1px var(--color-border-subtle);
+  opacity: 0.95;
+  transform: rotate(2deg);
+}
+
+.wp-react-ui-drag-overlay .wp-react-ui-sortable-widget {
+  outline: none;
+  margin: 0;
+  background: var(--color-surface-primary);
+  border: 1px solid var(--color-border-subtle);
+  padding: 16px 20px;
+  color: var(--color-text-primary);
+}
+
+/* Widget size variants */
+.wp-react-ui-dashboard-grid .widget--1x {
+  width: 100%;
+}
+.wp-react-ui-dashboard-grid .widget--2x {
+  width: 100%;
+}
+.wp-react-ui-dashboard-grid .widget--half {
+  width: 100%;
+}
+
+@media (min-width: 768px) {
+  .wp-react-ui-dashboard-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .wp-react-ui-dashboard-grid .widget--full {
+    grid-column: 1 / -1;
+  }
+  .wp-react-ui-dashboard-grid .widget--2x {
+    grid-column: span 2;
+  }
+  .wp-react-ui-dashboard-grid .widget--half {
+    grid-column: span 1;
+  }
+  .wp-react-ui-dashboard-grid .widget--1x {
+    grid-column: span 1;
+  }
+}
+
+/* ── Edit mode bar ── */
+
+.wp-react-ui-edit-bar {
+  position: fixed;
+  bottom: 24px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 16px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--color-bg-surface) 85%, transparent);
+  backdrop-filter: saturate(180%) blur(16px);
+  border: 1px solid var(--color-border-subtle);
+  box-shadow:
+    0 4px 20px rgba(0, 0, 0, 0.1),
+    0 0 0 1px color-mix(in srgb, var(--color-border-subtle) 50%, transparent);
+  font-size: 13px;
+}
+
+.wp-react-ui-edit-bar__label {
+  font-weight: 600;
+  font-size: 13px;
+  white-space: nowrap;
+  color: var(--color-text-primary);
+}
+
+.wp-react-ui-edit-bar__help {
+  color: var(--color-text-muted);
+  cursor: help;
+  font-size: 13px;
+  display: flex;
+  align-items: center;
+}
+
+.wp-react-ui-edit-bar__divider {
+  width: 1px;
+  height: 20px;
+  background: var(--color-border-subtle);
+  flex-shrink: 0;
+}
+
+.wp-react-ui-edit-bar .ant-btn {
+  font-size: 12px;
+  font-weight: 600;
+  border-radius: 999px;
+  height: 30px;
+  padding-inline: 12px;
+}
+
+.wp-react-ui-edit-bar .ant-btn-primary {
+  background: var(--color-accent-primary);
+}
+
+/* ── Catalogue drawer ── */
+
+.wp-react-ui-catalogue-body {
+  padding: 0 16px 16px !important;
+}
+
+.wp-react-ui-catalogue-list {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-height: 80px;
+  border-radius: 10px;
+  transition: background 180ms ease;
+}
+
+.wp-react-ui-catalogue-list--over {
+  background: color-mix(in srgb, var(--color-accent-primary) 6%, transparent);
+  outline: 2px dashed var(--color-accent-primary);
+  outline-offset: -2px;
+}
+
+/* ── Catalogue items ── */
+
+.wp-react-ui-catalogue-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 10px;
+  border-radius: 10px;
+  transition: background 160ms ease;
+}
+
+.wp-react-ui-catalogue-item:hover {
+  background: var(--color-bg-subtle);
+}
+
+.wp-react-ui-catalogue-item--disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.wp-react-ui-catalogue-item__icon {
+  flex-shrink: 0;
+  width: 28px;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 8px;
+  background: color-mix(in srgb, var(--color-accent-primary) 10%, transparent);
+  color: var(--color-accent-primary);
+  font-size: 14px;
+}
+
+.wp-react-ui-catalogue-item__body {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.wp-react-ui-catalogue-item__label {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--color-text-primary);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.wp-react-ui-catalogue-item__status {
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--color-text-muted);
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.wp-react-ui-catalogue-item__dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  display: inline-block;
+}
+
+.wp-react-ui-catalogue-item__dot--on {
+  background: var(--color-success);
+}
+
+.wp-react-ui-catalogue-item__dot--off {
+  background: var(--color-text-muted);
+}
+
+.wp-react-ui-catalogue-item__dot--ineligible {
+  background: var(--color-warning);
+}
+
+.wp-react-ui-catalogue-item__actions {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  flex-shrink: 0;
+}
+
+.wp-react-ui-catalogue-item__actions .ant-btn {
+  font-size: 12px;
+  font-weight: 600;
+  border-radius: 8px;
+  height: 28px;
+  padding-inline: 10px;
+}
+
+.wp-react-ui-catalogue-item__handle {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border: none;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--color-text-muted);
+  cursor: grab;
+  transition:
+    background 160ms ease,
+    color 160ms ease;
+}
+
+.wp-react-ui-catalogue-item__handle:hover {
+  background: var(--color-bg-subtle);
+  color: var(--color-text-primary);
+}
+
+/* ── KPI container ── */
+
+.wp-react-ui-kpi-container {
+  display: block;
+}
+
+.wp-react-ui-kpi-container--editing {
+  padding: 10px 12px;
+  border-radius: var(--radius-lg);
+  background: color-mix(in srgb, var(--color-accent-primary) 4%, var(--color-bg-surface));
+  border: 1px solid color-mix(in srgb, var(--color-accent-primary) 25%, var(--color-border-subtle));
+}
+
+/* "Add KPI" picker panel — prominent so users can find it */
+.wp-react-ui-kpi-picker {
+  margin-bottom: 10px;
+  padding: 8px 12px;
+  border-radius: 10px;
+  background: var(--color-bg-surface);
+  border: 1px dashed color-mix(in srgb, var(--color-accent-primary) 40%, var(--color-border-subtle));
+}
+
+.wp-react-ui-kpi-picker__btn.ant-btn {
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 500;
+  height: 28px;
+  padding-inline: 12px;
+  border-color: var(--color-border-subtle);
+}
+
+.wp-react-ui-kpi-picker__btn.ant-btn:hover {
+  border-color: var(--color-accent-primary);
+  color: var(--color-accent-primary);
+}
+
+.wp-react-ui-kpi-container__empty {
+  min-height: 96px;
+  border-radius: 10px;
+  border: 2px dashed var(--color-border-subtle);
+  color: var(--color-text-tertiary);
+  font-size: 13px;
+  padding: 16px;
+  text-align: center;
 }
 
 .wp-react-ui-inline-control {
@@ -323,6 +809,22 @@ body[data-theme="dark"] {
   background: var(--color-bg-surface);
   padding: 28px;
   box-sizing: border-box;
+}
+
+/* Surface panels inside the dashboard grid get subtle elevation and a
+   responsive hover effect that makes the widget grid feel tactile. */
+.wp-react-ui-dashboard-grid .wp-react-ui-surface-panel {
+  box-shadow: var(--shadow-sm);
+  transition:
+    box-shadow var(--motion-fast) var(--ease-standard),
+    transform var(--motion-fast) var(--ease-standard),
+    border-color var(--motion-fast) var(--ease-standard);
+}
+
+.wp-react-ui-dashboard-grid .wp-react-ui-surface-panel:hover {
+  box-shadow: var(--shadow-md);
+  transform: translateY(-1px);
+  border-color: var(--color-border-strong);
 }
 
 .wp-react-ui-surface-panel__header {
@@ -373,6 +875,14 @@ body[data-theme="dark"] {
 .wp-react-ui-surface-panel__body {
   flex: 1 1 auto;
   min-height: 0;
+}
+
+/* TrafficCharts wraps two SurfacePanel sections side by side. The outer
+   container provides the border/radius; remove them from the inner panels
+   so they merge seamlessly into a single widget card. */
+.wp-react-ui-traffic-charts .wp-react-ui-surface-panel {
+  border: none;
+  border-radius: 0;
 }
 
 .wp-react-ui-license-settings-panel .wp-react-ui-surface-panel__header {
@@ -582,7 +1092,12 @@ body[data-theme="dark"] {
   border: 1px solid var(--color-border-subtle);
   border-radius: var(--radius-lg);
   background: var(--color-bg-surface);
-  box-shadow: none;
+  box-shadow: var(--shadow-sm);
+}
+
+.wp-react-ui-dashboard-widget-card.ant-card:hover {
+  box-shadow: var(--shadow-md);
+  transform: translateY(-1px);
 }
 
 .wp-react-ui-dashboard-widget-card.ant-card .ant-card-head {
@@ -2043,4 +2558,17 @@ body[data-theme="dark"] {
   inset: 0;
   background: var(--ant-color-primary, #4f46e5);
   animation: wp-react-ui-progress-bar 1.4s ease-in-out infinite;
+}
+
+/* Visually-hidden helper for screen-reader-only live regions and labels. */
+.wp-react-ui-sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
 }

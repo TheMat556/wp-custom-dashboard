@@ -39,12 +39,41 @@ export default defineConfig(({ mode }) => ({
         assetFileNames: "assets/[name]-[hash].[ext]",
 
         manualChunks(id) {
-          if (
-            id.includes("node_modules/react") ||
-            id.includes("node_modules/scheduler")
-          ) {
+          if (!id.includes("node_modules")) return undefined;
+
+          // React core — small, used everywhere, kept hot.
+          if (id.includes("/react/") || id.includes("/react-dom/") || id.includes("/scheduler/")) {
             return "react";
           }
+          // Antd icons — large but tree-shakable; isolate so a stylesheet edit
+          // doesn't invalidate the whole vendor chunk.
+          if (id.includes("@ant-design/icons")) {
+            return "antd-icons";
+          }
+          // Antd itself + rc-* internals + dayjs (Antd's date dep).
+          if (
+            id.includes("/antd/") ||
+            id.includes("/rc-") ||
+            id.includes("/@rc-component/") ||
+            id.includes("/dayjs/")
+          ) {
+            return "antd";
+          }
+          // Recharts is heavy and only used by the dashboard charts.
+          if (
+            id.includes("/recharts/") ||
+            id.includes("/d3-") ||
+            id.includes("/victory-vendor/")
+          ) {
+            return "charts";
+          }
+          // dnd-kit only matters in dashboard edit mode.
+          if (id.includes("@dnd-kit/")) {
+            return "dnd-kit";
+          }
+          // Everything else from node_modules — keep together to avoid an
+          // explosion of tiny chunks.
+          return "vendor";
         },
       },
     },

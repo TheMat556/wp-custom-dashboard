@@ -363,6 +363,41 @@ const de: Record<string, string> = {
   "Open chat settings": "Chat-Einstellungen öffnen",
   "Open conversation list": "Gesprächsliste öffnen",
   "Close conversation list": "Gesprächsliste schließen",
+
+  // Backup indicator
+  "Last backup: {date}": "Letztes Backup: {date}",
+  "Backup: {relative}": "Backup: {relative}",
+
+  // KPI widgets
+  "No content yet": "Noch keine Inhalte",
+  Legal: "Rechtliches",
+  Email: "E-Mail",
+  Readiness: "Bereitschaft",
+  "Setup checklist": "Einrichtungs-Checkliste",
+  "Today's Bookings": "Heutige Buchungen",
+
+  // KPI descriptions
+  "Published posts, pages, and drafts overview":
+    "Übersicht über veröffentlichte Beiträge, Seiten und Entwürfe",
+  "Your search engine visibility score based on SEO checks":
+    "Ihr Suchmaschinen-Sichtbarkeitswert basierend auf SEO-Prüfungen",
+  "Legal compliance data not available": "Rechtskonformitätsdaten nicht verfügbar",
+  "Privacy policy and impressum are published, tracking complies with consent rules":
+    "Datenschutzerklärung und Impressum sind veröffentlicht, Tracking entspricht den Einwilligungsregeln",
+  "Some legal requirements need your attention — check the Site Status section":
+    "Einige rechtliche Anforderungen erfordern Ihre Aufmerksamkeit — prüfen Sie den Bereich Website-Status",
+  "Email delivery status not available": "E-Mail-Zustellungsstatus nicht verfügbar",
+  "Email delivery is configured and working": "E-Mail-Zustellung ist konfiguriert und funktioniert",
+  "Without an SMTP plugin, contact form emails may end up in spam":
+    "Ohne SMTP-Plugin landen E-Mails aus Kontaktformularen im Spam",
+  "Site readiness score — higher is better. Complete the setup checklist to improve it.":
+    "Website-Bereitschaftswert — höher ist besser. Schließen Sie die Einrichtungs-Checkliste ab, um ihn zu verbessern.",
+  "Site readiness score measures how launch-ready your site is":
+    "Der Bereitschaftswert misst, wie startbereit Ihre Website ist",
+  "Booking calendar data not available": "Buchungskalenderdaten nicht verfügbar",
+  "{n} bookings today, {m} upcoming": "{n} Buchungen heute, {m} anstehend",
+  "No bookings scheduled for today": "Keine Buchungen für heute geplant",
+  "Post and page content overview": "Übersicht über Beiträge und Seiteninhalte",
 };
 
 /* ── Translation function factory ─────────────────────────────────────────── */

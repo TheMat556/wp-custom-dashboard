@@ -1,15 +1,16 @@
-import type { CSSProperties } from "react";
+import { HolderOutlined } from "@ant-design/icons";
+import { DndContext, type DragEndEvent, DragOverlay, type DragStartEvent } from "@dnd-kit/core";
+import { restrictToVerticalAxis } from "@dnd-kit/modifiers";
+import { SortableContext, verticalListSortingStrategy } from "@dnd-kit/sortable";
+import { useMemo, useState } from "react";
+import { useStore } from "zustand";
 import type { WpReactUiConfig } from "../../../../types/wp";
+import { shellPreferencesStore } from "../../../shell/store/shellPreferencesStore";
 import type { DashboardViewModel } from "../../dashboardViewModel";
-import { ActionCenter } from "./components/ActionCenter";
-import { FirstStepsChecklist } from "./components/FirstStepsChecklist";
-import { HeroBanner } from "./components/HeroBanner";
-import { OfflineAlert } from "./components/OfflineAlert";
-import { SiteStatusOverview } from "./components/SiteStatusOverview";
-import { SummaryTiles } from "./components/SummaryTiles";
-import { TrafficCharts } from "./components/TrafficCharts";
-import { UpcomingBookings } from "./components/UpcomingBookings";
-import { UpdatesSection } from "./components/UpdatesSection";
+import { dashboardEditModeStore } from "../../store/dashboardEditModeStore";
+import { getVisibleWidgets, resolveWidgetKey } from "../../widgets/widgetRegistry";
+import { announceLive } from "./components/edit/announceLive";
+import { SortableWidgetCard } from "./components/edit/SortableWidgetCard";
 import type { TFunc } from "./types";
 
 interface DashboardContentProps {
@@ -21,6 +22,7 @@ interface DashboardContentProps {
   isMd: boolean;
   isLg: boolean;
   closeChecklist: () => void;
+  isEditing?: boolean;
 }
 
 export function DashboardContent({
@@ -32,139 +34,158 @@ export function DashboardContent({
   isMd,
   isLg,
   closeChecklist,
+  isEditing = false,
 }: DashboardContentProps) {
-  const revealVar = (delay: string) => ({ "--dashboard-reveal-delay": delay }) as CSSProperties;
+  // During editing, read widget order and visibility from the draft store
+  // so that reordering/hiding only affects the draft until "Done" is pressed.
+  const persistedOrder = useStore(shellPreferencesStore, (s) => s.dashboardWidgetOrder);
+  const persistedHidden = useStore(shellPreferencesStore, (s) => s.hiddenWidgets);
+  const setPersistedOrder = useStore(shellPreferencesStore, (s) => s.setDashboardWidgetOrder);
+
+  const draftOrder = useStore(dashboardEditModeStore, (s) => s.draft.order);
+  const draftHidden = useStore(dashboardEditModeStore, (s) => s.draft.hidden);
+  const setDraftOrder = useStore(dashboardEditModeStore, (s) => s.setDraftOrder);
+
+  const order = isEditing ? draftOrder : persistedOrder;
+  const hiddenKeys = isEditing ? draftHidden : persistedHidden;
+  const setOrder = isEditing ? setDraftOrder : setPersistedOrder;
+
+  const visibleWidgets = useMemo(
+    () => getVisibleWidgets(viewModel, hiddenKeys, order),
+    [viewModel, hiddenKeys, order]
+  );
+
+  // Separate hero widget from the rest — hero renders full-width without card styling
+  const heroWidget = useMemo(() => visibleWidgets.find((w) => w.key === "hero"), [visibleWidgets]);
+  const cardWidgets = useMemo(
+    () => visibleWidgets.filter((w) => w.key !== "hero"),
+    [visibleWidgets]
+  );
+
+  const [activeDragKey, setActiveDragKey] = useState<string | null>(null);
+
+  const handleDragStart = (event: DragStartEvent) => {
+    setActiveDragKey(String(event.active.id));
+  };
+
+  const handleDragEnd = (event: DragEndEvent) => {
+    setActiveDragKey(null);
+    const { active, over } = event;
+    if (!over || active.id === over.id) return;
+
+    const activeKey = String(active.id);
+    const overKey = String(over.id);
+
+    const currentOrder = getVisibleWidgets(viewModel, hiddenKeys, order).map((w) => w.key);
+    const oldIndex = currentOrder.indexOf(activeKey);
+    const newIndex = currentOrder.indexOf(overKey);
+    if (oldIndex === -1 || newIndex === -1) return;
+
+    const reordered = [...order];
+    const sourceIndex = reordered.indexOf(activeKey);
+    const targetIndex = reordered.indexOf(overKey);
+    if (sourceIndex === -1 || targetIndex === -1) return;
+
+    reordered.splice(sourceIndex, 1);
+    reordered.splice(targetIndex, 0, activeKey);
+
+    setOrder(reordered);
+    announceLive(`${activeKey} moved`);
+  };
+
+  const handleDragCancel = () => {
+    setActiveDragKey(null);
+  };
+
+  const activeWidgetMeta = activeDragKey ? (resolveWidgetKey(activeDragKey) ?? null) : null;
+
+  const renderWidgetContent = (widget: (typeof visibleWidgets)[number]) =>
+    widget.render({
+      config,
+      viewModel,
+      t,
+      intlLocale,
+      isMd,
+      isLg,
+      greetingKey,
+      closeChecklist,
+      isEditing,
+      widgetKey: widget.key,
+    });
+
+  const gridContent = (
+    <div
+      className={
+        isEditing
+          ? "wp-react-ui-dashboard-grid wp-react-ui-edit-mode"
+          : "wp-react-ui-dashboard-grid"
+      }
+    >
+      {cardWidgets.map((widget) => (
+        <SortableWidgetCard key={widget.key} widget={widget}>
+          {renderWidgetContent(widget)}
+        </SortableWidgetCard>
+      ))}
+    </div>
+  );
+
+  // When editing, don't wrap in DndContext — EditModeChrome provides it.
+  const dndGrid = isEditing ? (
+    gridContent
+  ) : (
+    <DndContext
+      onDragStart={handleDragStart}
+      onDragEnd={handleDragEnd}
+      onDragCancel={handleDragCancel}
+    >
+      <SortableContext items={cardWidgets.map((w) => w.key)} strategy={verticalListSortingStrategy}>
+        {gridContent}
+      </SortableContext>
+      <DragOverlay dropAnimation={null} modifiers={[restrictToVerticalAxis]}>
+        {activeWidgetMeta && (
+          <div className="wp-react-ui-drag-overlay" aria-hidden="true">
+            <div className="wp-react-ui-sortable-widget widget--full">
+              <span className="wp-react-ui-drag-handle" aria-hidden="true">
+                <HolderOutlined style={{ fontSize: 16 }} />
+              </span>
+              {activeWidgetMeta.render({
+                config,
+                viewModel,
+                t,
+                intlLocale,
+                isMd,
+                isLg,
+                greetingKey,
+                closeChecklist,
+                isEditing: false,
+                widgetKey: activeWidgetMeta.key,
+              })}
+            </div>
+          </div>
+        )}
+      </DragOverlay>
+    </DndContext>
+  );
 
   return (
-    <>
-      <div className="wp-react-ui-dashboard-reveal" style={revealVar("40ms")}>
-        <HeroBanner
-          userName={config.user.name}
-          adminUrl={config.adminUrl}
-          greetingKey={greetingKey}
-          intlLocale={intlLocale}
-          t={t}
-          total30Views={viewModel.total30Views}
-          viewTrend={viewModel.viewTrend}
-          sparkline={viewModel.sparkline}
-          stats={viewModel.stats}
-          readiness={viewModel.readiness}
-          isMd={isMd}
-        />
-      </div>
-
-      {viewModel.isSiteDown && viewModel.speed && (
-        <div
-          className="wp-react-ui-dashboard-reveal"
-          style={{ ...revealVar("90ms"), marginBottom: 16 }}
-        >
-          <OfflineAlert
-            speed={viewModel.speed}
-            t={t}
-            intlLocale={intlLocale}
-            adminUrl={config.adminUrl}
-          />
+    <div className="wp-react-ui-dashboard">
+      {heroWidget && (
+        <div className="wp-react-ui-dashboard__hero">
+          {heroWidget.render({
+            config,
+            viewModel,
+            t,
+            intlLocale,
+            isMd,
+            isLg,
+            greetingKey,
+            closeChecklist,
+            isEditing,
+            widgetKey: "hero",
+          })}
         </div>
       )}
-
-      <div
-        className="wp-react-ui-dashboard-reveal"
-        style={{ ...revealVar("120ms"), marginBottom: 20 }}
-      >
-        <SummaryTiles
-          isSiteDown={viewModel.isSiteDown}
-          health={viewModel.health}
-          speed={viewModel.speed}
-          updates={viewModel.updates}
-          submissionStats={viewModel.submissionStats}
-          total30Views={viewModel.total30Views}
-          viewTrend={viewModel.viewTrend}
-          hasUpdates={viewModel.hasUpdates}
-          t={t}
-          intlLocale={intlLocale}
-          adminUrl={config.adminUrl}
-          isLg={isLg}
-          isMd={isMd}
-        />
-      </div>
-
-      {viewModel.showChecklist && (
-        <>
-          <div className="wp-react-ui-dashboard-reveal" style={revealVar("160ms")}>
-            <FirstStepsChecklist
-              checklist={viewModel.checklist}
-              checklistDone={viewModel.checklistDone}
-              t={t}
-              adminUrl={config.adminUrl}
-              isMd={isMd}
-              onClose={closeChecklist}
-            />
-          </div>
-          <div style={{ height: 20 }} />
-        </>
-      )}
-
-      <div className="wp-react-ui-dashboard-reveal" style={revealVar("200ms")}>
-        <TrafficCharts
-          trend={viewModel.trend}
-          countries={viewModel.countries}
-          t={t}
-          intlLocale={intlLocale}
-          isMd={isMd}
-        />
-      </div>
-
-      {viewModel.calendar?.available && (
-        <div className="wp-react-ui-dashboard-reveal" style={revealVar("240ms")}>
-          <UpcomingBookings
-            calendar={viewModel.calendar}
-            t={t}
-            intlLocale={intlLocale}
-            adminUrl={config.adminUrl}
-            isMd={isMd}
-          />
-        </div>
-      )}
-
-      <div
-        className="wp-react-ui-dashboard-reveal"
-        style={{
-          ...revealVar("280ms"),
-          display: "flex",
-          flexDirection: "column",
-          gap: 16,
-          marginBottom: 16,
-        }}
-      >
-        <ActionCenter
-          actions={viewModel.actions}
-          criticalActions={viewModel.criticalActions}
-          warningActions={viewModel.warningActions}
-          infoActions={viewModel.infoActions}
-          hasUpdates={viewModel.hasUpdates}
-          t={t}
-          adminUrl={config.adminUrl}
-        />
-
-        {viewModel.hasUpdates && viewModel.updates && (
-          <UpdatesSection
-            updates={viewModel.updates}
-            t={t}
-            adminUrl={config.adminUrl}
-            isMd={isMd}
-          />
-        )}
-
-        {(viewModel.legalData || viewModel.bizData || viewModel.seoBasics) && (
-          <SiteStatusOverview
-            legalData={viewModel.legalData}
-            bizData={viewModel.bizData}
-            seoBasics={viewModel.seoBasics}
-            t={t}
-            adminUrl={config.adminUrl}
-          />
-        )}
-      </div>
-    </>
+      {dndGrid}
+    </div>
   );
 }

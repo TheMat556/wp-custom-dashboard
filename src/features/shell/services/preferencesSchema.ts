@@ -16,7 +16,17 @@ export const PartialPreferencesSchema = z.object({
   customPresetColor: z.string().optional(),
   dashboardWidgetOrder: z.array(z.string()).optional(),
   hiddenWidgets: z.array(z.string()).optional(),
+  dashboardWidgetSizes: z.record(z.string(), z.enum(["1x", "2x", "half", "full"])).optional(),
   highContrast: z.boolean().optional(),
+  kpiContainerInstances: z
+    .record(
+      z.string(),
+      z.object({
+        order: z.array(z.string()),
+        columns: z.union([z.literal(2), z.literal(3), z.literal(4), z.literal(5)]),
+      })
+    )
+    .optional(),
 });
 
 export const PreferencesResponseSchema = z.object({

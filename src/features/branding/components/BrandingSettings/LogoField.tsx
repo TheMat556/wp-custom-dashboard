@@ -1,7 +1,8 @@
 import { DeleteOutlined, PictureOutlined, UploadOutlined } from "@ant-design/icons";
 import { Button, Flex, Typography, theme } from "antd";
-import { useCallback } from "react";
+import { useCallback, useState } from "react";
 import { openMediaPicker } from "../../../../utils/wpMedia";
+import styles from "./BrandingSettings.module.css";
 
 const { Text } = Typography;
 
@@ -39,6 +40,7 @@ export function LogoField({
   onRemove,
 }: LogoFieldProps) {
   const { token } = theme.useToken();
+  const [isDragOver, setIsDragOver] = useState(false);
 
   const handleSelect = useCallback(async () => {
     const result = await openMediaPicker({
@@ -50,6 +52,34 @@ export function LogoField({
       onSelect(result.id, result.url);
     }
   }, [onSelect, selectButtonText, selectTitle]);
+
+  const handleDragOver = useCallback((e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragOver(true);
+  }, []);
+
+  const handleDragLeave = useCallback((e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragOver(false);
+  }, []);
+
+  const handleDrop = useCallback(
+    async (e: React.DragEvent) => {
+      e.preventDefault();
+      e.stopPropagation();
+      setIsDragOver(false);
+
+      const files = e.dataTransfer.files;
+      if (files.length === 0) return;
+
+      // Delegate to media picker for now — files dropped here could
+      // be uploaded via wp.media in a future iteration.
+      void handleSelect();
+    },
+    [handleSelect]
+  );
 
   return (
     <div
@@ -75,34 +105,41 @@ export function LogoField({
         <Text style={{ fontSize: 12, color: token.colorTextQuaternary }}>{description}</Text>
       </Flex>
 
+      {/* biome-ignore lint/a11y/useSemanticElements: A button cannot contain a nested drop zone with DnD handlers. The Upload/Replace button below provides the keyboard path. */}
       <div
-        className="wp-react-ui-inset-panel"
+        className={`${styles.logoPreviewBox} wp-react-ui-inset-panel`}
+        role="button"
+        tabIndex={0}
+        aria-label={label}
         style={{
-          height: 160,
-          marginBottom: 18,
-          padding: 18,
           borderRadius: token.borderRadiusLG,
           background: previewBackground ?? token.colorFillAlter,
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          overflow: "hidden",
-          boxSizing: "border-box",
+        }}
+        onDragOver={handleDragOver}
+        onDragLeave={handleDragLeave}
+        onDrop={handleDrop}
+        onKeyDown={(e) => {
+          if (e.key === "Enter" || e.key === " ") {
+            e.preventDefault();
+            void handleSelect();
+          }
         }}
       >
-        {logoUrl ? (
-          <img
-            src={logoUrl}
-            alt={previewAlt}
+        {isDragOver && (
+          <div
+            className={styles.dropOverlay}
             style={{
-              display: "block",
-              width: "auto",
-              height: "auto",
-              maxWidth: "min(100%, 240px)",
-              maxHeight: 72,
-              objectFit: "contain",
+              background: `${token.colorPrimary}15`,
+              color: token.colorPrimary,
             }}
-          />
+          >
+            <UploadOutlined className={styles.dropOverlayIcon} />
+            <Text>{uploadLabel}</Text>
+          </div>
+        )}
+
+        {logoUrl ? (
+          <img src={logoUrl} alt={previewAlt} className={styles.logoPreviewImg} />
         ) : (
           <Flex vertical align="center" gap={10}>
             <PictureOutlined style={{ fontSize: 28, color: token.colorTextQuaternary }} />

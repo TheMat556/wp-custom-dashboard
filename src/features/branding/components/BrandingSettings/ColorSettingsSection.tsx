@@ -2,6 +2,7 @@ import { BgColorsOutlined, EyeOutlined, ReloadOutlined } from "@ant-design/icons
 import { Button, ColorPicker, Flex, Select, Switch, Typography, theme } from "antd";
 import { CUSTOM_PRESET_KEY, THEME_PRESETS } from "../../../../config/themePresets";
 import { DEFAULT_PRIMARY_COLOR } from "../../brandingDraft";
+import styles from "./BrandingSettings.module.css";
 import { SurfaceCard } from "./SurfaceCard";
 
 const { Text } = Typography;
@@ -37,19 +38,9 @@ export function ColorSettingsSection({
       description={t("Shell color theme and accent palette.")}
       icon={<BgColorsOutlined />}
     >
-      <div style={{ display: "flex", flexDirection: "column", gap: 20, minHeight: "100%" }}>
+      <div className={styles.colorBody}>
         <div>
-          <Text
-            style={{
-              display: "block",
-              marginBottom: 8,
-              fontSize: 12,
-              fontWeight: 800,
-              letterSpacing: "0.12em",
-              textTransform: "uppercase",
-              color: token.colorTextTertiary,
-            }}
-          >
+          <Text className={styles.fieldLabel} style={{ color: token.colorTextTertiary }}>
             {t("Theme Preset")}
           </Text>
           <Select
@@ -121,24 +112,14 @@ export function ColorSettingsSection({
         </div>
 
         <div style={{ marginTop: "auto" }}>
-          <div
-            className="wp-react-ui-inset-panel"
-            style={{
-              height: 8,
-              borderRadius: 999,
-              overflow: "hidden",
-              display: "flex",
-              marginBottom: 12,
-              padding: 0,
-            }}
-          >
+          <div className={styles.previewDistBar}>
             <div style={{ flex: "0 0 48%", background: token.colorPrimary }} />
             <div style={{ flex: "0 0 24%", background: `${token.colorPrimary}80` }} />
             <div style={{ flex: "0 0 18%", background: token.colorTextSecondary }} />
             <div style={{ flex: "0 0 10%", background: token.colorBorderSecondary }} />
           </div>
-          <Flex justify="space-between" align="center" gap={8}>
-            <Text type="secondary" style={{ fontSize: 12 }}>
+          <div className={styles.previewDistActions}>
+            <Text type="secondary" className={styles.previewDistNote}>
               {t("Global distribution preview")}
             </Text>
             <Button
@@ -149,7 +130,7 @@ export function ColorSettingsSection({
             >
               {t("Reset to default")}
             </Button>
-          </Flex>
+          </div>
         </div>
       </div>
     </SurfaceCard>
