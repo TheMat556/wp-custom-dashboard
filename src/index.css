@@ -416,6 +416,7 @@ body[data-theme="dark"] {
   padding: 0;
   display: grid;
   gap: 12px;
+  margin-bottom: 8px;
 }
 
 .wp-react-ui-license-form-label {
@@ -827,6 +828,27 @@ body[data-theme="dark"] {
 
   .wp-react-ui-license-settings-actions .ant-btn {
     min-height: 42px;
+  }
+
+  .wp-react-ui-license-form-block > .ant-flex {
+    flex-direction: column !important;
+  }
+
+  .wp-react-ui-license-form-block > .ant-flex .ant-input {
+    width: 100%;
+  }
+
+  .wp-react-ui-license-form-block > .ant-flex .ant-btn {
+    width: 100%;
+  }
+
+  .wp-react-ui-license-actions-row {
+    flex-direction: column !important;
+    width: 100%;
+  }
+
+  .wp-react-ui-license-actions-row .ant-btn {
+    width: 100%;
   }
 }
 
