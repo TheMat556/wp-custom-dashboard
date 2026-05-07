@@ -327,15 +327,9 @@ export const DASHBOARD_WIDGETS: DashboardWidgetMeta[] = [
     allowedSizes: ["full", "half"],
     hidableByUser: true,
     isEligible: () => true,
-    render: ({ viewModel, t, intlLocale, isMd }) => (
+    render: ({ viewModel, t }) => (
       <div className="wp-react-ui-dashboard-reveal" style={revealVar("200ms")}>
-        <TrafficCharts
-          trend={viewModel.trend}
-          countries={viewModel.countries}
-          t={t}
-          intlLocale={intlLocale}
-          isMd={isMd}
-        />
+        <TrafficCharts trend={viewModel.trend} t={t} />
       </div>
     ),
   },
