@@ -90,7 +90,8 @@ export function DashboardContent({
     reordered.splice(targetIndex, 0, activeKey);
 
     setOrder(reordered);
-    announceLive(`${activeKey} moved`);
+    const movedLabel = resolveWidgetKey(activeKey)?.label ?? activeKey;
+    announceLive(`${movedLabel} moved`);
   };
 
   const handleDragCancel = () => {
@@ -137,6 +138,7 @@ export function DashboardContent({
       onDragStart={handleDragStart}
       onDragEnd={handleDragEnd}
       onDragCancel={handleDragCancel}
+      modifiers={[restrictToVerticalAxis]}
     >
       <SortableContext items={cardWidgets.map((w) => w.key)} strategy={verticalListSortingStrategy}>
         {gridContent}

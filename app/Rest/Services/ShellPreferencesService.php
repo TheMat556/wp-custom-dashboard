@@ -184,7 +184,25 @@ final class ShellPreferencesService {
 			}
 			$prefs['dashboardWidgetSizes'] = $migrated_sizes;
 		}
-		if ( isset( $prefs['kpiContainerInstances'] ) && ! is_array( $prefs['kpiContainerInstances'] ) ) {
+		if ( isset( $prefs['kpiContainerInstances'] ) && is_array( $prefs['kpiContainerInstances'] ) ) {
+			$normalized = array();
+			foreach ( $prefs['kpiContainerInstances'] as $instance_id => $cfg ) {
+				if ( ! is_array( $cfg ) ) {
+					continue;
+				}
+				$order = isset( $cfg['order'] ) && is_array( $cfg['order'] )
+					? self::sanitize_string_array( $cfg['order'] )
+					: array();
+				$columns = isset( $cfg['columns'] ) && is_int( $cfg['columns'] ) && $cfg['columns'] >= 2 && $cfg['columns'] <= 5
+					? $cfg['columns']
+					: 2;
+				$normalized[ $instance_id ] = array(
+					'order'   => $order,
+					'columns' => $columns,
+				);
+			}
+			$prefs['kpiContainerInstances'] = $normalized;
+		} elseif ( isset( $prefs['kpiContainerInstances'] ) ) {
 			unset( $prefs['kpiContainerInstances'] );
 		}
 		return $prefs;

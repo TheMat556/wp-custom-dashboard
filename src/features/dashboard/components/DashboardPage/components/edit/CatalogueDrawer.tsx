@@ -2,6 +2,7 @@ import { useDroppable } from "@dnd-kit/core";
 import { Drawer, Empty, Grid, Input } from "antd";
 import { useMemo, useState } from "react";
 import type { DashboardViewModel } from "../../../../dashboardViewModel";
+import type { TFunc } from "../../../../types";
 import {
   DASHBOARD_WIDGETS,
   type DashboardWidgetMeta,
@@ -21,6 +22,7 @@ interface CatalogueDrawerProps {
   order?: string[];
   /** Hidden widget keys (pass draft during editing). */
   hiddenKeys?: string[];
+  t: TFunc;
 }
 
 interface CatalogueRow {
@@ -76,6 +78,7 @@ export function CatalogueDrawer({
   onAdd,
   order: orderProp,
   hiddenKeys: hiddenKeysProp,
+  t,
 }: CatalogueDrawerProps) {
   const screens = Grid.useBreakpoint();
   const isMd = !!screens.md;
@@ -89,7 +92,7 @@ export function CatalogueDrawer({
 
   return (
     <Drawer
-      title="Add widgets"
+      title={t("Add widgets")}
       open={open}
       onClose={onClose}
       placement={isMd ? "right" : "bottom"}
@@ -101,7 +104,7 @@ export function CatalogueDrawer({
       classNames={{ body: "wp-react-ui-catalogue-body" }}
     >
       <Input.Search
-        placeholder="Search widgets"
+        placeholder={t("Search widgets")}
         value={search}
         onChange={(e) => setSearch(e.target.value)}
         allowClear
@@ -113,7 +116,7 @@ export function CatalogueDrawer({
         data-testid="catalogue-list"
       >
         {rows.length === 0 ? (
-          <Empty description="No widgets match that name." />
+          <Empty description={t("No widgets match that name.")} />
         ) : (
           rows.map(({ widget, status, ineligibleReason }) => (
             <CatalogueItem

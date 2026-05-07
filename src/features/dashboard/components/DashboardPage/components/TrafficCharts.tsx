@@ -49,7 +49,7 @@ export function TrafficCharts({ trend, countries, t, intlLocale, isMd }: Traffic
         gap: 16,
         border: "1px solid var(--color-border-subtle)",
         borderRadius: "var(--radius-lg)",
-        overflow: "hidden",
+        overflow: "clip",
       }}
     >
       {/* Page Views */}

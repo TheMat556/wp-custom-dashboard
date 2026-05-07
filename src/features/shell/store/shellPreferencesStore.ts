@@ -1,5 +1,9 @@
 import { createStore } from "zustand/vanilla";
-import type { PersistedShellPreferences } from "../../../types/shellPreferences";
+import type {
+  KpiContainerColumns,
+  KpiContainerInstanceConfig,
+  PersistedShellPreferences,
+} from "../../../types/shellPreferences";
 import type { WpReactUiConfig } from "../../../types/wp";
 import type { RecentPageRecord } from "../../../utils/commandPalette";
 import type { PreferencesService } from "../services/preferencesApi";
@@ -106,19 +110,20 @@ function readPersistedState(): PersistedShellPreferences {
         parsed.kpiContainerInstances !== null &&
         !Array.isArray(parsed.kpiContainerInstances)
           ? Object.fromEntries(
-              Object.entries(parsed.kpiContainerInstances)
-                .map(([id, cfg]) => {
-                  if (typeof cfg !== "object" || cfg === null) return [id, null] as const;
-                  const c = cfg as Record<string, unknown>;
-                  const order = Array.isArray(c.order)
-                    ? c.order.filter((v): v is string => typeof v === "string")
-                    : [];
-                  const columns = [2, 3, 4, 5].includes(c.columns as number)
-                    ? (c.columns as number)
-                    : 3;
-                  return [id, { order, columns }] as const;
-                })
-                .filter(([, v]) => v !== null)
+              Object.entries(parsed.kpiContainerInstances).reduce<
+                Array<[string, KpiContainerInstanceConfig]>
+              >((acc, [id, cfg]) => {
+                if (typeof cfg !== "object" || cfg === null) return acc;
+                const c = cfg as unknown as Record<string, unknown>;
+                const order = Array.isArray(c.order)
+                  ? c.order.filter((v): v is string => typeof v === "string")
+                  : [];
+                const columns = [2, 3, 4, 5].includes(c.columns as number)
+                  ? (c.columns as number as KpiContainerColumns)
+                  : (3 as KpiContainerColumns);
+                acc.push([id, { order, columns }]);
+                return acc;
+              }, [])
             )
           : defaults.kpiContainerInstances,
     };

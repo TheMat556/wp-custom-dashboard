@@ -1,6 +1,7 @@
 import { message } from "antd";
 import { useEffect, useRef } from "react";
 import { shellPreferencesStore } from "../../../../../shell/store/shellPreferencesStore";
+import type { TFunc } from "../../../../types";
 
 const SAVE_DEBOUNCE_MS = 600;
 
@@ -20,7 +21,7 @@ function snapshotTracked(state: Record<TrackedField, unknown>): string {
  * Shows a debounced "Saved" toast when dashboard layout preferences change
  * while the user is actively editing.
  */
-export function useSaveToast(enabled: boolean) {
+export function useSaveToast({ enabled, t }: { enabled: boolean; t: TFunc }) {
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
@@ -41,7 +42,7 @@ export function useSaveToast(enabled: boolean) {
 
       if (timer.current) clearTimeout(timer.current);
       timer.current = setTimeout(() => {
-        message.success({ content: "Saved", duration: 1.5, key: "dashboard-edit-save" });
+        message.success({ content: t("Saved"), duration: 1.5, key: "dashboard-edit-save" });
         timer.current = null;
       }, SAVE_DEBOUNCE_MS);
     });
@@ -53,5 +54,5 @@ export function useSaveToast(enabled: boolean) {
         timer.current = null;
       }
     };
-  }, [enabled]);
+  }, [enabled, t]);
 }

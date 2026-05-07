@@ -32,6 +32,8 @@ const emptyVm = {
   showChecklist: false,
 } as DashboardViewModel;
 
+const identityT = (key: string) => key;
+
 function renderDrawer(onAdd = vi.fn(), onClose = vi.fn(), options?: { hiddenKeys?: string[] }) {
   return render(
     <DndContext>
@@ -41,6 +43,7 @@ function renderDrawer(onAdd = vi.fn(), onClose = vi.fn(), options?: { hiddenKeys
         onAdd={onAdd}
         onClose={onClose}
         hiddenKeys={options?.hiddenKeys}
+        t={identityT}
       />
     </DndContext>
   );

@@ -24,12 +24,12 @@ function getUpdatesSub(
       <Flex gap={3} wrap="wrap">
         {(updates?.plugins ?? 0) > 0 && (
           <Tag color="blue" style={{ margin: 0, fontSize: 11 }}>
-            {updates?.plugins} plugins
+            {updates?.plugins} {t("plugins")}
           </Tag>
         )}
         {(updates?.themes ?? 0) > 0 && (
           <Tag color="purple" style={{ margin: 0, fontSize: 11 }}>
-            {updates?.themes} themes
+            {updates?.themes} {t("themes")}
           </Tag>
         )}
         {(updates?.core ?? 0) > 0 && (

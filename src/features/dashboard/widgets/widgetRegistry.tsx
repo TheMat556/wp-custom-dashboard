@@ -447,7 +447,7 @@ export const DASHBOARD_WIDGETS: DashboardWidgetMeta[] = [
 /** Prefix for KPI container instance keys in the widget order. */
 export const KPI_CONTAINER_INSTANCE_PREFIX = "kpi-container::";
 
-/** The 5 individual KPI widget keys. */
+/** The individual KPI widget keys that live inside KPI containers. */
 export const KPI_WIDGET_KEYS = [
   "kpi-website",
   "kpi-visitors",
@@ -581,12 +581,17 @@ export function mergeWidgetOrder(persistedOrder: string[]): string[] {
   });
 
   const defaultInstanceKey = `${KPI_CONTAINER_INSTANCE_PREFIX}__default__`;
-  if (hasContainerInstance && !validPersisted.includes(defaultInstanceKey)) {
-    validPersisted.push(defaultInstanceKey);
+  // Only seed the default container when there are no container instances at all
+  // (e.g. fresh user). When hasContainerInstance is true, the default will NOT
+  // be re-added even if it's missing from validPersisted — this prevents
+  // overriding deliberate user removal of the default container.
+  if (!hasContainerInstance) {
+    // The default key will come from missingFromRegistry below.
   }
 
   const missingFromRegistry = DEFAULT_WIDGET_ORDER.filter((key) => {
-    if (hasContainerInstance && key in TEMPLATE_REWRITES) return false;
+    if (hasContainerInstance && (key in TEMPLATE_REWRITES || key === defaultInstanceKey))
+      return false;
     return !validPersisted.includes(key);
   });
 

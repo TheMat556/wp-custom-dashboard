@@ -71,7 +71,38 @@
   padding: 18px;
 }
 
+.typoCardActive {
+  padding: 18px;
+  outline: 2px solid var(--color-accent-primary);
+  outline-offset: -2px;
+  border-radius: var(--radius-lg);
+}
+
+.typoCardInactive {
+  padding: 18px;
+  opacity: 0.75;
+}
+
 .typoLabel {
+  display: block;
+  margin-bottom: 6px;
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.typoLabelActive {
+  display: block;
+  margin-bottom: 6px;
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--color-accent-primary);
+}
+
+.typoLabelInactive {
   display: block;
   margin-bottom: 6px;
   font-size: 12px;
@@ -155,6 +186,10 @@
   object-fit: contain;
 }
 
+.dropOverlayIcon {
+  font-size: 24px;
+}
+
 .dropOverlay {
   position: absolute;
   inset: 0;
@@ -200,13 +235,7 @@
 
 .linkRulesTextarea {
   font-family:
-    ui-monospace,
-    SFMono-Regular,
-    SF Mono,
-    Menlo,
-    Consolas,
-    "Liberation Mono",
-    monospace;
+    ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, "Liberation Mono", monospace;
   resize: none;
 }
 

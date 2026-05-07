@@ -8,12 +8,14 @@ import {
 import { Button, Modal, Tooltip } from "antd";
 import { useStore } from "zustand";
 import { dashboardEditModeStore } from "../../../../store/dashboardEditModeStore";
+import type { TFunc } from "../../../types";
 
 interface EditModeBarProps {
   onToggleCatalogue?: () => void;
+  t: TFunc;
 }
 
-export function EditModeBar({ onToggleCatalogue }: EditModeBarProps = {}) {
+export function EditModeBar({ onToggleCatalogue, t }: EditModeBarProps = {} as EditModeBarProps) {
   const isEditing = useStore(dashboardEditModeStore, (s) => s.isEditing);
   const exitEditing = useStore(dashboardEditModeStore, (s) => s.exitEditing);
   const discardEditing = useStore(dashboardEditModeStore, (s) => s.discardEditing);
@@ -23,11 +25,12 @@ export function EditModeBar({ onToggleCatalogue }: EditModeBarProps = {}) {
 
   const handleReset = () => {
     Modal.confirm({
-      title: "Reset dashboard?",
-      content:
-        "This restores the default order, sizes, and visibility. Favorites and recent pages stay untouched.",
-      okText: "Reset",
-      cancelText: "Cancel",
+      title: t("Reset dashboard?"),
+      content: t(
+        "This restores the default order, sizes, and visibility. Favorites and recent pages stay untouched."
+      ),
+      okText: t("Reset"),
+      cancelText: t("Cancel"),
       okButtonProps: { danger: true },
       onOk: () => {
         resetDraftLayout();
@@ -37,24 +40,26 @@ export function EditModeBar({ onToggleCatalogue }: EditModeBarProps = {}) {
 
   return (
     <div className="wp-react-ui-edit-bar">
-      <span className="wp-react-ui-edit-bar__label">Customize</span>
-      <Tooltip title="Drag widgets to reorder. Use the controls to show/hide or resize widgets.">
+      <span className="wp-react-ui-edit-bar__label">{t("Customize")}</span>
+      <Tooltip
+        title={t("Drag widgets to reorder. Use the controls to show/hide or resize widgets.")}
+      >
         <QuestionCircleOutlined className="wp-react-ui-edit-bar__help" />
       </Tooltip>
       <span className="wp-react-ui-edit-bar__divider" />
       {onToggleCatalogue && (
         <Button size="small" icon={<AppstoreAddOutlined />} onClick={onToggleCatalogue}>
-          Browse
+          {t("Browse")}
         </Button>
       )}
       <Button size="small" icon={<UndoOutlined />} onClick={handleReset}>
-        Reset
+        {t("Reset")}
       </Button>
       <Button size="small" icon={<CloseOutlined />} onClick={discardEditing}>
-        Cancel
+        {t("Cancel")}
       </Button>
       <Button size="small" type="primary" icon={<CheckOutlined />} onClick={exitEditing}>
-        Done
+        {t("Done")}
       </Button>
     </div>
   );

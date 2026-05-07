@@ -1,7 +1,7 @@
 import { useDroppable } from "@dnd-kit/core";
 import { useStore } from "zustand";
 import { shellPreferencesStore } from "../../../../shell/store/shellPreferencesStore";
-import { dashboardEditModeStore } from "../../../../store/dashboardEditModeStore";
+import { dashboardEditModeStore } from "../../../store/dashboardEditModeStore";
 import type { DashboardWidgetMeta, WidgetRenderProps } from "../../../widgets/widgetRegistry";
 import { SortableWidgetCard } from "./edit/SortableWidgetCard";
 

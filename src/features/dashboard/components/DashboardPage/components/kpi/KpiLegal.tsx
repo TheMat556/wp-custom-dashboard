@@ -51,6 +51,15 @@ export function KpiLegal({ legalData, t }: KpiLegalProps) {
           {t("Impressum")}
         </Tag>
       )}
+      {trackingOk ? (
+        <Tag color="success" style={{ margin: 0, fontSize: 11, lineHeight: "18px" }}>
+          {t("Tracking consent")}
+        </Tag>
+      ) : (
+        <Tag color="error" style={{ margin: 0, fontSize: 11, lineHeight: "18px" }}>
+          {t("Tracking consent")}
+        </Tag>
+      )}
     </Flex>
   );
 

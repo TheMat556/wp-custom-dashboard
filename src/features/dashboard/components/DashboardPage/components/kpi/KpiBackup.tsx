@@ -10,6 +10,7 @@ import { StatTile } from "../StatTile";
 export interface KpiBackupProps {
   lastBackupDate: string | null | undefined;
   t: TFunc;
+  intlLocale?: string;
 }
 
 function daysSince(dateStr: string): number {
@@ -19,7 +20,19 @@ function daysSince(dateStr: string): number {
   return Math.floor((now - then) / 86_400_000);
 }
 
-export function KpiBackup({ lastBackupDate, t }: KpiBackupProps) {
+function formatDate(dateStr: string, locale: string): string {
+  try {
+    return new Intl.DateTimeFormat(locale, {
+      year: "numeric",
+      month: "short",
+      day: "numeric",
+    }).format(new Date(dateStr));
+  } catch {
+    return dateStr;
+  }
+}
+
+export function KpiBackup({ lastBackupDate, t, intlLocale = "en" }: KpiBackupProps) {
   const { token } = theme.useToken();
 
   let icon: React.ReactNode;
@@ -40,22 +53,28 @@ export function KpiBackup({ lastBackupDate, t }: KpiBackupProps) {
     tooltip = t("No backup has been recorded yet");
   } else {
     const days = daysSince(lastBackupDate);
+    const formattedDate = formatDate(lastBackupDate, intlLocale);
 
-    if (days <= 1) {
+    if (days === 0) {
       icon = <CheckCircleOutlined />;
       value = t("Today");
       color = token.colorSuccess;
       tooltip = t("Backed up less than 24 hours ago");
+    } else if (days === 1) {
+      icon = <CheckCircleOutlined />;
+      value = t("Yesterday");
+      color = token.colorSuccess;
+      tooltip = t("Last backup: {date}", { date: formattedDate });
     } else if (days <= 7) {
       icon = <CheckCircleOutlined />;
       value = t("{n}d ago", { n: days });
       color = token.colorSuccess;
-      tooltip = `Last backup: ${lastBackupDate}`;
+      tooltip = t("Last backup: {date}", { date: formattedDate });
     } else if (days <= 30) {
       icon = <ClockCircleOutlined />;
       value = t("{n}d ago", { n: days });
       color = token.colorWarning;
-      tooltip = `Last backup: ${lastBackupDate}`;
+      tooltip = t("Last backup: {date}", { date: formattedDate });
     } else {
       icon = <ExclamationCircleOutlined />;
       value = t("{n}d ago", { n: days });
@@ -65,7 +84,7 @@ export function KpiBackup({ lastBackupDate, t }: KpiBackupProps) {
 
     sub = (
       <Typography.Text style={{ fontSize: 11, color: token.colorTextTertiary }}>
-        {lastBackupDate}
+        {formattedDate}
       </Typography.Text>
     );
   }

@@ -36,7 +36,7 @@ function snapshotPersistedLayout(): DashboardEditDraft {
   return {
     order: [...prefs.dashboardWidgetOrder],
     hidden: [...prefs.hiddenWidgets],
-    kpiContainers: JSON.parse(JSON.stringify(prefs.kpiContainerInstances)),
+    kpiContainers: structuredClone(prefs.kpiContainerInstances),
     widgetSizes: { ...prefs.dashboardWidgetSizes },
   };
 }
@@ -114,12 +114,7 @@ export const dashboardEditModeStore = createStore<DashboardEditModeState>((set, 
     set({
       isEditing: true,
       savedDraft: snapshot,
-      draft: {
-        order: [...snapshot.order],
-        hidden: [...snapshot.hidden],
-        kpiContainers: JSON.parse(JSON.stringify(snapshot.kpiContainers)),
-        widgetSizes: { ...snapshot.widgetSizes },
-      },
+      draft: structuredClone(snapshot),
     });
   },
 

@@ -16,13 +16,13 @@ import { useStore } from "zustand";
 import type { DashboardViewModel } from "../../../../dashboardViewModel";
 import { dashboardEditModeStore } from "../../../../store/dashboardEditModeStore";
 import {
-  DASHBOARD_WIDGETS,
   isContainerInstanceKey,
   isKpiWidgetKey,
   mergeWidgetOrder,
   parseContainerInstanceKey,
   resolveWidgetKey,
 } from "../../../../widgets/widgetRegistry";
+import type { TFunc } from "../../../types";
 import { DASHBOARD_GRID_DROPPABLE_ID } from "../DashboardGrid";
 import { announceLive } from "./announceLive";
 import { CATALOGUE_DROPZONE_ID, CatalogueDrawer } from "./CatalogueDrawer";
@@ -33,10 +33,11 @@ import { useSaveToast } from "./useSaveToast";
 interface EditModeChromeProps {
   viewModel: DashboardViewModel;
   children: React.ReactNode;
+  t: TFunc;
 }
 
 function widgetLabel(key: string): string {
-  return DASHBOARD_WIDGETS.find((w) => w.key === key)?.label ?? key;
+  return resolveWidgetKey(key)?.label ?? key;
 }
 
 function insertKey(keys: string[], key: string, beforeKey: string | null): string[] {
@@ -48,7 +49,7 @@ function insertKey(keys: string[], key: string, beforeKey: string | null): strin
   return filtered;
 }
 
-function EditModeChrome({ viewModel, children }: EditModeChromeProps) {
+function EditModeChrome({ viewModel, children, t }: EditModeChromeProps) {
   const isEditing = useStore(dashboardEditModeStore, (s) => s.isEditing);
   const discardEditing = useStore(dashboardEditModeStore, (s) => s.discardEditing);
 
@@ -238,7 +239,7 @@ function EditModeChrome({ viewModel, children }: EditModeChromeProps) {
   );
 
   useEditKeyboardShortcuts({ enabled: isEditing, onEscape: discardEditing });
-  useSaveToast(isEditing);
+  useSaveToast({ enabled: isEditing, t });
 
   const handleAddClick = useCallback(
     (key: string) => handleAddFromCatalogue(key, null),
@@ -247,7 +248,7 @@ function EditModeChrome({ viewModel, children }: EditModeChromeProps) {
 
   return (
     <>
-      <EditModeBar onToggleCatalogue={() => setCatalogueOpen((prev) => !prev)} />
+      <EditModeBar onToggleCatalogue={() => setCatalogueOpen((prev) => !prev)} t={t} />
       <DndContext
         sensors={sensors}
         collisionDetection={closestCorners}
@@ -283,6 +284,7 @@ function EditModeChrome({ viewModel, children }: EditModeChromeProps) {
           onAdd={handleAddClick}
           order={draftOrder}
           hiddenKeys={draftHidden}
+          t={t}
         />
         <div data-edit-live-region aria-live="polite" className="wp-react-ui-sr-only" />
       </DndContext>

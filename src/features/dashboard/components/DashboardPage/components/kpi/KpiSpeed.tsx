@@ -24,8 +24,9 @@ function getSpeedColor(
   token: TokenType
 ): string {
   if (isSiteDown) return token.colorError;
-  if (speed?.status === "good") return token.colorSuccess;
-  if (speed?.status === "fair") return token.colorWarning;
+  if (!speed?.status) return token.colorTextSecondary;
+  if (speed.status === "good") return token.colorSuccess;
+  if (speed.status === "fair") return token.colorWarning;
   return token.colorError;
 }
 

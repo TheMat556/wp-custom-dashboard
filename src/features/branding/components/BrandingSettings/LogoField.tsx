@@ -111,6 +111,7 @@ export function LogoField({
         role="button"
         tabIndex={0}
         aria-label={label}
+        onClick={handleSelect}
         style={{
           borderRadius: token.borderRadiusLG,
           background: previewBackground ?? token.colorFillAlter,

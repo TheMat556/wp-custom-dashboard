@@ -66,9 +66,6 @@ export function SortableWidgetCard({ widget, children }: SortableWidgetCardProps
   const size = currentSize ?? widget.defaultSize;
   const canResize = widget.allowedSizes.length > 1;
 
-  // Hide size control on mobile (≤ 767px)
-  const showSizeControl = canResize && typeof window !== "undefined" && window.innerWidth > 767;
-
   const stopDragPointer = (event: React.PointerEvent) => {
     event.stopPropagation();
   };
@@ -111,7 +108,7 @@ export function SortableWidgetCard({ widget, children }: SortableWidgetCardProps
             onPointerMove={stopDragPointer}
             onPointerUp={stopDragPointer}
           >
-            {showSizeControl && (
+            {canResize && (
               <Segmented
                 size="small"
                 options={widget.allowedSizes.map((s) => ({ value: s, label: SIZE_LABELS[s] }))}

@@ -293,6 +293,14 @@ body[data-theme="dark"] {
   animation-delay: var(--dashboard-reveal-delay);
 }
 
+@media (prefers-reduced-motion: reduce) {
+  .wp-react-ui-dashboard-reveal {
+    animation: none;
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
 @keyframes wp-react-ui-dashboard-reveal {
   from {
     opacity: 0;
@@ -476,6 +484,14 @@ body[data-theme="dark"] {
   font-weight: 600;
   line-height: 22px;
   padding-inline: 8px;
+}
+
+/* Hide size control on mobile (≤ 767px) — the Segmented component is too
+   wide to fit in the floating panel on small screens. */
+@media (max-width: 767px) {
+  .wp-react-ui-widget-controls .ant-segmented {
+    display: none;
+  }
 }
 
 .wp-react-ui-delete-btn {

@@ -19,6 +19,8 @@ import {
 } from "../../../../../shell/store/shellPreferencesStore";
 import { useSaveToast } from "./useSaveToast";
 
+const identityT = (key: string) => key;
+
 describe("useSaveToast", () => {
   beforeEach(() => {
     successMock.mockClear();
@@ -31,14 +33,14 @@ describe("useSaveToast", () => {
   });
 
   it("does not toast when disabled", () => {
-    renderHook(() => useSaveToast(false));
+    renderHook(() => useSaveToast({ enabled: false, t: identityT }));
     shellPreferencesStore.setState({ dashboardWidgetOrder: ["a"] });
     vi.advanceTimersByTime(2000);
     expect(successMock).not.toHaveBeenCalled();
   });
 
   it("emits a debounced toast after a tracked field changes", () => {
-    renderHook(() => useSaveToast(true));
+    renderHook(() => useSaveToast({ enabled: true, t: identityT }));
     shellPreferencesStore.setState({ dashboardWidgetOrder: ["a"] });
     vi.advanceTimersByTime(599);
     expect(successMock).not.toHaveBeenCalled();
@@ -48,7 +50,7 @@ describe("useSaveToast", () => {
   });
 
   it("coalesces rapid changes into a single toast", () => {
-    renderHook(() => useSaveToast(true));
+    renderHook(() => useSaveToast({ enabled: true, t: identityT }));
     shellPreferencesStore.setState({ dashboardWidgetOrder: ["a"] });
     vi.advanceTimersByTime(200);
     shellPreferencesStore.setState({ dashboardWidgetOrder: ["a", "b"] });
@@ -59,7 +61,7 @@ describe("useSaveToast", () => {
   });
 
   it("ignores untracked field changes", () => {
-    renderHook(() => useSaveToast(true));
+    renderHook(() => useSaveToast({ enabled: true, t: identityT }));
     shellPreferencesStore.setState({ density: "compact" });
     vi.advanceTimersByTime(2000);
     expect(successMock).not.toHaveBeenCalled();

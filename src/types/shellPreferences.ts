@@ -1,8 +1,10 @@
 import type { RecentPageRecord } from "../utils/commandPalette";
 
-export type WidgetSize = "1x" | "2x" | "half" | "full";
+export const WIDGET_SIZES = ["1x", "2x", "half", "full"] as const;
+export type WidgetSize = (typeof WIDGET_SIZES)[number];
 
-export type KpiContainerColumns = 2 | 3 | 4 | 5;
+export const KPI_CONTAINER_COLUMNS = [2, 3, 4, 5] as const;
+export type KpiContainerColumns = (typeof KPI_CONTAINER_COLUMNS)[number];
 
 export interface KpiContainerInstanceConfig {
   /** Internal order of KPI keys inside this container instance */
