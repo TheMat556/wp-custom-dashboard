@@ -151,8 +151,8 @@ export default function BrandingSettings() {
   const handleKeyDown = useCallback(
     (e: KeyboardEvent) => {
       if ((e.ctrlKey || e.metaKey) && e.key === "s") {
-        e.preventDefault();
         if (isDirty && !saving) {
+          e.preventDefault();
           void handleSave();
         }
       }

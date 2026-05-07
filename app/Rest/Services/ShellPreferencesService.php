@@ -112,9 +112,20 @@ final class ShellPreferencesService {
 				if ( ! is_array( $cfg ) ) {
 					continue;
 				}
-				$order = isset( $cfg['order'] ) && is_array( $cfg['order'] )
-					? self::sanitize_string_array( $cfg['order'] )
-					: array();
+				$raw_order = isset( $cfg['order'] ) && is_array( $cfg['order'] ) ? $cfg['order'] : array();
+				$order     = array_values(
+					array_filter(
+						array_map(
+							function ( $v ) {
+								return is_scalar( $v ) ? sanitize_text_field( (string) $v ) : null;
+							},
+							$raw_order
+						),
+						function ( $v ) {
+							return null !== $v;
+						}
+					)
+				);
 				$columns = isset( $cfg['columns'] ) && is_int( $cfg['columns'] ) && $cfg['columns'] >= 2 && $cfg['columns'] <= 5
 					? $cfg['columns']
 					: self::DEFAULT_COLUMNS;
@@ -181,12 +192,13 @@ final class ShellPreferencesService {
 				if ( ! is_string( $v ) || ! in_array( $v, self::VALID_WIDGET_SIZES, true ) ) {
 					continue;
 				}
-				if ( isset( self::LEGACY_WIDGET_REPLACEMENTS[ $k ] ) ) {
-					foreach ( self::LEGACY_WIDGET_REPLACEMENTS[ $k ] as $r ) {
+				$safe_key = preg_replace( '/[^A-Za-z0-9_-]+/', '_', (string) $k );
+				if ( isset( self::LEGACY_WIDGET_REPLACEMENTS[ $safe_key ] ) ) {
+					foreach ( self::LEGACY_WIDGET_REPLACEMENTS[ $safe_key ] as $r ) {
 						$migrated_sizes[ $r ] = $v;
 					}
 				} else {
-					$migrated_sizes[ $k ] = $v;
+					$migrated_sizes[ $safe_key ] = $v;
 				}
 			}
 			$prefs['dashboardWidgetSizes'] = $migrated_sizes;
@@ -197,9 +209,20 @@ final class ShellPreferencesService {
 				if ( ! is_array( $cfg ) ) {
 					continue;
 				}
-				$order = isset( $cfg['order'] ) && is_array( $cfg['order'] )
-					? self::sanitize_string_array( $cfg['order'] )
-					: array();
+				$raw_order = isset( $cfg['order'] ) && is_array( $cfg['order'] ) ? $cfg['order'] : array();
+				$order     = array_values(
+					array_filter(
+						array_map(
+							function ( $v ) {
+								return is_scalar( $v ) ? sanitize_text_field( (string) $v ) : null;
+							},
+							$raw_order
+						),
+						function ( $v ) {
+							return null !== $v;
+						}
+					)
+				);
 				$columns = isset( $cfg['columns'] ) && is_int( $cfg['columns'] ) && $cfg['columns'] >= 2 && $cfg['columns'] <= 5
 					? $cfg['columns']
 					: self::DEFAULT_COLUMNS;
