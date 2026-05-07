@@ -42,7 +42,7 @@ final class ShellPreferencesService {
 		$raw   = get_user_meta( get_current_user_id(), self::META_KEY, true );
 		$prefs = is_array( $raw ) ? self::migrate_legacy_keys( $raw ) : array();
 
-		// Persist migration result if the normalized shape differs from the stored value
+		// Persist migration result if the normalized shape differs from the stored value.
 		if ( is_array( $raw ) && $raw !== $prefs ) {
 			update_user_meta( get_current_user_id(), self::META_KEY, $prefs );
 		}
