@@ -581,13 +581,6 @@ export function mergeWidgetOrder(persistedOrder: string[]): string[] {
   });
 
   const defaultInstanceKey = `${KPI_CONTAINER_INSTANCE_PREFIX}__default__`;
-  // Only seed the default container when there are no container instances at all
-  // (e.g. fresh user). When hasContainerInstance is true, the default will NOT
-  // be re-added even if it's missing from validPersisted — this prevents
-  // overriding deliberate user removal of the default container.
-  if (!hasContainerInstance) {
-    // The default key will come from missingFromRegistry below.
-  }
 
   const missingFromRegistry = DEFAULT_WIDGET_ORDER.filter((key) => {
     if (hasContainerInstance && (key in TEMPLATE_REWRITES || key === defaultInstanceKey))

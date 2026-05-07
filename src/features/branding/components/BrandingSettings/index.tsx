@@ -330,8 +330,6 @@ export default function BrandingSettings() {
         <Text type="secondary" className={styles.footerNote}>
           {t("Changes are applied live after saving.")}
         </Text>
-
-        <Flex gap={12} wrap />
       </div>
     </PageCanvas>
   );

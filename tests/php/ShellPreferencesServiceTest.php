@@ -66,7 +66,7 @@ class ShellPreferencesServiceTest extends TestCase {
 	/**
 	 * @dataProvider provideLegacyWidgetOrderMigration
 	 */
-	public function test_expand_legacy_keys_in_list( array $input, array $expected ): void {
+	public function testExpandLegacyKeysInList( array $input, array $expected ): void {
 		$service = new ShellPreferencesService();
 
 		// Use reflection to access the private static method.

@@ -18,6 +18,7 @@ import { useStore } from "zustand";
 import type { KpiContainerColumns } from "../../../../../../types/shellPreferences";
 import { shellPreferencesStore } from "../../../../../shell/store/shellPreferencesStore";
 import type { DashboardViewModel } from "../../../../dashboardViewModel";
+import { dashboardEditModeStore } from "../../../../store/dashboardEditModeStore";
 import { DASHBOARD_WIDGETS, KPI_WIDGET_KEYS } from "../../../../widgets/widgetRegistry";
 import { KpiBackup } from "./KpiBackup";
 import { KpiBookings } from "./KpiBookings";
@@ -303,6 +304,88 @@ function DraggableKpiTile({
 
 // ── KpiContainer ──
 
+function addKpiViaEditMode(instanceId: string, kpiKey: string) {
+  const state = dashboardEditModeStore.getState();
+  const currentOrder = state.draft.kpiContainers[instanceId]?.order ?? [];
+  if (currentOrder.includes(kpiKey)) return;
+  state.setDraftKpiContainerConfig(instanceId, { order: [...currentOrder, kpiKey] });
+  const filteredGrid = state.draft.order.filter((k) => k !== kpiKey);
+  if (filteredGrid.length !== state.draft.order.length) {
+    state.setDraftOrder(filteredGrid);
+  }
+}
+
+function addKpiViaPersisted(instanceId: string, kpiKey: string) {
+  const state = shellPreferencesStore.getState();
+  const current = state.kpiContainerInstances[instanceId];
+  const currentOrder = current?.order ?? [];
+  if (currentOrder.includes(kpiKey)) return;
+  state.setKpiContainerInstanceConfig(instanceId, { order: [...currentOrder, kpiKey] });
+  const filteredGrid = state.dashboardWidgetOrder.filter((k) => k !== kpiKey);
+  if (filteredGrid.length !== state.dashboardWidgetOrder.length) {
+    state.setDashboardWidgetOrder(filteredGrid);
+  }
+}
+
+function removeKpiViaEditMode(instanceId: string, instanceKey: string, kpiKey: string) {
+  const state = dashboardEditModeStore.getState();
+  const currentOrder = state.draft.kpiContainers[instanceId]?.order ?? [];
+  const next = currentOrder.filter((k) => k !== kpiKey);
+  state.setDraftKpiContainerConfig(instanceId, { order: next });
+  const containerIdx = state.draft.order.indexOf(instanceKey);
+  if (containerIdx !== -1) {
+    const newOrder = [...state.draft.order];
+    newOrder.splice(containerIdx + 1, 0, kpiKey);
+    state.setDraftOrder(newOrder);
+  }
+}
+
+function removeKpiViaPersisted(instanceId: string, instanceKey: string, kpiKey: string) {
+  const state = shellPreferencesStore.getState();
+  const current = state.kpiContainerInstances[instanceId];
+  const currentOrder = current?.order ?? [];
+  const next = currentOrder.filter((k) => k !== kpiKey);
+  state.setKpiContainerInstanceConfig(instanceId, { order: next });
+  const containerIdx = state.dashboardWidgetOrder.indexOf(instanceKey);
+  if (containerIdx !== -1) {
+    const newOrder = [...state.dashboardWidgetOrder];
+    newOrder.splice(containerIdx + 1, 0, kpiKey);
+    state.setDashboardWidgetOrder(newOrder);
+  }
+}
+
+function removeContainerViaEditMode(instanceId: string, instanceKey: string) {
+  const state = dashboardEditModeStore.getState();
+  const kpis = state.draft.kpiContainers[instanceId];
+  const kpiOrderInStore = kpis?.order ?? [];
+  const newOrder = [...state.draft.order];
+  const containerIdx = newOrder.indexOf(instanceKey);
+  if (containerIdx !== -1) {
+    newOrder.splice(containerIdx, 1);
+    kpiOrderInStore.forEach((kpiKey: string, i: number) => {
+      newOrder.splice(containerIdx + i, 0, kpiKey);
+    });
+    state.setDraftOrder(newOrder);
+  }
+  state.removeDraftKpiContainerInstance(instanceId);
+}
+
+function removeContainerViaPersisted(instanceId: string, instanceKey: string) {
+  const state = shellPreferencesStore.getState();
+  const kpis = state.kpiContainerInstances[instanceId];
+  const kpiOrderInStore = kpis?.order ?? [];
+  const newOrder = [...state.dashboardWidgetOrder];
+  const containerIdx = newOrder.indexOf(instanceKey);
+  if (containerIdx !== -1) {
+    newOrder.splice(containerIdx, 1);
+    kpiOrderInStore.forEach((kpiKey: string, i: number) => {
+      newOrder.splice(containerIdx + i, 0, kpiKey);
+    });
+    state.setDashboardWidgetOrder(newOrder);
+  }
+  state.removeKpiContainerInstance(instanceId);
+}
+
 export function KpiContainer({
   instanceKey,
   viewModel,
@@ -314,8 +397,20 @@ export function KpiContainer({
   const { token } = theme.useToken();
   const instanceId = parseInstanceId(instanceKey);
 
-  const instances = useStore(shellPreferencesStore, (s) => s.kpiContainerInstances);
-  const setInstanceConfig = useStore(shellPreferencesStore, (s) => s.setKpiContainerInstanceConfig);
+  const editDraft = useStore(dashboardEditModeStore, (s) => s.draft);
+  const setDraftKpiContainerConfig = useStore(
+    dashboardEditModeStore,
+    (s) => s.setDraftKpiContainerConfig
+  );
+
+  const persistedInstances = useStore(shellPreferencesStore, (s) => s.kpiContainerInstances);
+  const setPersistedInstanceConfig = useStore(
+    shellPreferencesStore,
+    (s) => s.setKpiContainerInstanceConfig
+  );
+
+  const instances = isEditing ? editDraft.kpiContainers : persistedInstances;
+  const setInstanceConfig = isEditing ? setDraftKpiContainerConfig : setPersistedInstanceConfig;
 
   const instanceCfg = instances[instanceId];
   const kpiOrder = instanceCfg?.order ?? [];
@@ -373,58 +468,26 @@ export function KpiContainer({
   // --- Add a KPI to this container from the available picker ---
   const handleAddKpi = useCallback(
     (kpiKey: string) => {
-      const state = shellPreferencesStore.getState();
-      const current = state.kpiContainerInstances[instanceId];
-      const currentOrder = current?.order ?? [];
-      if (currentOrder.includes(kpiKey)) return;
-      const next = [...currentOrder, kpiKey];
-      state.setKpiContainerInstanceConfig(instanceId, { order: next });
-      // Remove from grid order if present
-      const filteredGrid = state.dashboardWidgetOrder.filter((k) => k !== kpiKey);
-      if (filteredGrid.length !== state.dashboardWidgetOrder.length) {
-        state.setDashboardWidgetOrder(filteredGrid);
-      }
+      if (isEditing) addKpiViaEditMode(instanceId, kpiKey);
+      else addKpiViaPersisted(instanceId, kpiKey);
     },
-    [instanceId]
+    [instanceId, isEditing]
   );
 
   // --- Remove a KPI from this container (adds back to the grid) ---
   const handleRemoveKpi = useCallback(
     (kpiKey: string) => {
-      const state = shellPreferencesStore.getState();
-      const current = state.kpiContainerInstances[instanceId];
-      const currentOrder = current?.order ?? [];
-      const next = currentOrder.filter((k) => k !== kpiKey);
-      state.setKpiContainerInstanceConfig(instanceId, { order: next });
-      // Add back to the grid order (after the container)
-      const containerIdx = state.dashboardWidgetOrder.indexOf(instanceKey);
-      if (containerIdx !== -1) {
-        const newOrder = [...state.dashboardWidgetOrder];
-        newOrder.splice(containerIdx + 1, 0, kpiKey);
-        state.setDashboardWidgetOrder(newOrder);
-      }
+      if (isEditing) removeKpiViaEditMode(instanceId, instanceKey, kpiKey);
+      else removeKpiViaPersisted(instanceId, instanceKey, kpiKey);
     },
-    [instanceId, instanceKey]
+    [instanceId, instanceKey, isEditing]
   );
 
   // --- Remove the entire container instance ---
   const handleRemoveContainer = useCallback(() => {
-    const state = shellPreferencesStore.getState();
-    const kpis = state.kpiContainerInstances[instanceId];
-    const kpiOrderInStore = kpis?.order ?? [];
-    // Move all KPIs back to the grid before removing
-    const newOrder = [...state.dashboardWidgetOrder];
-    const containerIdx = newOrder.indexOf(instanceKey);
-    if (containerIdx !== -1) {
-      newOrder.splice(containerIdx, 1);
-      // Insert all KPIs from the container right after where it was
-      kpiOrderInStore.forEach((kpiKey: string, i: number) => {
-        newOrder.splice(containerIdx + i, 0, kpiKey);
-      });
-      state.setDashboardWidgetOrder(newOrder);
-    }
-    state.removeKpiContainerInstance(instanceId);
-  }, [instanceId, instanceKey]);
+    if (isEditing) removeContainerViaEditMode(instanceId, instanceKey);
+    else removeContainerViaPersisted(instanceId, instanceKey);
+  }, [instanceId, instanceKey, isEditing]);
 
   const [, setActiveKpiKey] = useState<string | null>(null);
 

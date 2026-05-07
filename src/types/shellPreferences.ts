@@ -23,6 +23,7 @@ export interface PersistedShellPreferences {
   hiddenWidgets: string[];
   dashboardWidgetSizes: Record<string, WidgetSize>;
   highContrast: boolean;
+  sidebarCollapsed: boolean;
   /** Config per KPI container instance (keyed by instance ID) */
   kpiContainerInstances: Record<string, KpiContainerInstanceConfig>;
 }

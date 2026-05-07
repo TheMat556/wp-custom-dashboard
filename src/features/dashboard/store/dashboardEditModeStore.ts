@@ -140,7 +140,8 @@ export const dashboardEditModeStore = createStore<DashboardEditModeState>((set, 
     if (
       savedDraft.order.join(",") !== persisted.dashboardWidgetOrder.join(",") ||
       savedDraft.hidden.join(",") !== persisted.hiddenWidgets.join(",") ||
-      JSON.stringify(savedDraft.widgetSizes) !== JSON.stringify(persisted.dashboardWidgetSizes)
+      JSON.stringify(savedDraft.widgetSizes) !== JSON.stringify(persisted.dashboardWidgetSizes) ||
+      JSON.stringify(savedDraft.kpiContainers) !== JSON.stringify(persisted.kpiContainerInstances)
     ) {
       commitDraftToPreferences(savedDraft);
     }

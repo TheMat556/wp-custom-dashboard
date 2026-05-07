@@ -37,6 +37,7 @@ function getDefaultPersistedState(): PersistedShellPreferences {
     dashboardWidgetOrder: [],
     hiddenWidgets: [],
     highContrast: false,
+    sidebarCollapsed: false,
     dashboardWidgetSizes: {},
     kpiContainerInstances: {
       __default__: {
@@ -95,6 +96,10 @@ function readPersistedState(): PersistedShellPreferences {
         : defaults.hiddenWidgets,
       highContrast:
         typeof parsed.highContrast === "boolean" ? parsed.highContrast : defaults.highContrast,
+      sidebarCollapsed:
+        typeof parsed.sidebarCollapsed === "boolean"
+          ? parsed.sidebarCollapsed
+          : defaults.sidebarCollapsed,
       dashboardWidgetSizes:
         typeof parsed.dashboardWidgetSizes === "object" &&
         parsed.dashboardWidgetSizes !== null &&
@@ -155,6 +160,7 @@ function getPersistedFields(
     | "dashboardWidgetOrder"
     | "hiddenWidgets"
     | "highContrast"
+    | "sidebarCollapsed"
     | "dashboardWidgetSizes"
     | "kpiContainerInstances"
   >
@@ -168,6 +174,7 @@ function getPersistedFields(
     dashboardWidgetOrder: state.dashboardWidgetOrder,
     hiddenWidgets: state.hiddenWidgets,
     highContrast: state.highContrast,
+    sidebarCollapsed: state.sidebarCollapsed,
     dashboardWidgetSizes: state.dashboardWidgetSizes,
     kpiContainerInstances: state.kpiContainerInstances,
   };
@@ -244,6 +251,7 @@ export const shellPreferencesStore = createStore<ShellPreferencesState>((set, ge
   dashboardWidgetOrder: [],
   hiddenWidgets: [],
   highContrast: false,
+  sidebarCollapsed: false,
   dashboardWidgetSizes: {},
   kpiContainerInstances: {},
 
@@ -440,6 +448,7 @@ export function resetShellPreferencesStore() {
     dashboardWidgetOrder: [],
     hiddenWidgets: [],
     highContrast: false,
+    sidebarCollapsed: false,
     dashboardWidgetSizes: {},
     kpiContainerInstances: {},
   });

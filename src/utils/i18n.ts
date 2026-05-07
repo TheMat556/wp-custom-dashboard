@@ -398,6 +398,83 @@ const de: Record<string, string> = {
   "{n} bookings today, {m} upcoming": "{n} Buchungen heute, {m} anstehend",
   "No bookings scheduled for today": "Keine Buchungen für heute geplant",
   "Post and page content overview": "Übersicht über Beiträge und Seiteninhalte",
+
+  // Edit mode
+  "1×": "1×",
+  "2×": "2×",
+  Half: "Halb",
+  Full: "Voll",
+  Size: "Größe",
+  "Drag to reorder": "Zum Neuordnen ziehen",
+  "Remove from dashboard": "Aus dem Dashboard entfernen",
+  "Add widgets": "Widgets hinzufügen",
+  "Search widgets": "Widgets suchen",
+  "No widgets match that name.": "Keine Widgets passen zu diesem Namen.",
+  Customize: "Anpassen",
+  Browse: "Durchsuchen",
+  "Drag widgets to reorder. Use the controls to show/hide or resize widgets.":
+    "Widgets zum Neuordnen ziehen. Steuerelemente zum Ein-/Ausblenden oder Größenändern verwenden.",
+  Reset: "Zurücksetzen",
+  "Reset dashboard?": "Dashboard zurücksetzen?",
+  Done: "Fertig",
+  "Edit dashboard": "Dashboard bearbeiten",
+  "Hero Banner": "Hero-Banner",
+  "Add Page Views": "Seitenaufrufe hinzufügen",
+  "Remove container": "Container entfernen",
+  Columns: "Spalten",
+  "KPI Container": "KPI-Container",
+  "Add KPI cards to this container": "KPI-Karten zu diesem Container hinzufügen",
+  "This container is empty — pick a KPI above to add it.":
+    "Dieser Container ist leer — wählen Sie oben einen KPI aus, um ihn hinzuzufügen.",
+  "No KPIs inside this container": "Keine KPIs in diesem Container",
+  Saved: "Gespeichert",
+  "Brand assets saved successfully.": "Markenassets erfolgreich gespeichert.",
+  "Failed to save brand assets.": "Fehler beim Speichern der Markenassets.",
+  "Branding is unavailable": "Branding nicht verfügbar",
+  "Activate a license to edit branding settings.":
+    "Aktivieren Sie eine Lizenz, um Branding-Einstellungen zu bearbeiten.",
+  "The current site license must be active to edit branding settings.":
+    "Die aktuelle Website-Lizenz muss aktiv sein, um Branding-Einstellungen zu bearbeiten.",
+  "License server URL": "Lizenzserver-URL",
+  "Connection settings": "Verbindungseinstellungen",
+  "License grace period active": "Lizenz-Kulanzfrist aktiv",
+  "Re-fetch license status from the server": "Lizenzstatus vom Server aktualisieren",
+  "Deactivate this license on the current site":
+    "Diese Lizenz auf der aktuellen Website deaktivieren",
+  "Edit chat backend connection": "Chat-Backend-Verbindung bearbeiten",
+  "This URL points the shell to the central WordPress chat backend.":
+    "Diese URL verweist die Shell auf das zentrale WordPress-Chat-Backend.",
+  "No central chat backend URL is configured yet.":
+    "Es ist noch keine zentrale Chat-Backend-URL konfiguriert.",
+  "Chat is unavailable": "Chat nicht verfügbar",
+  "Write a message": "Nachricht schreiben",
+  "Advanced Settings": "Erweiterte Einstellungen",
+  "Install WP Statistics (free) to track your visitors.":
+    "WP Statistics (kostenlos) installieren, um Ihre Besucher zu verfolgen.",
+  "Install an SEO plugin to track your search visibility":
+    "Installieren Sie ein SEO-Plugin, um Ihre Suchsichtbarkeit zu verfolgen.",
+  "SEO Score": "SEO-Wert",
+  "No plugin detected": "Kein Plugin erkannt",
+  Content: "Inhalt",
+  "Conversions (30d)": "Conversions (30 Tage)",
+  "Form submissions and bookings in the last 30 days":
+    "Formularübermittlungen und Buchungen der letzten 30 Tage",
+  "Legal compliance, business functions, and SEO health":
+    "Rechtskonformität, Geschäftsfunktionen und SEO-Gesundheit",
+  "Next 5 upcoming": "Nächste 5 anstehend",
+  Posts: "Beiträge",
+  "No drafts": "Keine Entwürfe",
+  bookings: "Buchungen",
+  Never: "Nie",
+  Yesterday: "Gestern",
+  plugins: "Plugins",
+  themes: "Themes",
+  "Backup is overdue — more than 30 days ago": "Backup überfällig — mehr als 30 Tage her",
+  "Backed up less than 24 hours ago": "Vor weniger als 24 Stunden gesichert",
+  "No backup recorded": "Kein Backup aufgezeichnet",
+  "No backup has been recorded yet": "Es wurde noch kein Backup aufgezeichnet",
+  "Panel Title": "Panel-Titel",
+  "Panel description": "Panel-Beschreibung",
 };
 
 /* ── Translation function factory ─────────────────────────────────────────── */
