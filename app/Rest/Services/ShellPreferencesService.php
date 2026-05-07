@@ -20,6 +20,8 @@ final class ShellPreferencesService {
 
 	private const VALID_WIDGET_SIZES = array( '1x', '2x', 'half', 'full' );
 
+	private const DEFAULT_COLUMNS = 3;
+
 	private const LEGACY_WIDGET_REPLACEMENTS = array(
 		'summary-tiles' => array( 'kpi-website', 'kpi-visitors', 'kpi-updates', 'kpi-speed', 'kpi-conversions' ),
 	);
@@ -39,6 +41,11 @@ final class ShellPreferencesService {
 	public function get_preferences_payload(): array {
 		$raw   = get_user_meta( get_current_user_id(), self::META_KEY, true );
 		$prefs = is_array( $raw ) ? self::migrate_legacy_keys( $raw ) : array();
+
+		// Persist migration result if the normalized shape differs from the stored value
+		if ( is_array( $raw ) && $raw !== $prefs ) {
+			update_user_meta( get_current_user_id(), self::META_KEY, $prefs );
+		}
 
 		return array( 'preferences' => $prefs );
 	}
@@ -110,7 +117,7 @@ final class ShellPreferencesService {
 					: array();
 				$columns = isset( $cfg['columns'] ) && is_int( $cfg['columns'] ) && $cfg['columns'] >= 2 && $cfg['columns'] <= 5
 					? $cfg['columns']
-					: 3;
+					: self::DEFAULT_COLUMNS;
 				$clean[ $id ] = array(
 					'order'   => $order,
 					'columns' => $columns,
@@ -195,7 +202,7 @@ final class ShellPreferencesService {
 					: array();
 				$columns = isset( $cfg['columns'] ) && is_int( $cfg['columns'] ) && $cfg['columns'] >= 2 && $cfg['columns'] <= 5
 					? $cfg['columns']
-					: 2;
+					: self::DEFAULT_COLUMNS;
 				$normalized[ $instance_id ] = array(
 					'order'   => $order,
 					'columns' => $columns,

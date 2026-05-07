@@ -2,7 +2,7 @@ import { EditOutlined } from "@ant-design/icons";
 import { Button } from "antd";
 import { useStore } from "zustand";
 import { dashboardEditModeStore } from "../../../../store/dashboardEditModeStore";
-import type { TFunc } from "../../../types";
+import type { TFunc } from "../../types";
 
 interface EditModeToggleProps {
   t: TFunc;

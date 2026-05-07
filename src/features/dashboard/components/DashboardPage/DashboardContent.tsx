@@ -1,5 +1,11 @@
 import { HolderOutlined } from "@ant-design/icons";
-import { DndContext, type DragEndEvent, DragOverlay, type DragStartEvent } from "@dnd-kit/core";
+import {
+  DndContext,
+  type DragEndEvent,
+  DragOverlay,
+  type DragStartEvent,
+  useDroppable,
+} from "@dnd-kit/core";
 import { restrictToVerticalAxis } from "@dnd-kit/modifiers";
 import { SortableContext, verticalListSortingStrategy } from "@dnd-kit/sortable";
 import { useMemo, useState } from "react";
@@ -9,6 +15,7 @@ import { shellPreferencesStore } from "../../../shell/store/shellPreferencesStor
 import type { DashboardViewModel } from "../../dashboardViewModel";
 import { dashboardEditModeStore } from "../../store/dashboardEditModeStore";
 import { getVisibleWidgets, resolveWidgetKey } from "../../widgets/widgetRegistry";
+import { DASHBOARD_GRID_DROPPABLE_ID } from "./components/DashboardGrid";
 import { announceLive } from "./components/edit/announceLive";
 import { SortableWidgetCard } from "./components/edit/SortableWidgetCard";
 import type { TFunc } from "./types";
@@ -64,6 +71,11 @@ export function DashboardContent({
 
   const [activeDragKey, setActiveDragKey] = useState<string | null>(null);
 
+  const { setNodeRef: setDroppableRef } = useDroppable({
+    id: DASHBOARD_GRID_DROPPABLE_ID,
+    disabled: !isEditing,
+  });
+
   const handleDragStart = (event: DragStartEvent) => {
     setActiveDragKey(String(event.active.id));
   };
@@ -75,11 +87,6 @@ export function DashboardContent({
 
     const activeKey = String(active.id);
     const overKey = String(over.id);
-
-    const currentOrder = getVisibleWidgets(viewModel, hiddenKeys, order).map((w) => w.key);
-    const oldIndex = currentOrder.indexOf(activeKey);
-    const newIndex = currentOrder.indexOf(overKey);
-    if (oldIndex === -1 || newIndex === -1) return;
 
     const reordered = [...order];
     const sourceIndex = reordered.indexOf(activeKey);
@@ -116,6 +123,7 @@ export function DashboardContent({
 
   const gridContent = (
     <div
+      ref={isEditing ? setDroppableRef : undefined}
       className={
         isEditing
           ? "wp-react-ui-dashboard-grid wp-react-ui-edit-mode"
@@ -123,7 +131,7 @@ export function DashboardContent({
       }
     >
       {cardWidgets.map((widget) => (
-        <SortableWidgetCard key={widget.key} widget={widget}>
+        <SortableWidgetCard key={widget.key} widget={widget} t={t}>
           {renderWidgetContent(widget)}
         </SortableWidgetCard>
       ))}

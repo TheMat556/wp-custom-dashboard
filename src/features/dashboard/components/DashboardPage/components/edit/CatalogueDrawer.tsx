@@ -2,13 +2,13 @@ import { useDroppable } from "@dnd-kit/core";
 import { Drawer, Empty, Grid, Input } from "antd";
 import { useMemo, useState } from "react";
 import type { DashboardViewModel } from "../../../../dashboardViewModel";
-import type { TFunc } from "../../../../types";
 import {
   DASHBOARD_WIDGETS,
   type DashboardWidgetMeta,
   KPI_WIDGET_KEYS,
   mergeWidgetOrder,
 } from "../../../../widgets/widgetRegistry";
+import type { TFunc } from "../../types";
 import { CatalogueItem, type CatalogueItemStatus } from "./CatalogueItem";
 
 export const CATALOGUE_DROPZONE_ID = "catalogue:dropzone";

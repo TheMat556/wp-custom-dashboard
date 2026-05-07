@@ -135,8 +135,15 @@ export const dashboardEditModeStore = createStore<DashboardEditModeState>((set, 
     const { savedDraft, isEditing } = get();
     if (!isEditing || !savedDraft) return;
 
-    // Restore the snapshot back to the persisted store
-    commitDraftToPreferences(savedDraft);
+    // Only commit if the saved draft differs from what's currently persisted
+    const persisted = shellPreferencesStore.getState();
+    if (
+      savedDraft.order.join(",") !== persisted.dashboardWidgetOrder.join(",") ||
+      savedDraft.hidden.join(",") !== persisted.hiddenWidgets.join(",") ||
+      JSON.stringify(savedDraft.widgetSizes) !== JSON.stringify(persisted.dashboardWidgetSizes)
+    ) {
+      commitDraftToPreferences(savedDraft);
+    }
 
     set({
       isEditing: false,

@@ -1,5 +1,5 @@
 import { DeleteOutlined, PictureOutlined, UploadOutlined } from "@ant-design/icons";
-import { Button, Flex, Typography, theme } from "antd";
+import { Button, Flex, message, Typography, theme } from "antd";
 import { useCallback, useState } from "react";
 import { openMediaPicker } from "../../../../utils/wpMedia";
 import styles from "./BrandingSettings.module.css";
@@ -62,7 +62,9 @@ export function LogoField({
   const handleDragLeave = useCallback((e: React.DragEvent) => {
     e.preventDefault();
     e.stopPropagation();
-    setIsDragOver(false);
+    if (!e.currentTarget.contains(e.relatedTarget as Node)) {
+      setIsDragOver(false);
+    }
   }, []);
 
   const handleDrop = useCallback(
@@ -76,6 +78,7 @@ export function LogoField({
 
       // Delegate to media picker for now — files dropped here could
       // be uploaded via wp.media in a future iteration.
+      message.info("Drag-to-upload not supported; opening media picker");
       void handleSelect();
     },
     [handleSelect]
@@ -130,7 +133,7 @@ export function LogoField({
           <div
             className={styles.dropOverlay}
             style={{
-              background: `${token.colorPrimary}15`,
+              background: token.colorPrimaryBg,
               color: token.colorPrimary,
             }}
           >

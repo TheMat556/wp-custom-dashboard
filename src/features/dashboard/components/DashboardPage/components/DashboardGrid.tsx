@@ -39,7 +39,7 @@ export function DashboardGrid({ widgets, isEditing, ...renderProps }: DashboardG
 
     if (isEditing) {
       return (
-        <SortableWidgetCard key={widget.key} widget={widget}>
+        <SortableWidgetCard key={widget.key} widget={widget} t={renderProps.t}>
           {widgetContent}
         </SortableWidgetCard>
       );

@@ -6,20 +6,21 @@ import { useCallback } from "react";
 import { useStore } from "zustand";
 import { dashboardEditModeStore } from "../../../../store/dashboardEditModeStore";
 import type { DashboardWidgetMeta, WidgetSize } from "../../../../widgets/widgetRegistry";
-
-const SIZE_LABELS: Record<WidgetSize, string> = {
-  "1x": "1×",
-  "2x": "2×",
-  half: "Half",
-  full: "Full",
-};
+import type { TFunc } from "../../types";
 
 interface SortableWidgetCardProps {
   widget: DashboardWidgetMeta;
   children: React.ReactNode;
+  t: TFunc;
 }
 
-export function SortableWidgetCard({ widget, children }: SortableWidgetCardProps) {
+export function SortableWidgetCard({ widget, children, t }: SortableWidgetCardProps) {
+  const SIZE_LABELS: Record<WidgetSize, string> = {
+    "1x": t("1×"),
+    "2x": t("2×"),
+    half: t("Half"),
+    full: t("Full"),
+  };
   const {
     setNodeRef: setDraggableRef,
     attributes,
@@ -72,6 +73,9 @@ export function SortableWidgetCard({ widget, children }: SortableWidgetCardProps
 
   /** Removes the widget from the dashboard draft (bin icon). */
   const handleDelete = useCallback(() => {
+    // Remove from order AND mark as hidden so "Undo" / catalogue restore works.
+    // Both state changes are needed: removing from order hides it from the grid,
+    // and marking it hidden lets the catalogue show it as "addable".
     const next = draftOrder.filter((k) => k !== widget.key);
     setDraftOrder(next);
     if (draftOrder.includes(widget.key) && !hiddenWidgets.includes(widget.key)) {
@@ -88,7 +92,7 @@ export function SortableWidgetCard({ widget, children }: SortableWidgetCardProps
       ref={mergedRef}
       style={style}
       className={`widget--${size} wp-react-ui-sortable-widget${overClass}${draggingClass}${isEditing ? " wp-react-ui-sortable-widget--editing" : ""}`}
-      aria-label="Drag to reorder"
+      aria-label={t("Drag to reorder")}
       {...attributes}
       {...(isEditing ? listeners : {})}
     >
@@ -98,7 +102,7 @@ export function SortableWidgetCard({ widget, children }: SortableWidgetCardProps
           they don't displace its layout. */}
       {isEditing && (
         <>
-          <span className="wp-react-ui-drag-handle" aria-hidden="true" title="Drag to reorder">
+          <span className="wp-react-ui-drag-handle" aria-hidden="true" title={t("Drag to reorder")}>
             <HolderOutlined style={{ fontSize: 14 }} />
           </span>
 
@@ -114,15 +118,15 @@ export function SortableWidgetCard({ widget, children }: SortableWidgetCardProps
                 options={widget.allowedSizes.map((s) => ({ value: s, label: SIZE_LABELS[s] }))}
                 value={size}
                 onChange={(val) => setDraftWidgetSize(widget.key, val as WidgetSize)}
-                aria-label="Size"
+                aria-label={t("Size")}
               />
             )}
             {widget.hidableByUser && (
-              <Tooltip title="Remove from dashboard">
+              <Tooltip title={t("Remove from dashboard")}>
                 <button
                   type="button"
                   onClick={handleDelete}
-                  aria-label="Remove from dashboard"
+                  aria-label={t("Remove from dashboard")}
                   className="wp-react-ui-delete-btn"
                 >
                   <DeleteOutlined />

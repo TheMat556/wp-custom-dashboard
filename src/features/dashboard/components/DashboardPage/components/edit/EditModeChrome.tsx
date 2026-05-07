@@ -10,7 +10,11 @@ import {
   useSensor,
   useSensors,
 } from "@dnd-kit/core";
-import { sortableKeyboardCoordinates } from "@dnd-kit/sortable";
+import {
+  SortableContext,
+  sortableKeyboardCoordinates,
+  verticalListSortingStrategy,
+} from "@dnd-kit/sortable";
 import { useCallback, useState } from "react";
 import { useStore } from "zustand";
 import type { DashboardViewModel } from "../../../../dashboardViewModel";
@@ -22,7 +26,7 @@ import {
   parseContainerInstanceKey,
   resolveWidgetKey,
 } from "../../../../widgets/widgetRegistry";
-import type { TFunc } from "../../../types";
+import type { TFunc } from "../../types";
 import { DASHBOARD_GRID_DROPPABLE_ID } from "../DashboardGrid";
 import { announceLive } from "./announceLive";
 import { CATALOGUE_DROPZONE_ID, CatalogueDrawer } from "./CatalogueDrawer";
@@ -68,10 +72,6 @@ function EditModeChrome({ viewModel, children, t }: EditModeChromeProps) {
     dashboardEditModeStore,
     (s) => s.addDraftKpiContainerInstance
   );
-  const removeDraftKpiContainerInstance = useStore(
-    dashboardEditModeStore,
-    (s) => s.removeDraftKpiContainerInstance
-  );
 
   const [catalogueOpen, setCatalogueOpen] = useState(true);
   const [activeKey, setActiveKey] = useState<string | null>(null);
@@ -90,14 +90,6 @@ function EditModeChrome({ viewModel, children, t }: EditModeChromeProps) {
     (key: string, overKey: string | null) => {
       // kpi-container is a multi-instance widget — create a new instance on every add
       if (key === "kpi-container") {
-        // Clean up any orphaned container instance state left before the fix
-        const keysToRemove = Object.keys(draftKpiContainers).filter(
-          (id) => id !== "__default__" && !draftOrder.includes(`kpi-container::${id}`)
-        );
-        for (const id of keysToRemove) {
-          removeDraftKpiContainerInstance(id);
-        }
-
         const instanceId = addDraftKpiContainerInstance();
         const instanceKey = `kpi-container::${instanceId}`;
         const target =
@@ -118,33 +110,25 @@ function EditModeChrome({ viewModel, children, t }: EditModeChromeProps) {
       setDraftOrder(insertKey(draftOrder, key, target));
       announceLive(`${widgetLabel(key)} added.`);
     },
-    [
-      draftHidden,
-      toggleDraftVisibility,
-      setDraftOrder,
-      draftOrder,
-      addDraftKpiContainerInstance,
-      removeDraftKpiContainerInstance,
-      draftKpiContainers,
-    ]
+    [draftHidden, toggleDraftVisibility, setDraftOrder, draftOrder, addDraftKpiContainerInstance]
   );
 
   const handleHideToCatalogue = useCallback(
     (key: string) => {
       if (isContainerInstanceKey(key)) {
-        // Fully remove container instance state instead of leaving orphaned state
-        const instanceId = parseContainerInstanceKey(key);
-        if (instanceId) {
-          const nextOrder = draftOrder.filter((k) => k !== key);
-          setDraftOrder(nextOrder);
-          removeDraftKpiContainerInstance(instanceId);
+        // Preserve container instance state and soft-hide it so it can be restored from the catalogue
+        const nextOrder = draftOrder.filter((k) => k !== key);
+        setDraftOrder(nextOrder);
+        if (!draftHidden.includes(key)) {
+          toggleDraftVisibility(key);
         }
+        announceLive("KPI Container moved to catalogue (hidden)");
       } else if (!draftHidden.includes(key)) {
         toggleDraftVisibility(key);
+        announceLive(`${widgetLabel(key)} hidden.`);
       }
-      announceLive(`${widgetLabel(key)} hidden.`);
     },
-    [draftHidden, toggleDraftVisibility, setDraftOrder, draftOrder, removeDraftKpiContainerInstance]
+    [draftHidden, toggleDraftVisibility, setDraftOrder, draftOrder]
   );
 
   const handleDragStart = useCallback((event: DragStartEvent) => {
@@ -196,6 +180,24 @@ function EditModeChrome({ viewModel, children, t }: EditModeChromeProps) {
     ]
   );
 
+  const handleReorder = useCallback(
+    (activeId: string, overId: string) => {
+      if (activeId === overId) return;
+      // Merge with defaults so indices work even on first load
+      const current = mergeWidgetOrder(draftOrder);
+      const oldIndex = current.indexOf(activeId);
+      const newIndex = current.indexOf(overId);
+      if (oldIndex === -1 || newIndex === -1) return;
+
+      const next = [...current];
+      next.splice(oldIndex, 1);
+      next.splice(newIndex, 0, activeId);
+      setDraftOrder(next);
+      announceLive(`${widgetLabel(activeId)} moved to position ${next.indexOf(activeId) + 1}.`);
+    },
+    [draftOrder, setDraftOrder]
+  );
+
   const handleDragEnd = useCallback(
     (event: DragEndEvent) => {
       setActiveKey(null);
@@ -206,8 +208,7 @@ function EditModeChrome({ viewModel, children, t }: EditModeChromeProps) {
 
       // Catalogue → grid
       if (activeId.startsWith("catalogue:")) {
-        const key = activeId.slice("catalogue:".length);
-        handleAddFromCatalogue(key, overId);
+        handleAddFromCatalogue(activeId.slice("catalogue:".length), overId);
         return;
       }
       // Grid → catalogue (hide)
@@ -221,21 +222,9 @@ function EditModeChrome({ viewModel, children, t }: EditModeChromeProps) {
         return;
       }
       // Reorder within grid
-      if (activeId !== overId) {
-        // Merge with defaults so indices work even on first load
-        const current = mergeWidgetOrder(draftOrder);
-        const oldIndex = current.indexOf(activeId);
-        const newIndex = current.indexOf(overId);
-        if (oldIndex !== -1 && newIndex !== -1 && oldIndex !== newIndex) {
-          const next = [...current];
-          next.splice(oldIndex, 1);
-          next.splice(newIndex, 0, activeId);
-          setDraftOrder(next);
-          announceLive(`${widgetLabel(activeId)} moved to position ${next.indexOf(activeId) + 1}.`);
-        }
-      }
+      handleReorder(activeId, overId);
     },
-    [handleAddFromCatalogue, handleHideToCatalogue, moveKpiIntoContainer, setDraftOrder, draftOrder]
+    [handleAddFromCatalogue, handleHideToCatalogue, moveKpiIntoContainer, handleReorder]
   );
 
   useEditKeyboardShortcuts({ enabled: isEditing, onEscape: discardEditing });
@@ -256,27 +245,32 @@ function EditModeChrome({ viewModel, children, t }: EditModeChromeProps) {
         onDragEnd={handleDragEnd}
         onDragCancel={handleDragCancel}
       >
-        {children}
-        <DragOverlay dropAnimation={null}>
-          {activeWidget && (
-            <div
-              className="wp-react-ui-drag-overlay"
-              style={
-                activeDragRect
-                  ? { width: activeDragRect.width, height: activeDragRect.height }
-                  : undefined
-              }
-              aria-hidden="true"
-            >
-              <div className="wp-react-ui-sortable-widget widget--full">
-                <span className="wp-react-ui-drag-handle" aria-hidden="true">
-                  <HolderOutlined style={{ fontSize: 16 }} />
-                </span>
-                <div style={{ padding: 16 }}>{widgetLabel(activeWidget.key)}</div>
+        <SortableContext
+          items={mergeWidgetOrder(draftOrder)}
+          strategy={verticalListSortingStrategy}
+        >
+          {children}
+          <DragOverlay dropAnimation={null}>
+            {activeWidget && (
+              <div
+                className="wp-react-ui-drag-overlay"
+                style={
+                  activeDragRect
+                    ? { width: activeDragRect.width, height: activeDragRect.height }
+                    : undefined
+                }
+                aria-hidden="true"
+              >
+                <div className="wp-react-ui-sortable-widget widget--full">
+                  <span className="wp-react-ui-drag-handle" aria-hidden="true">
+                    <HolderOutlined style={{ fontSize: 16 }} />
+                  </span>
+                  <div style={{ padding: 16 }}>{widgetLabel(activeWidget.key)}</div>
+                </div>
               </div>
-            </div>
-          )}
-        </DragOverlay>
+            )}
+          </DragOverlay>
+        </SortableContext>
         <CatalogueDrawer
           open={catalogueOpen}
           onClose={() => setCatalogueOpen(false)}

@@ -52,13 +52,13 @@ function renderDrawer(onAdd = vi.fn(), onClose = vi.fn(), options?: { hiddenKeys
 describe("CatalogueDrawer", () => {
   it("renders the catalogue title", () => {
     renderDrawer();
-    expect(screen.getByText("Add widgets")).toBeDefined();
+    expect(screen.getByText("Add widgets")).toBeInTheDocument();
   });
 
   it("lists hidable widgets (non-hidable like Hero Banner excluded)", () => {
     renderDrawer();
-    expect(screen.getByText("Page Views")).toBeDefined();
-    expect(screen.getByText("Action Center")).toBeDefined();
+    expect(screen.getByText("Page Views")).toBeInTheDocument();
+    expect(screen.getByText("Action Center")).toBeInTheDocument();
     expect(screen.queryByText("Hero Banner")).toBeNull();
   });
 
@@ -66,7 +66,7 @@ describe("CatalogueDrawer", () => {
     renderDrawer();
     const search = screen.getByPlaceholderText("Search widgets") as HTMLInputElement;
     fireEvent.change(search, { target: { value: "Page" } });
-    expect(screen.getByText("Page Views")).toBeDefined();
+    expect(screen.getByText("Page Views")).toBeInTheDocument();
     expect(screen.queryByText("Hero Banner")).toBeNull();
   });
 
@@ -74,7 +74,7 @@ describe("CatalogueDrawer", () => {
     renderDrawer();
     const search = screen.getByPlaceholderText("Search widgets") as HTMLInputElement;
     fireEvent.change(search, { target: { value: "ZzzNoSuchThing" } });
-    expect(screen.getByText("No widgets match that name.")).toBeDefined();
+    expect(screen.getByText("No widgets match that name.")).toBeInTheDocument();
   });
 
   it("invokes onAdd when the Add button is clicked on a hidden widget", () => {

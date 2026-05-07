@@ -28,6 +28,8 @@ vi.mock("../../../../../shell/store/shellPreferencesStore", () => ({
   },
 }));
 
+const t = (s: string) => s;
+
 const mockWidget: DashboardWidgetMeta = {
   key: "test-widget",
   label: "Test Widget",
@@ -49,7 +51,7 @@ describe("SortableWidgetCard", () => {
     render(
       <DndContext>
         <SortableContext items={["test-widget"]} strategy={rectSortingStrategy}>
-          <SortableWidgetCard widget={mockWidget}>
+          <SortableWidgetCard widget={mockWidget} t={t}>
             <div>Child content</div>
           </SortableWidgetCard>
         </SortableContext>
@@ -63,7 +65,7 @@ describe("SortableWidgetCard", () => {
     render(
       <DndContext>
         <SortableContext items={["test-widget"]} strategy={rectSortingStrategy}>
-          <SortableWidgetCard widget={mockWidget}>
+          <SortableWidgetCard widget={mockWidget} t={t}>
             <div>Content</div>
           </SortableWidgetCard>
         </SortableContext>

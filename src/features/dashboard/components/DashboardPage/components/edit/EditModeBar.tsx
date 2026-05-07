@@ -8,14 +8,14 @@ import {
 import { Button, Modal, Tooltip } from "antd";
 import { useStore } from "zustand";
 import { dashboardEditModeStore } from "../../../../store/dashboardEditModeStore";
-import type { TFunc } from "../../../types";
+import type { TFunc } from "../../types";
 
 interface EditModeBarProps {
   onToggleCatalogue?: () => void;
   t: TFunc;
 }
 
-export function EditModeBar({ onToggleCatalogue, t }: EditModeBarProps = {} as EditModeBarProps) {
+export function EditModeBar({ onToggleCatalogue, t }: EditModeBarProps) {
   const isEditing = useStore(dashboardEditModeStore, (s) => s.isEditing);
   const exitEditing = useStore(dashboardEditModeStore, (s) => s.exitEditing);
   const discardEditing = useStore(dashboardEditModeStore, (s) => s.discardEditing);

@@ -499,12 +499,12 @@ body[data-theme="dark"] {
   height: 30px;
   border-radius: 8px;
   border: none;
-  background: color-mix(in srgb, var(--color-error, #d4380d) 12%, transparent);
+  background: color-mix(in srgb, var(--color-danger, #d4380d) 12%, transparent);
   cursor: pointer;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  color: var(--color-error, #d4380d);
+  color: var(--color-danger, #d4380d);
   transition:
     color 180ms ease,
     background 180ms ease,
@@ -514,7 +514,7 @@ body[data-theme="dark"] {
 
 .wp-react-ui-delete-btn:hover {
   color: #fff;
-  background: var(--color-error, #d4380d);
+  background: var(--color-danger, #d4380d);
   transform: scale(1.08);
 }
 

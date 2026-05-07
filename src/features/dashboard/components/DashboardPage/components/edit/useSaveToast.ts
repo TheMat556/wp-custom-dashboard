@@ -1,25 +1,14 @@
 import { message } from "antd";
 import { useEffect, useRef } from "react";
-import { shellPreferencesStore } from "../../../../../shell/store/shellPreferencesStore";
-import type { TFunc } from "../../../../types";
+import { dashboardEditModeStore } from "../../../../store/dashboardEditModeStore";
+import type { TFunc } from "../../types";
 
 const SAVE_DEBOUNCE_MS = 600;
 
-const TRACKED_FIELDS = ["dashboardWidgetOrder", "hiddenWidgets", "dashboardWidgetSizes"] as const;
-
-type TrackedField = (typeof TRACKED_FIELDS)[number];
-
-function snapshotTracked(state: Record<TrackedField, unknown>): string {
-  return JSON.stringify({
-    dashboardWidgetOrder: state.dashboardWidgetOrder,
-    hiddenWidgets: state.hiddenWidgets,
-    dashboardWidgetSizes: state.dashboardWidgetSizes,
-  });
-}
-
 /**
- * Shows a debounced "Saved" toast when dashboard layout preferences change
- * while the user is actively editing.
+ * Shows a debounced "Saved" toast when the user commits draft changes
+ * via exitEditing. Subscribes to dashboardEditModeStore and compares
+ * `isEditing` transitions (true → false) to detect a commit.
  */
 export function useSaveToast({ enabled, t }: { enabled: boolean; t: TFunc }) {
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -33,18 +22,19 @@ export function useSaveToast({ enabled, t }: { enabled: boolean; t: TFunc }) {
       return;
     }
 
-    let prev = snapshotTracked(shellPreferencesStore.getState() as Record<TrackedField, unknown>);
+    let prevEditing = dashboardEditModeStore.getState().isEditing;
 
-    const unsubscribe = shellPreferencesStore.subscribe((state) => {
-      const next = snapshotTracked(state as unknown as Record<TrackedField, unknown>);
-      if (next === prev) return;
-      prev = next;
-
-      if (timer.current) clearTimeout(timer.current);
-      timer.current = setTimeout(() => {
-        message.success({ content: t("Saved"), duration: 1.5, key: "dashboard-edit-save" });
-        timer.current = null;
-      }, SAVE_DEBOUNCE_MS);
+    const unsubscribe = dashboardEditModeStore.subscribe((state) => {
+      const nextEditing = state.isEditing;
+      // Detect transition from editing (true) → committed (false)
+      if (prevEditing === true && nextEditing === false) {
+        if (timer.current) clearTimeout(timer.current);
+        timer.current = setTimeout(() => {
+          message.success({ content: t("Saved"), duration: 1.5, key: "dashboard-edit-save" });
+          timer.current = null;
+        }, SAVE_DEBOUNCE_MS);
+      }
+      prevEditing = nextEditing;
     });
 
     return () => {

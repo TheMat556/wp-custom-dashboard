@@ -13,18 +13,28 @@ vi.mock("antd", async (importOriginal) => {
   };
 });
 
-import {
-  resetShellPreferencesStore,
-  shellPreferencesStore,
-} from "../../../../../shell/store/shellPreferencesStore";
+import { dashboardEditModeStore } from "../../../../store/dashboardEditModeStore";
 import { useSaveToast } from "./useSaveToast";
 
 const identityT = (key: string) => key;
 
+function resetStore() {
+  dashboardEditModeStore.setState({
+    isEditing: false,
+    savedDraft: null,
+    draft: {
+      order: [],
+      hidden: [],
+      kpiContainers: { __default__: { order: [], columns: 3 } },
+      widgetSizes: {},
+    },
+  });
+}
+
 describe("useSaveToast", () => {
   beforeEach(() => {
     successMock.mockClear();
-    resetShellPreferencesStore();
+    resetStore();
     vi.useFakeTimers();
   });
 
@@ -34,14 +44,19 @@ describe("useSaveToast", () => {
 
   it("does not toast when disabled", () => {
     renderHook(() => useSaveToast({ enabled: false, t: identityT }));
-    shellPreferencesStore.setState({ dashboardWidgetOrder: ["a"] });
+    // Transition isEditing → false while disabled should not trigger
+    dashboardEditModeStore.setState({ isEditing: true });
+    dashboardEditModeStore.setState({ isEditing: false });
     vi.advanceTimersByTime(2000);
     expect(successMock).not.toHaveBeenCalled();
   });
 
-  it("emits a debounced toast after a tracked field changes", () => {
+  it("emits a debounced toast after exiting edit mode", () => {
+    // Start with editing active
+    dashboardEditModeStore.setState({ isEditing: true });
     renderHook(() => useSaveToast({ enabled: true, t: identityT }));
-    shellPreferencesStore.setState({ dashboardWidgetOrder: ["a"] });
+    // Exit edit mode — triggers the toast
+    dashboardEditModeStore.setState({ isEditing: false });
     vi.advanceTimersByTime(599);
     expect(successMock).not.toHaveBeenCalled();
     vi.advanceTimersByTime(2);
@@ -49,20 +64,27 @@ describe("useSaveToast", () => {
     expect(successMock).toHaveBeenCalledWith(expect.objectContaining({ content: "Saved" }));
   });
 
-  it("coalesces rapid changes into a single toast", () => {
+  it("coalesces rapid transitions into a single toast", () => {
+    dashboardEditModeStore.setState({ isEditing: true });
     renderHook(() => useSaveToast({ enabled: true, t: identityT }));
-    shellPreferencesStore.setState({ dashboardWidgetOrder: ["a"] });
+
+    // Rapidly toggle isEditing
+    dashboardEditModeStore.setState({ isEditing: false });
     vi.advanceTimersByTime(200);
-    shellPreferencesStore.setState({ dashboardWidgetOrder: ["a", "b"] });
+    dashboardEditModeStore.setState({ isEditing: true });
+    dashboardEditModeStore.setState({ isEditing: false });
     vi.advanceTimersByTime(200);
-    shellPreferencesStore.setState({ hiddenWidgets: ["c"] });
+    dashboardEditModeStore.setState({ isEditing: false });
     vi.advanceTimersByTime(601);
+    // Only one toast should fire (the last transition)
     expect(successMock).toHaveBeenCalledTimes(1);
   });
 
-  it("ignores untracked field changes", () => {
+  it("ignores transitions when editing state stays the same", () => {
+    dashboardEditModeStore.setState({ isEditing: true });
     renderHook(() => useSaveToast({ enabled: true, t: identityT }));
-    shellPreferencesStore.setState({ density: "compact" });
+    // Set same value — no transition
+    dashboardEditModeStore.setState({ isEditing: true });
     vi.advanceTimersByTime(2000);
     expect(successMock).not.toHaveBeenCalled();
   });

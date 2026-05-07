@@ -65,7 +65,7 @@ export default function DashboardPage() {
   return (
     <PageCanvas>
       {isEditing ? (
-        <Suspense fallback={null}>
+        <Suspense fallback={content}>
           <EditModeChrome viewModel={viewModel} t={t}>
             {content}
           </EditModeChrome>
