@@ -4,6 +4,7 @@ import { useStore } from "zustand";
 import PageCanvas from "../../../../shared/ui/PageCanvas";
 import { useFeature, useLicense } from "../../../license/context/LicenseContext";
 import { dashboardEditModeStore } from "../../store/dashboardEditModeStore";
+import { useSaveToast } from "./components/edit/useSaveToast";
 import { DashboardContent } from "./DashboardContent";
 import { useDashboardData } from "./hooks/useDashboardData";
 import { getGreeting } from "./utils/formatters";
@@ -22,6 +23,8 @@ export default function DashboardPage() {
     useDashboardData(canViewDashboard);
 
   const isEditing = useStore(dashboardEditModeStore, (s) => s.isEditing);
+
+  useSaveToast({ enabled: true, t });
 
   if (!canViewDashboard) {
     return (

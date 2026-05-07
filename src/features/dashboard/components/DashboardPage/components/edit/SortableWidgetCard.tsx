@@ -4,6 +4,7 @@ import { CSS } from "@dnd-kit/utilities";
 import { Segmented, Tooltip } from "antd";
 import { useCallback } from "react";
 import { useStore } from "zustand";
+import { shellPreferencesStore } from "../../../../../shell/store/shellPreferencesStore";
 import { dashboardEditModeStore } from "../../../../store/dashboardEditModeStore";
 import type { DashboardWidgetMeta, WidgetSize } from "../../../../widgets/widgetRegistry";
 import type { TFunc } from "../../types";
@@ -47,9 +48,12 @@ export function SortableWidgetCard({ widget, children, t }: SortableWidgetCardPr
   const draftOrder = useStore(dashboardEditModeStore, (s) => s.draft.order);
   const setDraftOrder = useStore(dashboardEditModeStore, (s) => s.setDraftOrder);
   const toggleDraftVisibility = useStore(dashboardEditModeStore, (s) => s.toggleDraftVisibility);
-  const currentSize = useStore(dashboardEditModeStore, (s) => s.draft.widgetSizes[widget.key]);
+  const draftSize = useStore(dashboardEditModeStore, (s) => s.draft.widgetSizes[widget.key]);
+  const persistedSize = useStore(shellPreferencesStore, (s) => s.dashboardWidgetSizes[widget.key]);
   const hiddenWidgets = useStore(dashboardEditModeStore, (s) => s.draft.hidden);
   const isEditing = useStore(dashboardEditModeStore, (s) => s.isEditing);
+
+  const currentSize = isEditing ? draftSize : persistedSize;
 
   const isDragging = active?.id === widget.key;
 

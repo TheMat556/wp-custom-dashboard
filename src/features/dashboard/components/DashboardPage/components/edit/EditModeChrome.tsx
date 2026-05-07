@@ -32,7 +32,6 @@ import { announceLive } from "./announceLive";
 import { CATALOGUE_DROPZONE_ID, CatalogueDrawer } from "./CatalogueDrawer";
 import { EditModeBar } from "./EditModeBar";
 import { useEditKeyboardShortcuts } from "./useEditKeyboardShortcuts";
-import { useSaveToast } from "./useSaveToast";
 
 interface EditModeChromeProps {
   viewModel: DashboardViewModel;
@@ -228,7 +227,6 @@ function EditModeChrome({ viewModel, children, t }: EditModeChromeProps) {
   );
 
   useEditKeyboardShortcuts({ enabled: isEditing, onEscape: discardEditing });
-  useSaveToast({ enabled: isEditing, t });
 
   const handleAddClick = useCallback(
     (key: string) => handleAddFromCatalogue(key, null),
