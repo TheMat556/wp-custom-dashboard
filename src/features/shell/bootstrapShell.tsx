@@ -1,4 +1,4 @@
-import { theme as antTheme, ConfigProvider } from "antd";
+import { App as AntApp, theme as antTheme, ConfigProvider } from "antd";
 import React, { useLayoutEffect, useMemo } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { useStore } from "zustand";
@@ -164,12 +164,14 @@ function ShellRoot({ host, config }: { host: HTMLElement; config: Readonly<WpRea
       <ShellConfigProvider config={config}>
         <LicenseProvider>
           <AntConfigProvider>
-            <NotificationRenderer />
-            <SessionHeartbeatEffect />
-            <SessionExpiredModal />
-            <NativeCommandPaletteEnhancer />
-            <ShellMountEffects host={host} />
-            <App />
+            <AntApp>
+              <NotificationRenderer />
+              <SessionHeartbeatEffect />
+              <SessionExpiredModal />
+              <NativeCommandPaletteEnhancer />
+              <ShellMountEffects host={host} />
+              <App />
+            </AntApp>
           </AntConfigProvider>
         </LicenseProvider>
       </ShellConfigProvider>

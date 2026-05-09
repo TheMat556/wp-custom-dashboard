@@ -1,6 +1,9 @@
 import { createStore } from "zustand/vanilla";
 import type { KpiContainerColumns, WidgetSize } from "../../../types/shellPreferences";
+import { generateContainerInstanceId } from "../../../utils/ids";
+import { logger } from "../../../utils/logger";
 import { shellPreferencesStore } from "../../shell/store/shellPreferencesStore";
+import { DEFAULT_KPI_CONTAINER_ORDER } from "../widgets/dashboardConstants";
 
 interface DashboardEditDraft {
   order: string[];
@@ -8,14 +11,6 @@ interface DashboardEditDraft {
   kpiContainers: Record<string, { order: string[]; columns: KpiContainerColumns }>;
   widgetSizes: Record<string, WidgetSize>;
 }
-
-const DEFAULT_KPI_CONTAINER_ORDER = [
-  "kpi-website",
-  "kpi-visitors",
-  "kpi-updates",
-  "kpi-speed",
-  "kpi-conversions",
-];
 
 function createEmptyDraft(): DashboardEditDraft {
   return {
@@ -36,7 +31,13 @@ function snapshotPersistedLayout(): DashboardEditDraft {
   return {
     order: [...prefs.dashboardWidgetOrder],
     hidden: [...prefs.hiddenWidgets],
-    kpiContainers: structuredClone(prefs.kpiContainerInstances),
+    kpiContainers: {
+      __default__: {
+        order: [...DEFAULT_KPI_CONTAINER_ORDER],
+        columns: 3,
+      },
+      ...structuredClone(prefs.kpiContainerInstances),
+    },
     widgetSizes: { ...prefs.dashboardWidgetSizes },
   };
 }
@@ -48,14 +49,8 @@ function commitDraftToPreferences(draft: DashboardEditDraft) {
     hiddenWidgets: draft.hidden,
     kpiContainerInstances: draft.kpiContainers,
     dashboardWidgetSizes: draft.widgetSizes,
+    _persistedVersion: shellPreferencesStore.getState()._persistedVersion + 1,
   });
-}
-
-let containerInstanceCounter = 0;
-
-function generateDraftContainerInstanceId(): string {
-  containerInstanceCounter++;
-  return `draft-instance-${containerInstanceCounter}-${Date.now()}`;
 }
 
 export interface DashboardEditModeState {
@@ -66,6 +61,9 @@ export interface DashboardEditModeState {
 
   /** Active working draft — mutated during editing. */
   draft: DashboardEditDraft;
+
+  /** Whether the last exit was a commit (true) or discard (false). */
+  lastTransitionWasCommit: boolean;
 
   /** Enter edit mode: snapshot current layout into the draft. */
   enterEditing: () => void;
@@ -91,6 +89,11 @@ export interface DashboardEditModeState {
     config: Partial<{ order: string[]; columns: KpiContainerColumns }>
   ) => void;
 
+  /** Bulk-set all KPI container configs in the draft. */
+  setDraftKpiContainers: (
+    containers: Record<string, { order: string[]; columns: KpiContainerColumns }>
+  ) => void;
+
   /** Add a new KPI container instance to the draft. */
   addDraftKpiContainerInstance: () => string;
 
@@ -102,12 +105,16 @@ export interface DashboardEditModeState {
 
   /** Reset the draft to default layout (does not touch persisted state). */
   resetDraftLayout: () => void;
+
+  /** Whether the draft differs from the saved snapshot. */
+  isDraftDirty: () => boolean;
 }
 
 export const dashboardEditModeStore = createStore<DashboardEditModeState>((set, get) => ({
   isEditing: false,
   savedDraft: null,
   draft: createEmptyDraft(),
+  lastTransitionWasCommit: false,
 
   enterEditing() {
     const snapshot = snapshotPersistedLayout();
@@ -115,6 +122,7 @@ export const dashboardEditModeStore = createStore<DashboardEditModeState>((set, 
       isEditing: true,
       savedDraft: snapshot,
       draft: structuredClone(snapshot),
+      lastTransitionWasCommit: false,
     });
   },
 
@@ -128,6 +136,7 @@ export const dashboardEditModeStore = createStore<DashboardEditModeState>((set, 
       isEditing: false,
       savedDraft: null,
       draft: createEmptyDraft(),
+      lastTransitionWasCommit: true,
     });
   },
 
@@ -135,21 +144,11 @@ export const dashboardEditModeStore = createStore<DashboardEditModeState>((set, 
     const { savedDraft, isEditing } = get();
     if (!isEditing || !savedDraft) return;
 
-    // Only commit if the saved draft differs from what's currently persisted
-    const persisted = shellPreferencesStore.getState();
-    if (
-      savedDraft.order.join(",") !== persisted.dashboardWidgetOrder.join(",") ||
-      savedDraft.hidden.join(",") !== persisted.hiddenWidgets.join(",") ||
-      JSON.stringify(savedDraft.widgetSizes) !== JSON.stringify(persisted.dashboardWidgetSizes) ||
-      JSON.stringify(savedDraft.kpiContainers) !== JSON.stringify(persisted.kpiContainerInstances)
-    ) {
-      commitDraftToPreferences(savedDraft);
-    }
-
     set({
       isEditing: false,
       savedDraft: null,
       draft: createEmptyDraft(),
+      lastTransitionWasCommit: false,
     });
   },
 
@@ -182,7 +181,12 @@ export const dashboardEditModeStore = createStore<DashboardEditModeState>((set, 
     set((state) => {
       const containers = { ...state.draft.kpiContainers };
       const existing = containers[instanceId];
-      if (!existing) return state;
+      if (!existing) {
+        logger.warn(
+          `[EditMode] Attempted to set KPI container config for missing instance: ${instanceId}`
+        );
+        return state;
+      }
       containers[instanceId] = {
         order: config.order ?? existing.order,
         columns: config.columns ?? existing.columns,
@@ -191,8 +195,12 @@ export const dashboardEditModeStore = createStore<DashboardEditModeState>((set, 
     });
   },
 
+  setDraftKpiContainers(containers) {
+    set((state) => ({ draft: { ...state.draft, kpiContainers: containers } }));
+  },
+
   addDraftKpiContainerInstance() {
-    const instanceId = generateDraftContainerInstanceId();
+    const instanceId = generateContainerInstanceId();
     set((state) => ({
       draft: {
         ...state.draft,
@@ -224,5 +232,30 @@ export const dashboardEditModeStore = createStore<DashboardEditModeState>((set, 
 
   resetDraftLayout() {
     set({ draft: createEmptyDraft() });
+  },
+
+  /** Stable comparison that sorts keys to avoid key-order false positives. */
+  isDraftDirty() {
+    const { draft, savedDraft } = get();
+    if (!savedDraft) return false;
+    const stableJson = (val: unknown): string => {
+      if (val === null || typeof val !== "object") return JSON.stringify(val);
+      const sorted = Object.keys(val as object)
+        .sort()
+        .reduce(
+          (acc, k) => {
+            (acc as Record<string, unknown>)[k] = (val as Record<string, unknown>)[k];
+            return acc;
+          },
+          {} as Record<string, unknown>
+        );
+      return JSON.stringify(sorted);
+    };
+    return (
+      draft.order.join(",") !== savedDraft.order.join(",") ||
+      draft.hidden.join(",") !== savedDraft.hidden.join(",") ||
+      stableJson(draft.widgetSizes) !== stableJson(savedDraft.widgetSizes) ||
+      stableJson(draft.kpiContainers) !== stableJson(savedDraft.kpiContainers)
+    );
   },
 }));

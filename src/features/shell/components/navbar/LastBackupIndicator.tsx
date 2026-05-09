@@ -19,16 +19,16 @@ function tryParseDate(dateStr: string): Date | undefined {
   }
 }
 
-function formatDateString(dateStr: string): string {
+function formatDateString(dateStr: string, locale: string): string {
   const d = tryParseDate(dateStr);
   if (!d) return dateStr;
-  return relativeTime(d.getTime() / 1000, "en");
+  return relativeTime(d.getTime() / 1000, locale);
 }
 
-function formatAbsoluteDate(dateStr: string): string {
+function formatAbsoluteDate(dateStr: string, locale: string): string {
   const d = tryParseDate(dateStr);
   if (!d) return dateStr;
-  return d.toLocaleString("en-US", {
+  return d.toLocaleString(locale, {
     year: "numeric",
     month: "short",
     day: "numeric",
@@ -44,12 +44,13 @@ interface LastBackupIndicatorProps {
 export function LastBackupIndicator({ isMobile }: LastBackupIndicatorProps) {
   const config = useShellConfig();
   const t = useMemo(() => createT(config.locale ?? "en_US"), [config.locale]);
+  const intlLocale = (config.locale ?? "en_US").replace("_", "-");
   const lastBackupDate = useStore(dashboardStore, (s) => s.data?.atAGlance?.lastBackupDate);
 
   if (!lastBackupDate) return null;
 
-  const relative = formatDateString(lastBackupDate);
-  const absolute = formatAbsoluteDate(lastBackupDate);
+  const relative = formatDateString(lastBackupDate, intlLocale);
+  const absolute = formatAbsoluteDate(lastBackupDate, intlLocale);
 
   const content = (
     <Tooltip title={t("Last backup: {date}", { date: absolute })}>

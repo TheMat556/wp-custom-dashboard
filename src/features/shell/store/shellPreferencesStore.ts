@@ -6,6 +6,9 @@ import type {
 } from "../../../types/shellPreferences";
 import type { WpReactUiConfig } from "../../../types/wp";
 import type { RecentPageRecord } from "../../../utils/commandPalette";
+import { generateContainerInstanceId } from "../../../utils/ids";
+import { logger } from "../../../utils/logger";
+import { DEFAULT_KPI_CONTAINER_ORDER } from "../../dashboard/widgets/dashboardConstants";
 import type { PreferencesService } from "../services/preferencesApi";
 import { createPreferencesService } from "../services/preferencesApi";
 
@@ -18,14 +21,6 @@ const SYNC_DEBOUNCE_MS = 500;
 function canUseDOM(): boolean {
   return typeof window !== "undefined" && typeof localStorage !== "undefined";
 }
-
-const DEFAULT_KPI_CONTAINER_ORDER = [
-  "kpi-website",
-  "kpi-visitors",
-  "kpi-updates",
-  "kpi-speed",
-  "kpi-conversions",
-];
 
 function getDefaultPersistedState(): PersistedShellPreferences {
   return {
@@ -189,7 +184,9 @@ function scheduleSyncToServer() {
   syncTimer = setTimeout(() => {
     if (!preferencesService) return;
     const fields = getPersistedFields(shellPreferencesStore.getState());
-    preferencesService.savePreferences(fields);
+    preferencesService.savePreferences(fields).catch((err) => {
+      logger.warn("[Preferences] Server sync failed", err);
+    });
   }, SYNC_DEBOUNCE_MS);
 }
 
@@ -202,15 +199,8 @@ function fallbackTitle(pageUrl: string): string {
   }
 }
 
-/**
- * Generates a unique container instance ID using a short random hex string.
- */
-function generateContainerInstanceId(): string {
-  const random = Math.random().toString(36).slice(2, 8);
-  return `instance-${random}`;
-}
-
 export interface ShellPreferencesState extends PersistedShellPreferences {
+  _persistedVersion: number;
   paletteOpen: boolean;
   paletteQuery: string;
   openPalette: (query?: string) => void;
@@ -241,6 +231,7 @@ export interface ShellPreferencesState extends PersistedShellPreferences {
 }
 
 export const shellPreferencesStore = createStore<ShellPreferencesState>((set, get) => ({
+  _persistedVersion: 0,
   paletteOpen: false,
   paletteQuery: "",
   favorites: [],
@@ -275,7 +266,7 @@ export const shellPreferencesStore = createStore<ShellPreferencesState>((set, ge
       ? get().favorites.filter((item) => item !== normalizedSlug)
       : [normalizedSlug, ...get().favorites];
 
-    set({ favorites });
+    set((state) => ({ favorites, _persistedVersion: state._persistedVersion + 1 }));
   },
 
   recordVisit(pageUrl: string, title: string) {
@@ -291,11 +282,11 @@ export const shellPreferencesStore = createStore<ShellPreferencesState>((set, ge
       ...get().recentPages.filter((item) => item.pageUrl !== normalizedUrl),
     ].slice(0, MAX_RECENT_PAGES);
 
-    set({ recentPages });
+    set((state) => ({ recentPages, _persistedVersion: state._persistedVersion + 1 }));
   },
 
   setDensity(density) {
-    set({ density });
+    set((state) => ({ density, _persistedVersion: state._persistedVersion + 1 }));
   },
 
   setThemePreset(key, customColor) {
@@ -303,62 +294,80 @@ export const shellPreferencesStore = createStore<ShellPreferencesState>((set, ge
     if (customColor !== undefined) {
       updates.customPresetColor = customColor;
     }
-    set(updates);
+    set((state) => ({ ...updates, _persistedVersion: state._persistedVersion + 1 }));
   },
 
   setDashboardWidgetOrder(order) {
-    set({ dashboardWidgetOrder: order });
+    set((state) => ({
+      dashboardWidgetOrder: order,
+      _persistedVersion: state._persistedVersion + 1,
+    }));
   },
 
   toggleWidgetVisibility(widgetKey) {
     const hiddenWidgets = get().hiddenWidgets.includes(widgetKey)
       ? get().hiddenWidgets.filter((k) => k !== widgetKey)
       : [...get().hiddenWidgets, widgetKey];
-    set({ hiddenWidgets });
+    set((state) => ({ hiddenWidgets, _persistedVersion: state._persistedVersion + 1 }));
   },
 
   setHighContrast(enabled) {
-    set({ highContrast: enabled });
+    set((state) => ({ highContrast: enabled, _persistedVersion: state._persistedVersion + 1 }));
   },
 
   setDashboardWidgetSize(widgetKey, size) {
     const sizes = { ...get().dashboardWidgetSizes, [widgetKey]: size };
-    set({ dashboardWidgetSizes: sizes });
+    set((state) => ({
+      dashboardWidgetSizes: sizes,
+      _persistedVersion: state._persistedVersion + 1,
+    }));
   },
 
   setKpiContainerInstanceConfig(instanceId, config) {
     const instances = { ...get().kpiContainerInstances };
-    const existing = instances[instanceId];
-    if (!existing) return;
+    let existing = instances[instanceId];
+    if (!existing) {
+      existing = { order: [], columns: 3 };
+    }
     instances[instanceId] = {
       order: config.order ?? existing.order,
       columns: config.columns ?? existing.columns,
     };
-    set({ kpiContainerInstances: instances });
+    set((state) => ({
+      kpiContainerInstances: instances,
+      _persistedVersion: state._persistedVersion + 1,
+    }));
   },
 
   addKpiContainerInstance() {
     const instanceId = generateContainerInstanceId();
     const instances = { ...get().kpiContainerInstances };
     instances[instanceId] = { order: [], columns: 3 };
-    set({ kpiContainerInstances: instances });
+    set((state) => ({
+      kpiContainerInstances: instances,
+      _persistedVersion: state._persistedVersion + 1,
+    }));
     return instanceId;
   },
 
   removeKpiContainerInstance(instanceId) {
     const instances = { ...get().kpiContainerInstances };
     delete instances[instanceId];
-    set({ kpiContainerInstances: instances });
+    set((state) => ({
+      kpiContainerInstances: instances,
+      _persistedVersion: state._persistedVersion + 1,
+    }));
   },
 
   resetDashboardLayout() {
     const defaults = getDefaultPersistedState();
-    set({
+    set((state) => ({
       dashboardWidgetOrder: [],
       hiddenWidgets: [],
       dashboardWidgetSizes: {},
       kpiContainerInstances: defaults.kpiContainerInstances,
-    });
+      _persistedVersion: state._persistedVersion + 1,
+    }));
   },
 
   async syncFromServer() {
@@ -380,7 +389,7 @@ export const shellPreferencesStore = createStore<ShellPreferencesState>((set, ge
             : current.recentPages,
       };
 
-      set(merged);
+      set((state) => ({ ...merged, _persistedVersion: state._persistedVersion + 1 }));
       // Subscriber will handle localStorage persistence.
     } catch {
       // Silently fail — local state is still valid.
@@ -404,11 +413,11 @@ export function bootstrapShellPreferencesStore(
   });
 
   // Subscriber: write to localStorage and schedule server sync whenever a
-  // persisted field changes. Runs synchronously after every state update.
+  // persisted field changes. Uses _persistedVersion dirty counter to avoid
+  // deep comparison of the full state.
   unsubPersist = shellPreferencesStore.subscribe((state, prev) => {
-    const next = getPersistedFields(state);
-    const previous = getPersistedFields(prev);
-    if (JSON.stringify(next) !== JSON.stringify(previous)) {
+    if (state._persistedVersion !== prev._persistedVersion) {
+      const next = getPersistedFields(state);
       persistState(next);
       scheduleSyncToServer();
     }

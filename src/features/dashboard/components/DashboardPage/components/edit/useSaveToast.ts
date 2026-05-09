@@ -3,6 +3,9 @@ import { useEffect, useRef } from "react";
 import { dashboardEditModeStore } from "../../../../store/dashboardEditModeStore";
 import type { TFunc } from "../../types";
 
+// Note: SAVE_DEBOUNCE_MS (600ms) differs from shellPreferencesStore SYNC_DEBOUNCE_MS (500ms).
+// This is intentional — the toast debounce is for UI feedback only and should be slightly
+// longer than the sync debounce to avoid showing "Saved" before the server sync completes.
 const SAVE_DEBOUNCE_MS = 600;
 
 /**
@@ -22,19 +25,18 @@ export function useSaveToast({ enabled, t }: { enabled: boolean; t: TFunc }) {
       return;
     }
 
-    let prevEditing = dashboardEditModeStore.getState().isEditing;
-
-    const unsubscribe = dashboardEditModeStore.subscribe((state) => {
-      const nextEditing = state.isEditing;
-      // Detect transition from editing (true) → committed (false)
-      if (prevEditing === true && nextEditing === false) {
+    const unsubscribe = dashboardEditModeStore.subscribe((state, prevState) => {
+      if (
+        prevState.isEditing === true &&
+        state.isEditing === false &&
+        state.lastTransitionWasCommit
+      ) {
         if (timer.current) clearTimeout(timer.current);
         timer.current = setTimeout(() => {
           message.success({ content: t("Saved"), duration: 1.5, key: "dashboard-edit-save" });
           timer.current = null;
         }, SAVE_DEBOUNCE_MS);
       }
-      prevEditing = nextEditing;
     });
 
     return () => {

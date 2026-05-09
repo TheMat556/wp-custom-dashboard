@@ -585,6 +585,15 @@ export function mergeWidgetOrder(persistedOrder: string[]): string[] {
   return [...validPersisted, ...missingFromRegistry];
 }
 
+/** Map-based lookup for O(1) widget access by key. */
+export const DASHBOARD_WIDGETS_MAP = new Map(DASHBOARD_WIDGETS.map((w) => [w.key, w]));
+
+/** O(1) lookup of a widget's eligibility by key. */
+export function isWidgetEligible(key: string, vm: DashboardViewModel): boolean {
+  const widget = DASHBOARD_WIDGETS_MAP.get(key);
+  return widget ? widget.isEligible(vm) : false;
+}
+
 /**
  * Returns the ordered list of widget metadata that should be visible.
  */

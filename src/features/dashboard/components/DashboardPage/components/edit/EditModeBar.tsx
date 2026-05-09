@@ -5,7 +5,7 @@ import {
   QuestionCircleOutlined,
   UndoOutlined,
 } from "@ant-design/icons";
-import { Button, Modal, Tooltip } from "antd";
+import { App, Button, Tooltip } from "antd";
 import { useStore } from "zustand";
 import { dashboardEditModeStore } from "../../../../store/dashboardEditModeStore";
 import type { TFunc } from "../../types";
@@ -20,11 +20,12 @@ export function EditModeBar({ onToggleCatalogue, t }: EditModeBarProps) {
   const exitEditing = useStore(dashboardEditModeStore, (s) => s.exitEditing);
   const discardEditing = useStore(dashboardEditModeStore, (s) => s.discardEditing);
   const resetDraftLayout = useStore(dashboardEditModeStore, (s) => s.resetDraftLayout);
+  const { modal } = App.useApp();
 
   if (!isEditing) return null;
 
   const handleReset = () => {
-    Modal.confirm({
+    modal.confirm({
       title: t("Reset dashboard?"),
       content: t(
         "This restores the default order, sizes, and visibility. Favorites and recent pages stay untouched."

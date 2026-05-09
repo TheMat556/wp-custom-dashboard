@@ -15,13 +15,15 @@ import {
   sortableKeyboardCoordinates,
   verticalListSortingStrategy,
 } from "@dnd-kit/sortable";
-import { useCallback, useState } from "react";
+import { Modal } from "antd";
+import { useCallback, useMemo, useState } from "react";
 import { useStore } from "zustand";
 import type { DashboardViewModel } from "../../../../dashboardViewModel";
 import { dashboardEditModeStore } from "../../../../store/dashboardEditModeStore";
 import {
   isContainerInstanceKey,
   isKpiWidgetKey,
+  KPI_CONTAINER_INSTANCE_PREFIX,
   mergeWidgetOrder,
   parseContainerInstanceKey,
   resolveWidgetKey,
@@ -59,6 +61,7 @@ function EditModeChrome({ viewModel, children, t }: EditModeChromeProps) {
   // Read draft state from the edit mode store instead of shellPreferencesStore.
   // This keeps all layout mutations isolated until "Done" commits them.
   const draftOrder = useStore(dashboardEditModeStore, (s) => s.draft.order);
+  const mergedOrder = useMemo(() => mergeWidgetOrder(draftOrder), [draftOrder]);
   const draftHidden = useStore(dashboardEditModeStore, (s) => s.draft.hidden);
   const draftKpiContainers = useStore(dashboardEditModeStore, (s) => s.draft.kpiContainers);
   const setDraftOrder = useStore(dashboardEditModeStore, (s) => s.setDraftOrder);
@@ -87,40 +90,43 @@ function EditModeChrome({ viewModel, children, t }: EditModeChromeProps) {
 
   const handleAddFromCatalogue = useCallback(
     (key: string, overKey: string | null) => {
-      // kpi-container is a multi-instance widget — create a new instance on every add
+      // Read fresh state from the store instead of using captured draftOrder
+      const currentDraftOrder = dashboardEditModeStore.getState().draft.order;
+      const currentDraftHidden = dashboardEditModeStore.getState().draft.hidden;
+
       if (key === "kpi-container") {
         const instanceId = addDraftKpiContainerInstance();
-        const instanceKey = `kpi-container::${instanceId}`;
+        const instanceKey = `${KPI_CONTAINER_INSTANCE_PREFIX}${instanceId}`;
         const target =
           overKey && overKey !== CATALOGUE_DROPZONE_ID && overKey !== DASHBOARD_GRID_DROPPABLE_ID
             ? overKey
             : null;
-        setDraftOrder(insertKey(draftOrder, instanceKey, target));
+        setDraftOrder(insertKey(currentDraftOrder, instanceKey, target));
         announceLive("KPI Container added.");
         return;
       }
-      if (draftHidden.includes(key)) {
+      if (currentDraftHidden.includes(key)) {
         toggleDraftVisibility(key);
       }
       const target =
         overKey && overKey !== CATALOGUE_DROPZONE_ID && overKey !== DASHBOARD_GRID_DROPPABLE_ID
           ? overKey
           : null;
-      setDraftOrder(insertKey(draftOrder, key, target));
+      setDraftOrder(insertKey(currentDraftOrder, key, target));
       announceLive(`${widgetLabel(key)} added.`);
     },
-    [draftHidden, toggleDraftVisibility, setDraftOrder, draftOrder, addDraftKpiContainerInstance]
+    [addDraftKpiContainerInstance, toggleDraftVisibility, setDraftOrder]
   );
 
   const handleHideToCatalogue = useCallback(
     (key: string) => {
       if (isContainerInstanceKey(key)) {
-        // Preserve container instance state and soft-hide it so it can be restored from the catalogue
-        const nextOrder = draftOrder.filter((k) => k !== key);
-        setDraftOrder(nextOrder);
+        // Soft-hide the container so it can be restored from the catalogue
         if (!draftHidden.includes(key)) {
           toggleDraftVisibility(key);
         }
+        const nextOrder = draftOrder.filter((k) => k !== key);
+        setDraftOrder(nextOrder);
         announceLive("KPI Container moved to catalogue (hidden)");
       } else if (!draftHidden.includes(key)) {
         toggleDraftVisibility(key);
@@ -226,7 +232,22 @@ function EditModeChrome({ viewModel, children, t }: EditModeChromeProps) {
     [handleAddFromCatalogue, handleHideToCatalogue, moveKpiIntoContainer, handleReorder]
   );
 
-  useEditKeyboardShortcuts({ enabled: isEditing, onEscape: discardEditing });
+  const handleEscape = useCallback(() => {
+    if (dashboardEditModeStore.getState().isDraftDirty()) {
+      Modal.confirm({
+        title: t("Discard changes?"),
+        content: t("You have unsaved changes. Discard them?"),
+        okText: t("Discard"),
+        cancelText: t("Cancel"),
+        okButtonProps: { danger: true },
+        onOk: () => discardEditing(),
+      });
+    } else {
+      discardEditing();
+    }
+  }, [discardEditing, t]);
+
+  useEditKeyboardShortcuts({ enabled: isEditing, onEscape: handleEscape });
 
   const handleAddClick = useCallback(
     (key: string) => handleAddFromCatalogue(key, null),
@@ -243,10 +264,7 @@ function EditModeChrome({ viewModel, children, t }: EditModeChromeProps) {
         onDragEnd={handleDragEnd}
         onDragCancel={handleDragCancel}
       >
-        <SortableContext
-          items={mergeWidgetOrder(draftOrder)}
-          strategy={verticalListSortingStrategy}
-        >
+        <SortableContext items={mergedOrder} strategy={verticalListSortingStrategy}>
           {children}
           <DragOverlay dropAnimation={null}>
             {activeWidget && (

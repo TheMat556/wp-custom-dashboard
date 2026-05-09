@@ -89,7 +89,14 @@ export function HeroBanner({
               </Text>
               {stats.lastBackupDate && (
                 <Text type="secondary" style={{ fontSize: 12 }}>
-                  Last backup: {stats.lastBackupDate}
+                  {t("Last backup: {date}", {
+                    date: new Date(stats.lastBackupDate).toLocaleString(intlLocale, {
+                      month: "short",
+                      day: "numeric",
+                      hour: "2-digit",
+                      minute: "2-digit",
+                    }),
+                  })}
                 </Text>
               )}
             </Flex>

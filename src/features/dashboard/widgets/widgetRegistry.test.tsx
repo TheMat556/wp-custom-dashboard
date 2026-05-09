@@ -227,6 +227,23 @@ describe("widgetRegistry", () => {
     });
   });
 
+  describe("KPI registry parity", () => {
+    it("all KPI_WIDGET_KEYS have corresponding entries in DASHBOARD_WIDGETS", () => {
+      const registryKeys = new Set(DASHBOARD_WIDGETS.map((w) => w.key));
+      for (const key of KPI_WIDGET_KEYS) {
+        expect(registryKeys.has(key)).toBe(true);
+      }
+    });
+
+    it("all KPI widgets have isEligible function", () => {
+      for (const key of KPI_WIDGET_KEYS) {
+        const widget = DASHBOARD_WIDGETS.find((w) => w.key === key);
+        expect(widget).toBeDefined();
+        expect(typeof widget?.isEligible).toBe("function");
+      }
+    });
+  });
+
   describe("getHiddenWidgets", () => {
     it("returns widgets that are in the hidden list and hidable", () => {
       const hidden = getHiddenWidgets(["traffic", "action-center"], DEFAULT_WIDGET_ORDER);

@@ -74,7 +74,7 @@ class RestControllerBehaviorTest extends TestCase {
 					'favorites'    => array( 'index.php' ),
 				),
 			),
-			$response
+			$response instanceof \WpReactUi\Rest\Services\ShellPreferencesDto ? $response->to_array() : $response
 		);
 	}
 
@@ -97,7 +97,9 @@ class RestControllerBehaviorTest extends TestCase {
 
 		$response = $controller->update( $request );
 
-		$prefs = $response['preferences'];
+		$prefs = $response instanceof \WpReactUi\Rest\Services\ShellPreferencesDto
+			? $response->preferences
+			: $response['preferences'];
 		$this->assertSame( array( '', 'plugins.php' ), $prefs['favorites'] );
 		$this->assertSame( array( '', 'dashboard_primary' ), $prefs['hiddenWidgets'] );
 		$this->assertSame( 'Plugins', $prefs['recentPages'][0]['title'] );

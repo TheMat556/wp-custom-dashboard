@@ -3,7 +3,6 @@ import {
   closestCorners,
   DndContext,
   type DragEndEvent,
-  type DragStartEvent,
   KeyboardSensor,
   PointerSensor,
   useDraggable,
@@ -13,132 +12,22 @@ import {
 } from "@dnd-kit/core";
 import { CSS } from "@dnd-kit/utilities";
 import { Button, Flex, Segmented, Typography, theme } from "antd";
-import { useCallback, useState } from "react";
+import { useCallback, useMemo } from "react";
 import { useStore } from "zustand";
+import { useShallow } from "zustand/react/shallow";
 import type { KpiContainerColumns } from "../../../../../../types/shellPreferences";
 import { shellPreferencesStore } from "../../../../../shell/store/shellPreferencesStore";
 import type { DashboardViewModel } from "../../../../dashboardViewModel";
 import { dashboardEditModeStore } from "../../../../store/dashboardEditModeStore";
-import { DASHBOARD_WIDGETS, KPI_WIDGET_KEYS } from "../../../../widgets/widgetRegistry";
-import { KpiBackup } from "./KpiBackup";
-import { KpiBookings } from "./KpiBookings";
-import { KpiContent } from "./KpiContent";
-import { KpiConversions } from "./KpiConversions";
-import { KpiEmail } from "./KpiEmail";
-import { KpiLegal } from "./KpiLegal";
-import { KpiReadiness } from "./KpiReadiness";
-import { KpiSeoScore } from "./KpiSeoScore";
-import { KpiSpeed } from "./KpiSpeed";
-import { KpiUpdates } from "./KpiUpdates";
-import { KpiVisitors } from "./KpiVisitors";
-import { KpiWebsite } from "./KpiWebsite";
+import type { DashboardWidgetMeta, WidgetRenderProps } from "../../../../widgets/widgetRegistry";
+import {
+  DASHBOARD_WIDGETS,
+  KPI_WIDGET_KEYS,
+  parseContainerInstanceKey,
+} from "../../../../widgets/widgetRegistry";
+import kpiStyles from "./KpiContainer.module.css";
 
 const { Text } = Typography;
-
-interface KpiDescriptor {
-  key: string;
-  label: string;
-  render: (props: {
-    viewModel: DashboardViewModel;
-    config: { adminUrl: string };
-    t: (key: string, vars?: Record<string, string | number>) => string;
-    intlLocale: string;
-  }) => React.ReactNode;
-}
-
-const ALL_KPIS: Record<string, KpiDescriptor> = {
-  "kpi-website": {
-    key: "kpi-website",
-    label: "Website status",
-    render: ({ viewModel, config, t }) => (
-      <KpiWebsite
-        isSiteDown={viewModel.isSiteDown}
-        health={viewModel.health}
-        speed={viewModel.speed}
-        t={t}
-        adminUrl={config.adminUrl}
-      />
-    ),
-  },
-  "kpi-visitors": {
-    key: "kpi-visitors",
-    label: "Visitors (30d)",
-    render: ({ viewModel, t, intlLocale }) => (
-      <KpiVisitors
-        total30Views={viewModel.total30Views}
-        viewTrend={viewModel.viewTrend}
-        t={t}
-        intlLocale={intlLocale}
-      />
-    ),
-  },
-  "kpi-updates": {
-    key: "kpi-updates",
-    label: "Updates",
-    render: ({ viewModel, t, intlLocale, config }) => (
-      <KpiUpdates
-        updates={viewModel.updates}
-        hasUpdates={viewModel.hasUpdates}
-        t={t}
-        intlLocale={intlLocale}
-        adminUrl={config.adminUrl}
-      />
-    ),
-  },
-  "kpi-speed": {
-    key: "kpi-speed",
-    label: "Speed",
-    render: ({ viewModel, t }) => (
-      <KpiSpeed isSiteDown={viewModel.isSiteDown} speed={viewModel.speed} t={t} />
-    ),
-  },
-  "kpi-conversions": {
-    key: "kpi-conversions",
-    label: "Conversions (30d)",
-    render: ({ viewModel, t }) => (
-      <KpiConversions submissionStats={viewModel.submissionStats} t={t} />
-    ),
-  },
-  "kpi-backup": {
-    key: "kpi-backup",
-    label: "Backup",
-    render: ({ viewModel, t }) => (
-      <KpiBackup lastBackupDate={viewModel.stats?.lastBackupDate} t={t} />
-    ),
-  },
-  "kpi-seo-score": {
-    key: "kpi-seo-score",
-    label: "SEO Score",
-    render: ({ viewModel, t }) => (
-      <KpiSeoScore seoBasics={viewModel.seoBasics} seo={viewModel.seo} t={t} />
-    ),
-  },
-  "kpi-content": {
-    key: "kpi-content",
-    label: "Content",
-    render: ({ viewModel, t }) => <KpiContent stats={viewModel.stats} t={t} />,
-  },
-  "kpi-legal": {
-    key: "kpi-legal",
-    label: "Legal",
-    render: ({ viewModel, t }) => <KpiLegal legalData={viewModel.legalData} t={t} />,
-  },
-  "kpi-email": {
-    key: "kpi-email",
-    label: "Email",
-    render: ({ viewModel, t }) => <KpiEmail bizData={viewModel.bizData} t={t} />,
-  },
-  "kpi-readiness": {
-    key: "kpi-readiness",
-    label: "Readiness",
-    render: ({ viewModel, t }) => <KpiReadiness readiness={viewModel.readiness} t={t} />,
-  },
-  "kpi-bookings": {
-    key: "kpi-bookings",
-    label: "Today's Bookings",
-    render: ({ viewModel, t }) => <KpiBookings calendar={viewModel.calendar} t={t} />,
-  },
-};
 
 const COLUMN_OPTIONS: { value: KpiContainerColumns; label: string }[] = [
   { value: 2, label: "2" },
@@ -156,16 +45,8 @@ interface KpiContainerProps {
   isEditing: boolean;
 }
 
-function parseInstanceId(instanceKey: string): string {
-  const prefix = "kpi-container::";
-  if (instanceKey.startsWith(prefix)) return instanceKey.slice(prefix.length);
-  return instanceKey;
-}
-
-// ── DraggableKpiTile — extracted to module level to prevent DnD breakage ──
-
 interface DraggableKpiTileProps {
-  kpi: KpiDescriptor;
+  kpi: DashboardWidgetMeta;
   index: number;
   isEditing: boolean;
   handleRemoveKpi: (kpiKey: string) => void;
@@ -174,6 +55,25 @@ interface DraggableKpiTileProps {
   config: { adminUrl: string };
   t: (key: string, vars?: Record<string, string | number>) => string;
   intlLocale: string;
+}
+
+function renderWidgetFromRegistry(
+  widget: DashboardWidgetMeta,
+  props: {
+    viewModel: DashboardViewModel;
+    config: { adminUrl: string };
+    t: (key: string, vars?: Record<string, string | number>) => string;
+    intlLocale: string;
+  }
+): React.ReactNode {
+  return widget.render({
+    config: props.config,
+    viewModel: props.viewModel,
+    t: props.t,
+    intlLocale: props.intlLocale,
+    isEditing: false,
+    widgetKey: widget.key,
+  } as WidgetRenderProps);
 }
 
 function DraggableKpiTile({
@@ -195,11 +95,9 @@ function DraggableKpiTile({
     active: dndActive,
   } = useDraggable({
     id: kpi.key,
-    disabled: !isEditing,
   });
   const { setNodeRef: setDropRef, isOver: isOverTile } = useDroppable({
     id: kpi.key,
-    disabled: !isEditing,
   });
 
   const mergedRef = useCallback(
@@ -234,25 +132,8 @@ function DraggableKpiTile({
           {...listeners}
           {...attributes}
           role="button"
-          aria-label={`Drag ${kpi.label} to reorder`}
-          style={{
-            position: "absolute",
-            top: 4,
-            left: 4,
-            zIndex: 5,
-            width: 22,
-            height: 22,
-            borderRadius: "50%",
-            border: "1px solid var(--color-border-subtle)",
-            background: "var(--color-bg-surface)",
-            cursor: "grab",
-            display: "inline-flex",
-            alignItems: "center",
-            justifyContent: "center",
-            color: "var(--color-text-muted)",
-            fontSize: 11,
-            touchAction: "none",
-          }}
+          aria-label={t("Drag {label} to reorder", { label: kpi.label })}
+          className={kpiStyles.dragHandle}
         >
           <HolderOutlined />
         </span>
@@ -263,25 +144,8 @@ function DraggableKpiTile({
         <button
           type="button"
           onClick={() => handleRemoveKpi(kpi.key)}
-          aria-label={`Remove ${kpi.label} from container`}
-          style={{
-            position: "absolute",
-            top: 4,
-            right: 4,
-            zIndex: 5,
-            width: 22,
-            height: 22,
-            borderRadius: "50%",
-            border: "none",
-            background: "var(--color-bg-elevated)",
-            cursor: "pointer",
-            display: "inline-flex",
-            alignItems: "center",
-            justifyContent: "center",
-            color: "var(--color-text-tertiary)",
-            boxShadow: "var(--shadow-tertiary)",
-            fontSize: 11,
-          }}
+          aria-label={t("Remove {label} from container", { label: kpi.label })}
+          className={kpiStyles.removeBtn}
         >
           <CloseOutlined />
         </button>
@@ -296,7 +160,7 @@ function DraggableKpiTile({
           } as React.CSSProperties
         }
       >
-        {kpi.render({ viewModel, config, t, intlLocale })}
+        {renderWidgetFromRegistry(kpi, { viewModel, config, t, intlLocale })}
       </div>
     </div>
   );
@@ -315,18 +179,6 @@ function addKpiViaEditMode(instanceId: string, kpiKey: string) {
   }
 }
 
-function addKpiViaPersisted(instanceId: string, kpiKey: string) {
-  const state = shellPreferencesStore.getState();
-  const current = state.kpiContainerInstances[instanceId];
-  const currentOrder = current?.order ?? [];
-  if (currentOrder.includes(kpiKey)) return;
-  state.setKpiContainerInstanceConfig(instanceId, { order: [...currentOrder, kpiKey] });
-  const filteredGrid = state.dashboardWidgetOrder.filter((k) => k !== kpiKey);
-  if (filteredGrid.length !== state.dashboardWidgetOrder.length) {
-    state.setDashboardWidgetOrder(filteredGrid);
-  }
-}
-
 function removeKpiViaEditMode(instanceId: string, instanceKey: string, kpiKey: string) {
   const state = dashboardEditModeStore.getState();
   const currentOrder = state.draft.kpiContainers[instanceId]?.order ?? [];
@@ -340,50 +192,15 @@ function removeKpiViaEditMode(instanceId: string, instanceKey: string, kpiKey: s
   }
 }
 
-function removeKpiViaPersisted(instanceId: string, instanceKey: string, kpiKey: string) {
-  const state = shellPreferencesStore.getState();
-  const current = state.kpiContainerInstances[instanceId];
-  const currentOrder = current?.order ?? [];
-  const next = currentOrder.filter((k) => k !== kpiKey);
-  state.setKpiContainerInstanceConfig(instanceId, { order: next });
-  const containerIdx = state.dashboardWidgetOrder.indexOf(instanceKey);
-  if (containerIdx !== -1) {
-    const newOrder = [...state.dashboardWidgetOrder];
-    newOrder.splice(containerIdx + 1, 0, kpiKey);
-    state.setDashboardWidgetOrder(newOrder);
-  }
-}
-
 function removeContainerViaEditMode(instanceId: string, instanceKey: string) {
   const state = dashboardEditModeStore.getState();
   const kpis = state.draft.kpiContainers[instanceId];
   const kpiOrderInStore = kpis?.order ?? [];
-  const newOrder = [...state.draft.order];
-  const containerIdx = newOrder.indexOf(instanceKey);
-  if (containerIdx !== -1) {
-    newOrder.splice(containerIdx, 1);
-    kpiOrderInStore.forEach((kpiKey: string, i: number) => {
-      newOrder.splice(containerIdx + i, 0, kpiKey);
-    });
-    state.setDraftOrder(newOrder);
-  }
+  const newOrder = state.draft.order.flatMap((k) =>
+    k === instanceKey ? [...kpiOrderInStore] : [k]
+  );
+  state.setDraftOrder(newOrder);
   state.removeDraftKpiContainerInstance(instanceId);
-}
-
-function removeContainerViaPersisted(instanceId: string, instanceKey: string) {
-  const state = shellPreferencesStore.getState();
-  const kpis = state.kpiContainerInstances[instanceId];
-  const kpiOrderInStore = kpis?.order ?? [];
-  const newOrder = [...state.dashboardWidgetOrder];
-  const containerIdx = newOrder.indexOf(instanceKey);
-  if (containerIdx !== -1) {
-    newOrder.splice(containerIdx, 1);
-    kpiOrderInStore.forEach((kpiKey: string, i: number) => {
-      newOrder.splice(containerIdx + i, 0, kpiKey);
-    });
-    state.setDashboardWidgetOrder(newOrder);
-  }
-  state.removeKpiContainerInstance(instanceId);
 }
 
 export function KpiContainer({
@@ -395,9 +212,12 @@ export function KpiContainer({
   isEditing,
 }: KpiContainerProps) {
   const { token } = theme.useToken();
-  const instanceId = parseInstanceId(instanceKey);
+  const instanceId = parseContainerInstanceKey(instanceKey) ?? instanceKey;
 
-  const editDraft = useStore(dashboardEditModeStore, (s) => s.draft);
+  const editDraftKpiContainers = useStore(
+    dashboardEditModeStore,
+    useShallow((s) => s.draft.kpiContainers)
+  );
   const setDraftKpiContainerConfig = useStore(
     dashboardEditModeStore,
     (s) => s.setDraftKpiContainerConfig
@@ -409,12 +229,22 @@ export function KpiContainer({
     (s) => s.setKpiContainerInstanceConfig
   );
 
-  const instances = isEditing ? editDraft.kpiContainers : persistedInstances;
+  const instances = isEditing ? editDraftKpiContainers : persistedInstances;
   const setInstanceConfig = isEditing ? setDraftKpiContainerConfig : setPersistedInstanceConfig;
 
   const instanceCfg = instances[instanceId];
   const kpiOrder = instanceCfg?.order ?? [];
   const kpiColumns = instanceCfg?.columns ?? 3;
+
+  const kpiRegistry = useMemo(() => {
+    const map = new Map<string, DashboardWidgetMeta>();
+    for (const w of DASHBOARD_WIDGETS) {
+      if (KPI_WIDGET_KEYS.includes(w.key)) {
+        map.set(w.key, w);
+      }
+    }
+    return map;
+  }, []);
 
   const isKpiEligible = useCallback(
     (key: string) => {
@@ -426,8 +256,8 @@ export function KpiContainer({
 
   // Resolve ordered KPIs (only show eligible ones)
   const visibleKpis = kpiOrder
-    .map((key) => ALL_KPIS[key])
-    .filter((k): k is KpiDescriptor => !!k && isKpiEligible(k.key));
+    .map((key) => kpiRegistry.get(key))
+    .filter((k): k is DashboardWidgetMeta => !!k && isKpiEligible(k.key));
 
   // Determine which KPIs are NOT in this container and are eligible (for the "add" picker)
   const kpiKeysInContainer = new Set(kpiOrder);
@@ -441,14 +271,8 @@ export function KpiContainer({
     useSensor(KeyboardSensor)
   );
 
-  // --- Inner DnD: handle drag start for KPI tiles ---
-  const handleKpiDragStart = useCallback((event: DragStartEvent) => {
-    setActiveKpiKey(String(event.active.id));
-  }, []);
-
   const handleKpiDragEnd = useCallback(
     (event: DragEndEvent) => {
-      setActiveKpiKey(null);
       const activeId = String(event.active.id);
       const overId = event.over ? String(event.over.id) : null;
       if (!overId || activeId === overId) return;
@@ -468,28 +292,23 @@ export function KpiContainer({
   // --- Add a KPI to this container from the available picker ---
   const handleAddKpi = useCallback(
     (kpiKey: string) => {
-      if (isEditing) addKpiViaEditMode(instanceId, kpiKey);
-      else addKpiViaPersisted(instanceId, kpiKey);
+      addKpiViaEditMode(instanceId, kpiKey);
     },
-    [instanceId, isEditing]
+    [instanceId]
   );
 
   // --- Remove a KPI from this container (adds back to the grid) ---
   const handleRemoveKpi = useCallback(
     (kpiKey: string) => {
-      if (isEditing) removeKpiViaEditMode(instanceId, instanceKey, kpiKey);
-      else removeKpiViaPersisted(instanceId, instanceKey, kpiKey);
+      removeKpiViaEditMode(instanceId, instanceKey, kpiKey);
     },
-    [instanceId, instanceKey, isEditing]
+    [instanceId, instanceKey]
   );
 
   // --- Remove the entire container instance ---
   const handleRemoveContainer = useCallback(() => {
-    if (isEditing) removeContainerViaEditMode(instanceId, instanceKey);
-    else removeContainerViaPersisted(instanceId, instanceKey);
-  }, [instanceId, instanceKey, isEditing]);
-
-  const [, setActiveKpiKey] = useState<string | null>(null);
+    removeContainerViaEditMode(instanceId, instanceKey);
+  }, [instanceId, instanceKey]);
 
   const revealDelayMs = 100;
 
@@ -539,7 +358,7 @@ export function KpiContainer({
                   } as React.CSSProperties
                 }
               >
-                {kpi.render({ viewModel, config, t, intlLocale })}
+                {renderWidgetFromRegistry(kpi, { viewModel, config, t, intlLocale })}
               </div>
             </div>
           )
@@ -561,7 +380,7 @@ export function KpiContainer({
               {t("KPI Container")}
             </Text>
             <Text type="secondary" style={{ fontSize: 12 }}>
-              #{instanceId === "__default__" ? "1" : instanceId.replace("inst_", "")}
+              #{instanceId === "__default__" ? "1" : instanceId.replace(/^instance-/, "")}
             </Text>
           </Flex>
           <Flex align="center" gap={6}>
@@ -615,7 +434,7 @@ export function KpiContainer({
           </Flex>
           <Flex wrap="wrap" gap={6} style={{ marginTop: 10 }}>
             {availableKpiKeys.map((kpiKey) => {
-              const kpi = ALL_KPIS[kpiKey];
+              const kpi = kpiRegistry.get(kpiKey);
               if (!kpi) return null;
               return (
                 <Button
@@ -638,7 +457,6 @@ export function KpiContainer({
         <DndContext
           sensors={sensors}
           collisionDetection={closestCorners}
-          onDragStart={handleKpiDragStart}
           onDragEnd={handleKpiDragEnd}
         >
           {renderKpiContent()}

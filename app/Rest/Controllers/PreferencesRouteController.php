@@ -32,7 +32,7 @@ final class PreferencesRouteController {
 	}
 
 	public function show() {
-		return rest_ensure_response( $this->service->get_preferences_payload() );
+		return rest_ensure_response( $this->service->get_preferences_payload()->to_array() );
 	}
 
 	public function update( WP_REST_Request $request ) {
@@ -47,6 +47,6 @@ final class PreferencesRouteController {
 			return new WP_Error( 'invalid_data', 'Expected JSON object', array( 'status' => 400 ) );
 		}
 
-		return rest_ensure_response( $this->service->save_preferences( $input ) );
+		return rest_ensure_response( $this->service->save_preferences( $input )->to_array() );
 	}
 }

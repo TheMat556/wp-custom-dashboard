@@ -28,6 +28,7 @@ function resetStore() {
       kpiContainers: { __default__: { order: [], columns: 3 } },
       widgetSizes: {},
     },
+    lastTransitionWasCommit: false,
   });
 }
 
@@ -46,7 +47,7 @@ describe("useSaveToast", () => {
     renderHook(() => useSaveToast({ enabled: false, t: identityT }));
     // Transition isEditing → false while disabled should not trigger
     dashboardEditModeStore.setState({ isEditing: true });
-    dashboardEditModeStore.setState({ isEditing: false });
+    dashboardEditModeStore.setState({ isEditing: false, lastTransitionWasCommit: true });
     vi.advanceTimersByTime(2000);
     expect(successMock).not.toHaveBeenCalled();
   });
@@ -56,7 +57,7 @@ describe("useSaveToast", () => {
     dashboardEditModeStore.setState({ isEditing: true });
     renderHook(() => useSaveToast({ enabled: true, t: identityT }));
     // Exit edit mode — triggers the toast
-    dashboardEditModeStore.setState({ isEditing: false });
+    dashboardEditModeStore.setState({ isEditing: false, lastTransitionWasCommit: true });
     vi.advanceTimersByTime(599);
     expect(successMock).not.toHaveBeenCalled();
     vi.advanceTimersByTime(2);
@@ -69,12 +70,12 @@ describe("useSaveToast", () => {
     renderHook(() => useSaveToast({ enabled: true, t: identityT }));
 
     // Rapidly toggle isEditing
-    dashboardEditModeStore.setState({ isEditing: false });
+    dashboardEditModeStore.setState({ isEditing: false, lastTransitionWasCommit: true });
     vi.advanceTimersByTime(200);
     dashboardEditModeStore.setState({ isEditing: true });
-    dashboardEditModeStore.setState({ isEditing: false });
+    dashboardEditModeStore.setState({ isEditing: false, lastTransitionWasCommit: true });
     vi.advanceTimersByTime(200);
-    dashboardEditModeStore.setState({ isEditing: false });
+    dashboardEditModeStore.setState({ isEditing: false, lastTransitionWasCommit: true });
     vi.advanceTimersByTime(601);
     // Only one toast should fire (the last transition)
     expect(successMock).toHaveBeenCalledTimes(1);
@@ -85,6 +86,15 @@ describe("useSaveToast", () => {
     renderHook(() => useSaveToast({ enabled: true, t: identityT }));
     // Set same value — no transition
     dashboardEditModeStore.setState({ isEditing: true });
+    vi.advanceTimersByTime(2000);
+    expect(successMock).not.toHaveBeenCalled();
+  });
+
+  it("does not toast on discard", () => {
+    dashboardEditModeStore.setState({ isEditing: true });
+    renderHook(() => useSaveToast({ enabled: true, t: identityT }));
+    // Discard — should NOT trigger toast
+    dashboardEditModeStore.setState({ isEditing: false, lastTransitionWasCommit: false });
     vi.advanceTimersByTime(2000);
     expect(successMock).not.toHaveBeenCalled();
   });

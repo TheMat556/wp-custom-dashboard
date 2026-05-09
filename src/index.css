@@ -1,4 +1,17 @@
 /* Base styles — loaded globally via wp_enqueue_style */
+/* Ant Design's <App> renders a plain <div class="ant-app"> as a flex child of
+   #react-shell-root. Without an explicit width it shrinks to the shell's
+   intrinsic min-content, collapsing the dashboard's `1fr` track. Force it to
+   fill the flex parent so the shell grid resolves against the full viewport. */
+#react-shell-root > .ant-app {
+  flex: 1 1 auto;
+  min-width: 0;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
 #react-shell-root {
   --font-display: var(
     --wp-react-ui-font-family,
@@ -157,6 +170,7 @@ body[data-theme="dark"] {
 }
 
 .wp-react-ui-shell {
+  position: relative;
   display: grid;
   grid-template-columns: var(--sidebar-width, var(--shell-sidebar-width, 240px)) minmax(0, 1fr);
   grid-template-rows: var(--shell-navbar-height, 65px) minmax(0, 1fr);
@@ -185,13 +199,15 @@ body[data-theme="dark"] {
 }
 
 .wp-react-ui-shell-content-slot {
-  grid-area: content;
-  position: relative;
+  position: absolute;
+  left: var(--sidebar-width, var(--shell-sidebar-width, 240px));
+  top: var(--shell-navbar-height, 65px);
+  right: 0;
+  bottom: 0;
   overflow: hidden;
   pointer-events: auto;
-  min-width: 0;
-  min-height: 0;
   outline: none;
+  transition: left var(--motion-base) var(--ease-standard);
 }
 
 .wp-react-ui-shell-content-slot--native {

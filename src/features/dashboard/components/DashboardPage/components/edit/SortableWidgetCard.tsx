@@ -82,7 +82,7 @@ export function SortableWidgetCard({ widget, children, t }: SortableWidgetCardPr
     // and marking it hidden lets the catalogue show it as "addable".
     const next = draftOrder.filter((k) => k !== widget.key);
     setDraftOrder(next);
-    if (draftOrder.includes(widget.key) && !hiddenWidgets.includes(widget.key)) {
+    if (!hiddenWidgets.includes(widget.key)) {
       toggleDraftVisibility(widget.key);
     }
   }, [widget.key, draftOrder, setDraftOrder, toggleDraftVisibility, hiddenWidgets]);
