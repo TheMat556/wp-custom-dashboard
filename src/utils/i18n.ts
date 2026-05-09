@@ -16,7 +16,10 @@ const DE_DICT_KEY = "__wp_react_ui_de_dict";
 
 function getDeDict(): Record<string, string> | null {
   try {
-    return (globalThis as Record<string, unknown>)[DE_DICT_KEY] as Record<string, string> | null ?? null;
+    return (
+      ((globalThis as Record<string, unknown>)[DE_DICT_KEY] as Record<string, string> | null) ??
+      null
+    );
   } catch {
     return null;
   }
