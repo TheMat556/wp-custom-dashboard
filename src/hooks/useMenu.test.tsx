@@ -1,5 +1,6 @@
 import { act, fireEvent, render, screen } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { preloadDeDict } from "../utils/i18n";
 
 describe("useMenu", () => {
   beforeEach(() => {
@@ -84,6 +85,8 @@ describe("useMenu", () => {
   });
 
   it("localizes the Brand Assets menu label from the active shell locale", async () => {
+    // Ensure German dictionary is loaded before checking translations.
+    await preloadDeDict();
     window.wpReactUi = {
       ...window.wpReactUi,
       locale: "de_DE",

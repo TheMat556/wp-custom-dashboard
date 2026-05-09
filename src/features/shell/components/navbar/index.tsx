@@ -13,6 +13,7 @@ import { Breadcrumb, Button, Dropdown, Tooltip, type TooltipProps, Typography, t
 import { lazy, Suspense, useMemo } from "react";
 import type { AdminBarAction } from "../../../../utils/adminBar";
 import { CommandPaletteTrigger } from "./CommandPalette";
+import { LastBackupIndicator } from "./LastBackupIndicator";
 import { useNavbarController } from "./useNavbarController";
 
 const { Text } = Typography;
@@ -128,6 +129,14 @@ export default function Navbar() {
       icon: React.ReactNode;
       onClick: () => void;
     }[] = [];
+    if (ctrl.isMobile && ctrl.activeKey === "index.php") {
+      items.push({
+        key: "backup",
+        label: <LastBackupIndicator isMobile />,
+        icon: null as unknown as React.ReactNode,
+        onClick: () => {},
+      });
+    }
     if (!ctrl.showExport) {
       items.push({
         key: "export",
@@ -161,6 +170,8 @@ export default function Navbar() {
     ctrl.publicUrl,
     ctrl.openActivity,
     ctrl.toggleTheme,
+    ctrl.isMobile,
+    ctrl.activeKey,
   ]);
 
   const breadcrumbItems = useMemo(() => {
@@ -466,6 +477,10 @@ export default function Navbar() {
               }}
             />
           </Tooltip>
+        )}
+
+        {!ctrl.isMobile && ctrl.activeKey === "index.php" && (
+          <LastBackupIndicator isMobile={false} />
         )}
 
         {ctrl.showTheme && (

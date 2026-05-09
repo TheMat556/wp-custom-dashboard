@@ -1,10 +1,15 @@
 import { Alert, Grid, Spin } from "antd";
-import { useMemo } from "react";
+import { lazy, Suspense, useMemo } from "react";
+import { useStore } from "zustand";
 import PageCanvas from "../../../../shared/ui/PageCanvas";
 import { useFeature, useLicense } from "../../../license/context/LicenseContext";
+import { dashboardEditModeStore } from "../../store/dashboardEditModeStore";
+import { useSaveToast } from "./components/edit/useSaveToast";
 import { DashboardContent } from "./DashboardContent";
 import { useDashboardData } from "./hooks/useDashboardData";
 import { getGreeting } from "./utils/formatters";
+
+const EditModeChrome = lazy(() => import("./components/edit/EditModeChrome"));
 
 export default function DashboardPage() {
   const screens = Grid.useBreakpoint();
@@ -16,6 +21,10 @@ export default function DashboardPage() {
 
   const { config, t, intlLocale, loading, data, closeChecklist, ...viewModel } =
     useDashboardData(canViewDashboard);
+
+  const isEditing = useStore(dashboardEditModeStore, (s) => s.isEditing);
+
+  useSaveToast({ enabled: true, t });
 
   if (!canViewDashboard) {
     return (
@@ -42,18 +51,31 @@ export default function DashboardPage() {
     );
   }
 
+  const content = (
+    <DashboardContent
+      config={config}
+      t={t}
+      intlLocale={intlLocale}
+      greetingKey={greetingKey}
+      viewModel={viewModel}
+      isMd={isMd}
+      isLg={isLg}
+      closeChecklist={closeChecklist}
+      isEditing={isEditing}
+    />
+  );
+
   return (
     <PageCanvas>
-      <DashboardContent
-        config={config}
-        t={t}
-        intlLocale={intlLocale}
-        greetingKey={greetingKey}
-        viewModel={viewModel}
-        isMd={isMd}
-        isLg={isLg}
-        closeChecklist={closeChecklist}
-      />
+      {isEditing ? (
+        <Suspense fallback={content}>
+          <EditModeChrome viewModel={viewModel} t={t}>
+            {content}
+          </EditModeChrome>
+        </Suspense>
+      ) : (
+        content
+      )}
     </PageCanvas>
   );
 }

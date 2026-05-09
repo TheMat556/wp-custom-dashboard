@@ -1,0 +1,35 @@
+{
+  "_comment": "Shared fixture for PHP/TS parity tests. Input → expected pairs for legacy widget key migration.",
+  "cases": [
+    {
+      "name": "empty list",
+      "input": [],
+      "expected": []
+    },
+    {
+      "name": "no legacy keys",
+      "input": ["hero", "first-steps-checklist", "action-center"],
+      "expected": ["hero", "first-steps-checklist", "action-center"]
+    },
+    {
+      "name": "summary-tiles expanded",
+      "input": ["summary-tiles"],
+      "expected": ["kpi-website", "kpi-visitors", "kpi-updates", "kpi-speed", "kpi-conversions"]
+    },
+    {
+      "name": "kpi-container rewritten to default instance",
+      "input": ["kpi-container"],
+      "expected": ["kpi-container::__default__"]
+    },
+    {
+      "name": "container instance key preserved",
+      "input": ["kpi-container::inst_1"],
+      "expected": ["kpi-container::inst_1"]
+    },
+    {
+      "name": "duplicates are deduplicated",
+      "input": ["summary-tiles", "kpi-website"],
+      "expected": ["kpi-website", "kpi-visitors", "kpi-updates", "kpi-speed", "kpi-conversions"]
+    }
+  ]
+}

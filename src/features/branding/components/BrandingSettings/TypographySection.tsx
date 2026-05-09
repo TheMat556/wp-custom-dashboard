@@ -1,6 +1,7 @@
 import { FontSizeOutlined } from "@ant-design/icons";
 import { Select, Typography, theme } from "antd";
 import { FONT_PRESETS, type FontPresetKey } from "../../../../utils/fontPresets";
+import styles from "./BrandingSettings.module.css";
 import { SurfaceCard } from "./SurfaceCard";
 
 const { Text } = Typography;
@@ -32,26 +33,9 @@ export function TypographySection({
       description={t("Choose the font system used across the shell interface.")}
       icon={<FontSizeOutlined />}
     >
-      <div
-        style={{
-          display: "grid",
-          gridTemplateColumns: isLg ? "320px minmax(0, 1fr)" : "1fr",
-          gap: 24,
-          alignItems: "start",
-        }}
-      >
+      <div className={`${styles.typoLayout}${isLg ? "" : ` ${styles.typoLayoutSingle}`}`}>
         <div style={{ minWidth: 0 }}>
-          <Text
-            style={{
-              display: "block",
-              marginBottom: 8,
-              fontSize: 12,
-              fontWeight: 800,
-              letterSpacing: "0.12em",
-              textTransform: "uppercase",
-              color: token.colorTextTertiary,
-            }}
-          >
+          <Text className={styles.fieldLabel} style={{ color: token.colorTextTertiary }}>
             {t("Font preset")}
           </Text>
           <Select
@@ -64,15 +48,9 @@ export function TypographySection({
         </div>
 
         <div
-          style={{
-            display: "grid",
-            gridTemplateColumns: isXl
-              ? "repeat(4, minmax(0, 1fr))"
-              : isMd
-                ? "repeat(2, minmax(0, 1fr))"
-                : "1fr",
-            gap: 16,
-          }}
+          className={`${styles.typoCardGrid}${
+            !isXl ? (isMd ? ` ${styles.typoCardGridHalf}` : ` ${styles.typoCardGridFull}`) : ""
+          }`}
         >
           {Object.entries(FONT_PRESETS).map(([key, preset]) => {
             const active = key === fontPreset;
@@ -80,44 +58,39 @@ export function TypographySection({
             return (
               <div
                 key={key}
-                className="wp-react-ui-inset-panel"
+                className={`wp-react-ui-inset-panel ${styles.typoCard} ${
+                  active ? styles.typoCardActive : styles.typoCardInactive
+                }`}
                 style={{
-                  padding: 18,
                   borderRadius: token.borderRadiusLG,
                   border: `1px solid ${active ? token.colorPrimary : token.colorBorderSecondary}`,
                   background: active ? `${token.colorPrimary}10` : "var(--surface-inset)",
                 }}
               >
                 <Text
-                  style={{
-                    display: "block",
-                    marginBottom: 6,
-                    fontSize: 12,
-                    fontWeight: 800,
-                    letterSpacing: "0.12em",
-                    textTransform: "uppercase",
-                    color: active ? token.colorPrimary : token.colorTextTertiary,
-                  }}
+                  className={`${styles.typoLabel} ${
+                    active ? styles.typoLabelActive : styles.typoLabelInactive
+                  }`}
+                  style={{ color: active ? token.colorPrimary : token.colorTextTertiary }}
                 >
                   {t(preset.label)}
                 </Text>
                 <div
+                  className={styles.typoSample}
                   style={{
                     fontFamily: preset.family,
-                    fontSize: 28,
-                    lineHeight: 1,
-                    marginBottom: 10,
                     color: token.colorTextHeading,
                   }}
                 >
                   Aa
                 </div>
-                <Text style={{ display: "block", fontFamily: preset.family, fontWeight: 600 }}>
+                <Text className={styles.typoHeading} style={{ fontFamily: preset.family }}>
                   {t("Brand Assets")}
                 </Text>
                 <Text
                   type="secondary"
-                  style={{ display: "block", fontFamily: preset.family, fontSize: 12 }}
+                  className={styles.typoBody}
+                  style={{ fontFamily: preset.family }}
                 >
                   The quick brown fox
                 </Text>

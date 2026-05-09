@@ -1,7 +1,14 @@
 import { createStore } from "zustand/vanilla";
-import type { PersistedShellPreferences } from "../../../types/shellPreferences";
+import type {
+  KpiContainerColumns,
+  KpiContainerInstanceConfig,
+  PersistedShellPreferences,
+} from "../../../types/shellPreferences";
 import type { WpReactUiConfig } from "../../../types/wp";
 import type { RecentPageRecord } from "../../../utils/commandPalette";
+import { generateContainerInstanceId } from "../../../utils/ids";
+import { logger } from "../../../utils/logger";
+import { DEFAULT_KPI_CONTAINER_ORDER } from "../../dashboard/widgets/dashboardConstants";
 import type { PreferencesService } from "../services/preferencesApi";
 import { createPreferencesService } from "../services/preferencesApi";
 
@@ -25,6 +32,14 @@ function getDefaultPersistedState(): PersistedShellPreferences {
     dashboardWidgetOrder: [],
     hiddenWidgets: [],
     highContrast: false,
+    sidebarCollapsed: false,
+    dashboardWidgetSizes: {},
+    kpiContainerInstances: {
+      __default__: {
+        order: [...DEFAULT_KPI_CONTAINER_ORDER],
+        columns: 3,
+      },
+    },
   };
 }
 
@@ -76,6 +91,41 @@ function readPersistedState(): PersistedShellPreferences {
         : defaults.hiddenWidgets,
       highContrast:
         typeof parsed.highContrast === "boolean" ? parsed.highContrast : defaults.highContrast,
+      sidebarCollapsed:
+        typeof parsed.sidebarCollapsed === "boolean"
+          ? parsed.sidebarCollapsed
+          : defaults.sidebarCollapsed,
+      dashboardWidgetSizes:
+        typeof parsed.dashboardWidgetSizes === "object" &&
+        parsed.dashboardWidgetSizes !== null &&
+        !Array.isArray(parsed.dashboardWidgetSizes)
+          ? Object.fromEntries(
+              Object.entries(parsed.dashboardWidgetSizes).filter(
+                ([, v]) => typeof v === "string" && ["1x", "2x", "half", "full"].includes(v)
+              )
+            )
+          : defaults.dashboardWidgetSizes,
+      kpiContainerInstances:
+        typeof parsed.kpiContainerInstances === "object" &&
+        parsed.kpiContainerInstances !== null &&
+        !Array.isArray(parsed.kpiContainerInstances)
+          ? Object.fromEntries(
+              Object.entries(parsed.kpiContainerInstances).reduce<
+                Array<[string, KpiContainerInstanceConfig]>
+              >((acc, [id, cfg]) => {
+                if (typeof cfg !== "object" || cfg === null) return acc;
+                const c = cfg as unknown as Record<string, unknown>;
+                const order = Array.isArray(c.order)
+                  ? c.order.filter((v): v is string => typeof v === "string")
+                  : [];
+                const columns = [2, 3, 4, 5].includes(c.columns as number)
+                  ? (c.columns as number as KpiContainerColumns)
+                  : (3 as KpiContainerColumns);
+                acc.push([id, { order, columns }]);
+                return acc;
+              }, [])
+            )
+          : defaults.kpiContainerInstances,
     };
   } catch {
     return getDefaultPersistedState();
@@ -105,6 +155,9 @@ function getPersistedFields(
     | "dashboardWidgetOrder"
     | "hiddenWidgets"
     | "highContrast"
+    | "sidebarCollapsed"
+    | "dashboardWidgetSizes"
+    | "kpiContainerInstances"
   >
 ): PersistedShellPreferences {
   return {
@@ -116,6 +169,9 @@ function getPersistedFields(
     dashboardWidgetOrder: state.dashboardWidgetOrder,
     hiddenWidgets: state.hiddenWidgets,
     highContrast: state.highContrast,
+    sidebarCollapsed: state.sidebarCollapsed,
+    dashboardWidgetSizes: state.dashboardWidgetSizes,
+    kpiContainerInstances: state.kpiContainerInstances,
   };
 }
 
@@ -128,7 +184,9 @@ function scheduleSyncToServer() {
   syncTimer = setTimeout(() => {
     if (!preferencesService) return;
     const fields = getPersistedFields(shellPreferencesStore.getState());
-    preferencesService.savePreferences(fields);
+    preferencesService.savePreferences(fields).catch((err) => {
+      logger.warn("[Preferences] Server sync failed", err);
+    });
   }, SYNC_DEBOUNCE_MS);
 }
 
@@ -142,6 +200,7 @@ function fallbackTitle(pageUrl: string): string {
 }
 
 export interface ShellPreferencesState extends PersistedShellPreferences {
+  _persistedVersion: number;
   paletteOpen: boolean;
   paletteQuery: string;
   openPalette: (query?: string) => void;
@@ -154,10 +213,25 @@ export interface ShellPreferencesState extends PersistedShellPreferences {
   setDashboardWidgetOrder: (order: string[]) => void;
   toggleWidgetVisibility: (widgetKey: string) => void;
   setHighContrast: (enabled: boolean) => void;
+  setDashboardWidgetSize: (
+    widgetKey: string,
+    size: import("../../../types/shellPreferences").WidgetSize
+  ) => void;
+  setKpiContainerInstanceConfig: (
+    instanceId: string,
+    config: {
+      order?: string[];
+      columns?: import("../../../types/shellPreferences").KpiContainerColumns;
+    }
+  ) => void;
+  addKpiContainerInstance: () => string;
+  removeKpiContainerInstance: (instanceId: string) => void;
+  resetDashboardLayout: () => void;
   syncFromServer: () => Promise<void>;
 }
 
 export const shellPreferencesStore = createStore<ShellPreferencesState>((set, get) => ({
+  _persistedVersion: 0,
   paletteOpen: false,
   paletteQuery: "",
   favorites: [],
@@ -168,6 +242,9 @@ export const shellPreferencesStore = createStore<ShellPreferencesState>((set, ge
   dashboardWidgetOrder: [],
   hiddenWidgets: [],
   highContrast: false,
+  sidebarCollapsed: false,
+  dashboardWidgetSizes: {},
+  kpiContainerInstances: {},
 
   openPalette(query = "") {
     set({ paletteOpen: true, paletteQuery: query });
@@ -189,7 +266,7 @@ export const shellPreferencesStore = createStore<ShellPreferencesState>((set, ge
       ? get().favorites.filter((item) => item !== normalizedSlug)
       : [normalizedSlug, ...get().favorites];
 
-    set({ favorites });
+    set((state) => ({ favorites, _persistedVersion: state._persistedVersion + 1 }));
   },
 
   recordVisit(pageUrl: string, title: string) {
@@ -205,11 +282,11 @@ export const shellPreferencesStore = createStore<ShellPreferencesState>((set, ge
       ...get().recentPages.filter((item) => item.pageUrl !== normalizedUrl),
     ].slice(0, MAX_RECENT_PAGES);
 
-    set({ recentPages });
+    set((state) => ({ recentPages, _persistedVersion: state._persistedVersion + 1 }));
   },
 
   setDensity(density) {
-    set({ density });
+    set((state) => ({ density, _persistedVersion: state._persistedVersion + 1 }));
   },
 
   setThemePreset(key, customColor) {
@@ -217,22 +294,80 @@ export const shellPreferencesStore = createStore<ShellPreferencesState>((set, ge
     if (customColor !== undefined) {
       updates.customPresetColor = customColor;
     }
-    set(updates);
+    set((state) => ({ ...updates, _persistedVersion: state._persistedVersion + 1 }));
   },
 
   setDashboardWidgetOrder(order) {
-    set({ dashboardWidgetOrder: order });
+    set((state) => ({
+      dashboardWidgetOrder: order,
+      _persistedVersion: state._persistedVersion + 1,
+    }));
   },
 
   toggleWidgetVisibility(widgetKey) {
     const hiddenWidgets = get().hiddenWidgets.includes(widgetKey)
       ? get().hiddenWidgets.filter((k) => k !== widgetKey)
       : [...get().hiddenWidgets, widgetKey];
-    set({ hiddenWidgets });
+    set((state) => ({ hiddenWidgets, _persistedVersion: state._persistedVersion + 1 }));
   },
 
   setHighContrast(enabled) {
-    set({ highContrast: enabled });
+    set((state) => ({ highContrast: enabled, _persistedVersion: state._persistedVersion + 1 }));
+  },
+
+  setDashboardWidgetSize(widgetKey, size) {
+    const sizes = { ...get().dashboardWidgetSizes, [widgetKey]: size };
+    set((state) => ({
+      dashboardWidgetSizes: sizes,
+      _persistedVersion: state._persistedVersion + 1,
+    }));
+  },
+
+  setKpiContainerInstanceConfig(instanceId, config) {
+    const instances = { ...get().kpiContainerInstances };
+    let existing = instances[instanceId];
+    if (!existing) {
+      existing = { order: [], columns: 3 };
+    }
+    instances[instanceId] = {
+      order: config.order ?? existing.order,
+      columns: config.columns ?? existing.columns,
+    };
+    set((state) => ({
+      kpiContainerInstances: instances,
+      _persistedVersion: state._persistedVersion + 1,
+    }));
+  },
+
+  addKpiContainerInstance() {
+    const instanceId = generateContainerInstanceId();
+    const instances = { ...get().kpiContainerInstances };
+    instances[instanceId] = { order: [], columns: 3 };
+    set((state) => ({
+      kpiContainerInstances: instances,
+      _persistedVersion: state._persistedVersion + 1,
+    }));
+    return instanceId;
+  },
+
+  removeKpiContainerInstance(instanceId) {
+    const instances = { ...get().kpiContainerInstances };
+    delete instances[instanceId];
+    set((state) => ({
+      kpiContainerInstances: instances,
+      _persistedVersion: state._persistedVersion + 1,
+    }));
+  },
+
+  resetDashboardLayout() {
+    const defaults = getDefaultPersistedState();
+    set((state) => ({
+      dashboardWidgetOrder: [],
+      hiddenWidgets: [],
+      dashboardWidgetSizes: {},
+      kpiContainerInstances: defaults.kpiContainerInstances,
+      _persistedVersion: state._persistedVersion + 1,
+    }));
   },
 
   async syncFromServer() {
@@ -254,7 +389,7 @@ export const shellPreferencesStore = createStore<ShellPreferencesState>((set, ge
             : current.recentPages,
       };
 
-      set(merged);
+      set((state) => ({ ...merged, _persistedVersion: state._persistedVersion + 1 }));
       // Subscriber will handle localStorage persistence.
     } catch {
       // Silently fail — local state is still valid.
@@ -278,11 +413,11 @@ export function bootstrapShellPreferencesStore(
   });
 
   // Subscriber: write to localStorage and schedule server sync whenever a
-  // persisted field changes. Runs synchronously after every state update.
+  // persisted field changes. Uses _persistedVersion dirty counter to avoid
+  // deep comparison of the full state.
   unsubPersist = shellPreferencesStore.subscribe((state, prev) => {
-    const next = getPersistedFields(state);
-    const previous = getPersistedFields(prev);
-    if (JSON.stringify(next) !== JSON.stringify(previous)) {
+    if (state._persistedVersion !== prev._persistedVersion) {
+      const next = getPersistedFields(state);
       persistState(next);
       scheduleSyncToServer();
     }
@@ -322,5 +457,8 @@ export function resetShellPreferencesStore() {
     dashboardWidgetOrder: [],
     hiddenWidgets: [],
     highContrast: false,
+    sidebarCollapsed: false,
+    dashboardWidgetSizes: {},
+    kpiContainerInstances: {},
   });
 }

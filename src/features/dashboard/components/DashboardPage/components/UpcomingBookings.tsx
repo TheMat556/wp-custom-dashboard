@@ -18,7 +18,7 @@ export function UpcomingBookings({
   const { token } = theme.useToken();
 
   return (
-    <div style={{ marginBottom: 16 }}>
+    <div>
       <Section
         icon={<CalendarOutlined />}
         title={t("Upcoming Bookings")}

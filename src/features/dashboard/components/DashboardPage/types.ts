@@ -114,10 +114,7 @@ export interface FirstStepsChecklistProps {
 
 export interface TrafficChartsProps {
   trend: { date: string; views: number }[];
-  countries: CountryStatEntry[];
   t: TFunc;
-  intlLocale: string;
-  isMd: boolean;
 }
 
 export interface UpcomingBookingsProps {

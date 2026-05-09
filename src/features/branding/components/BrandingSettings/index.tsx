@@ -1,5 +1,16 @@
-import { Alert, Button, Flex, Grid, Spin, Switch, Typography, theme } from "antd";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import {
+  Alert,
+  Button,
+  Card,
+  Flex,
+  Grid,
+  message,
+  Skeleton,
+  Switch,
+  Typography,
+  theme,
+} from "antd";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useStore } from "zustand";
 import { CUSTOM_PRESET_KEY, THEME_PRESETS } from "../../../../config/themePresets";
 import PageCanvas from "../../../../shared/ui/PageCanvas";
@@ -19,6 +30,7 @@ import {
 import { loadBranding, saveBranding } from "../../store/brandingActions";
 import { brandingStore } from "../../store/brandingStore";
 import { BrandAssetsSection } from "./BrandAssetsSection";
+import styles from "./BrandingSettings.module.css";
 import { ColorSettingsSection } from "./ColorSettingsSection";
 import { LinkRulesSection } from "./LinkRulesSection";
 import { TypographySection } from "./TypographySection";
@@ -53,6 +65,7 @@ export default function BrandingSettings() {
   const loading = useStore(brandingStore, (state) => state.loading);
   const saving = useStore(brandingStore, (state) => state.saving);
   const highContrast = useStore(shellPreferencesStore, (state) => state.highContrast);
+  const containerRef = useRef<HTMLDivElement>(null);
   const [draft, setDraft] = useState(() => createEmptyBrandingDraft(getThemePreferenceSnapshot()));
   const { token } = theme.useToken();
   const screens = useBreakpoint();
@@ -113,14 +126,71 @@ export default function BrandingSettings() {
   );
 
   const handleSave = useCallback(async () => {
-    await saveBranding(buildBrandingSaveInput(draft));
-    shellPreferencesStore.getState().setThemePreset(draft.themePreset, draft.customPresetColor);
-  }, [draft]);
+    try {
+      await saveBranding(buildBrandingSaveInput(draft));
+      shellPreferencesStore.getState().setThemePreset(draft.themePreset, draft.customPresetColor);
+      void message.success(t("Brand assets saved successfully."));
+    } catch {
+      void message.error(t("Failed to save brand assets."));
+    }
+  }, [draft, t]);
 
+  // ── Unsaved changes guard ────────────────────────────────────────────────
+  useEffect(() => {
+    if (!isDirty) return;
+
+    const handler = (e: BeforeUnloadEvent) => {
+      e.preventDefault();
+      e.returnValue = "";
+    };
+
+    window.addEventListener("beforeunload", handler);
+    return () => window.removeEventListener("beforeunload", handler);
+  }, [isDirty]);
+
+  // ── Keyboard shortcut: Ctrl+S / Cmd+S (scoped to component) ───────────────
+  const handleKeyDown = useCallback(
+    (e: KeyboardEvent) => {
+      const container = containerRef.current;
+      if (!container) return;
+      const isRelevant =
+        container.contains(e.target as Node) || container.contains(document.activeElement);
+      if (!isRelevant) return;
+      if ((e.ctrlKey || e.metaKey) && e.key === "s") {
+        if (isDirty && !saving) {
+          e.preventDefault();
+          void handleSave();
+        }
+      }
+    },
+    [handleSave, isDirty, saving]
+  );
+
+  useEffect(() => {
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [handleKeyDown]);
+
+  // ── Loading skeleton ─────────────────────────────────────────────────────
   if (loading && !settings) {
     return (
-      <PageCanvas centered aria-busy="true">
-        <Spin size="large" />
+      <PageCanvas aria-busy="true">
+        <Skeleton active paragraph={{ rows: 0 }} title={{ width: "40%" }} />
+        <div className={styles.skeletonGrid}>
+          <Card>
+            <Skeleton active paragraph={{ rows: 2 }} />
+            <Skeleton active paragraph={{ rows: 4 }} style={{ marginTop: 16 }} />
+          </Card>
+          <Card>
+            <Skeleton active paragraph={{ rows: 2 }} />
+            <Skeleton active paragraph={{ rows: 4 }} style={{ marginTop: 16 }} />
+          </Card>
+        </div>
+        <div className={styles.skeletonFullWidth}>
+          <Card>
+            <Skeleton active paragraph={{ rows: 4 }} />
+          </Card>
+        </div>
       </PageCanvas>
     );
   }
@@ -143,144 +213,132 @@ export default function BrandingSettings() {
   }
 
   return (
-    <PageCanvas>
-      {license.status === "grace" && (
-        <Alert
-          type="warning"
-          showIcon
-          style={{ marginBottom: 24 }}
-          message={t("License grace period active")}
-          description={t(
-            `Branding settings remain available for ${license.graceDaysRemaining} more day(s).`
-          )}
-        />
-      )}
-      <div className="wp-react-ui-page-intro">
-        <Flex
-          className="wp-react-ui-page-intro__header"
-          justify="space-between"
-          align="flex-start"
-          gap={24}
-          wrap
-        >
-          <div className="wp-react-ui-page-intro__copy" style={{ minWidth: 0 }}>
-            <Title
-              level={2}
-              className="wp-react-ui-page-intro__title"
-              style={{ marginBottom: 6, fontSize: screens.md ? 30 : 24 }}
-            >
-              {t("Brand Assets")}
-            </Title>
-            <Paragraph
-              type="secondary"
-              className="wp-react-ui-page-intro__description"
-              style={{ marginBottom: 0, maxWidth: 760, fontSize: 14 }}
-            >
-              {t(
-                "Centralized management for identity logos, color accents, and global navigation fragments used across the shell."
-              )}
-            </Paragraph>
-          </div>
-
-          <Flex className="wp-react-ui-page-intro__actions" gap={12} wrap align="center">
-            <div className="wp-react-ui-inline-control">
-              <Text style={{ fontSize: 12, fontWeight: 700, color: token.colorTextSecondary }}>
-                {t("Logo-only sidebar")}
-              </Text>
-              <Switch
-                checked={draft.useLongLogo}
-                onChange={(useLongLogo) => updateDraft({ useLongLogo })}
-                checkedChildren={t("On")}
-                unCheckedChildren={t("Off")}
-              />
+    <div ref={containerRef}>
+      <PageCanvas>
+        {license.status === "grace" && (
+          <Alert
+            type="warning"
+            showIcon
+            style={{ marginBottom: 24 }}
+            message={t("License grace period active")}
+            description={t(
+              `Branding settings remain available for ${license.graceDaysRemaining} more day(s).`
+            )}
+          />
+        )}
+        <div className="wp-react-ui-page-intro">
+          <Flex
+            className="wp-react-ui-page-intro__header"
+            justify="space-between"
+            align="flex-start"
+            gap={24}
+            wrap
+          >
+            <div className="wp-react-ui-page-intro__copy" style={{ minWidth: 0 }}>
+              <Title
+                level={2}
+                className="wp-react-ui-page-intro__title"
+                style={{ marginBottom: 6, fontSize: screens.md ? 30 : 24 }}
+              >
+                {t("Brand Assets")}
+              </Title>
+              <Paragraph
+                type="secondary"
+                className="wp-react-ui-page-intro__description"
+                style={{ marginBottom: 0, maxWidth: 760, fontSize: 14 }}
+              >
+                {t(
+                  "Centralized management for identity logos, color accents, and global navigation fragments used across the shell."
+                )}
+              </Paragraph>
             </div>
-            <Button
-              type="primary"
-              loading={saving}
-              onClick={() => void handleSave()}
-              disabled={!isDirty}
-            >
-              {t("Save Brand Assets")}
-            </Button>
+
+            <Flex className="wp-react-ui-page-intro__actions" gap={12} wrap align="center">
+              <div className="wp-react-ui-inline-control">
+                <Text style={{ fontSize: 12, fontWeight: 700, color: token.colorTextSecondary }}>
+                  {t("Logo-only sidebar")}
+                </Text>
+                <Switch
+                  checked={draft.useLongLogo}
+                  onChange={(useLongLogo) => updateDraft({ useLongLogo })}
+                  checkedChildren={t("On")}
+                  unCheckedChildren={t("Off")}
+                />
+              </div>
+              <Button
+                type="primary"
+                loading={saving}
+                onClick={() => void handleSave()}
+                disabled={!isDirty}
+              >
+                {t("Save Brand Assets")}
+              </Button>
+            </Flex>
           </Flex>
-        </Flex>
-      </div>
+        </div>
 
-      <BrandAssetsSection
-        t={t}
-        isLg={!!screens.lg}
-        lightLogoId={draft.lightLogoId}
-        lightLogoUrl={draft.lightLogoUrl}
-        darkLogoId={draft.darkLogoId}
-        darkLogoUrl={draft.darkLogoUrl}
-        onLightLogoSelect={(id, url) => updateDraft({ lightLogoId: id, lightLogoUrl: url })}
-        onLightLogoRemove={() => updateDraft({ lightLogoId: 0, lightLogoUrl: null })}
-        onDarkLogoSelect={(id, url) => updateDraft({ darkLogoId: id, darkLogoUrl: url })}
-        onDarkLogoRemove={() => updateDraft({ darkLogoId: 0, darkLogoUrl: null })}
-      />
-
-      <div
-        style={{
-          display: "grid",
-          gridTemplateColumns: screens.lg ? "repeat(2, minmax(0, 1fr))" : "1fr",
-          gap: 24,
-          alignItems: "stretch",
-          marginTop: 24,
-        }}
-      >
-        <ColorSettingsSection
+        <BrandAssetsSection
           t={t}
-          themePresetOptions={themePresetOptions}
-          draftThemePreset={draft.themePreset}
-          draftCustomColor={draft.customPresetColor}
-          highContrast={highContrast}
-          onThemePresetChange={(themePreset) => updateDraft({ themePreset })}
-          onCustomColorChange={(customPresetColor) => updateDraft({ customPresetColor })}
-          onToggleHighContrast={toggleHighContrast}
-          onReset={() =>
-            updateDraft({
-              themePreset: "default",
-              customPresetColor: DEFAULT_PRIMARY_COLOR,
-            })
-          }
-        />
-
-        <LinkRulesSection
-          t={t}
-          patterns={draft.patterns}
-          onPatternsChange={(patterns) => updateDraft({ patterns })}
-        />
-      </div>
-
-      <div style={{ marginTop: 24 }}>
-        <TypographySection
-          t={t}
-          fontPreset={draft.fontPreset}
-          fontPresetOptions={fontPresetOptions}
-          isXl={!!screens.xl}
-          isMd={!!screens.md}
           isLg={!!screens.lg}
-          onFontPresetChange={(fontPreset: FontPresetKey) => updateDraft({ fontPreset })}
+          lightLogoId={draft.lightLogoId}
+          lightLogoUrl={draft.lightLogoUrl}
+          darkLogoId={draft.darkLogoId}
+          darkLogoUrl={draft.darkLogoUrl}
+          onLightLogoSelect={(id, url) => updateDraft({ lightLogoId: id, lightLogoUrl: url })}
+          onLightLogoRemove={() => updateDraft({ lightLogoId: 0, lightLogoUrl: null })}
+          onDarkLogoSelect={(id, url) => updateDraft({ darkLogoId: id, darkLogoUrl: url })}
+          onDarkLogoRemove={() => updateDraft({ darkLogoId: 0, darkLogoUrl: null })}
         />
-      </div>
 
-      <Flex
-        justify="space-between"
-        align="center"
-        gap={16}
-        wrap
-        style={{
-          marginTop: 32,
-          paddingTop: 24,
-          borderTop: `1px solid ${token.colorBorderSecondary}`,
-        }}
-      >
-        <Text type="secondary" style={{ fontSize: 12 }}>
-          {t("Changes are applied live after saving.")}
-        </Text>
+        <div
+          className={`${styles.twoColumnGrid}${screens.lg ? "" : ` ${styles.twoColumnGridSingle}`}`}
+          style={{ marginTop: 24 }}
+        >
+          <ColorSettingsSection
+            t={t}
+            themePresetOptions={themePresetOptions}
+            draftThemePreset={draft.themePreset}
+            draftCustomColor={draft.customPresetColor}
+            highContrast={highContrast}
+            onThemePresetChange={(themePreset) => updateDraft({ themePreset })}
+            onCustomColorChange={(customPresetColor) => updateDraft({ customPresetColor })}
+            onToggleHighContrast={toggleHighContrast}
+            onReset={() =>
+              updateDraft({
+                themePreset: "default",
+                customPresetColor: DEFAULT_PRIMARY_COLOR,
+              })
+            }
+          />
 
-        <Flex gap={12} wrap />
-      </Flex>
-    </PageCanvas>
+          <LinkRulesSection
+            t={t}
+            patterns={draft.patterns}
+            onPatternsChange={(patterns) => updateDraft({ patterns })}
+          />
+        </div>
+
+        <div className={styles.sectionSpacer}>
+          <TypographySection
+            t={t}
+            fontPreset={draft.fontPreset}
+            fontPresetOptions={fontPresetOptions}
+            isXl={!!screens.xl}
+            isMd={!!screens.md}
+            isLg={!!screens.lg}
+            onFontPresetChange={(fontPreset: FontPresetKey) => updateDraft({ fontPreset })}
+          />
+        </div>
+
+        <div
+          className={styles.footerBar}
+          style={{ borderTop: `1px solid ${token.colorBorderSecondary}` }}
+        >
+          <Text type="secondary" className={styles.footerNote}>
+            {t("Changes are applied live after saving.")}
+          </Text>
+        </div>
+      </PageCanvas>
+    </div>
   );
 }

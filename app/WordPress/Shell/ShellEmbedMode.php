@@ -194,7 +194,7 @@ body { margin: 0 !important; padding: 0 !important; min-height: 100% !important;
 #adminmenuback, #adminmenuwrap, #adminmenumain, #wpadminbar, #wpfooter { display: none !important; }
 #wpbody { padding-top: 0 !important; }
 #wpcontent { margin-left: 0 !important; float: none !important; }
-#wpbody-content { margin-top: 0 !important; padding-top: 0 !important; padding-bottom: 0 !important; }
+#wpbody-content { margin-top: 0 !important; padding-top: 0 !important; padding-bottom: 0 !important; float: none !important; }
 #wpwrap { display: block !important; }
 ';
 	}

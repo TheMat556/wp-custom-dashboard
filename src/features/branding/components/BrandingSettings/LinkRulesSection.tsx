@@ -1,5 +1,6 @@
 import { LinkOutlined } from "@ant-design/icons";
-import { Flex, Input, Typography, theme } from "antd";
+import { Input, Typography, theme } from "antd";
+import styles from "./BrandingSettings.module.css";
 import { SurfaceCard } from "./SurfaceCard";
 
 const { Text } = Typography;
@@ -20,45 +21,29 @@ export function LinkRulesSection({ t, patterns, onPatternsChange }: LinkRulesSec
       description={t("Patterns that should open in a new tab.")}
       icon={<LinkOutlined />}
     >
-      <Text
-        style={{
-          display: "flex",
-          justifyContent: "space-between",
-          gap: 12,
-          marginBottom: 10,
-          fontSize: 12,
-          fontWeight: 800,
-          letterSpacing: "0.12em",
-          textTransform: "uppercase",
-          color: token.colorTextTertiary,
-        }}
-      >
+      <div className={styles.fieldLabelRow} style={{ color: token.colorTextTertiary }}>
         <span>{t("Global URL Fragments")}</span>
-        <span style={{ textTransform: "none", letterSpacing: 0, fontWeight: 500 }}>
-          {t("One fragment per line")}
-        </span>
-      </Text>
+        <span className={styles.fieldLabelRowSpan}>{t("One fragment per line")}</span>
+      </div>
 
       <TextArea
         value={patterns}
         onChange={(event) => onPatternsChange(event.target.value)}
         rows={8}
         placeholder={"/brand-kit\n/identity-guide\n/media-assets"}
+        className={styles.linkRulesTextarea}
         style={{
-          fontFamily:
-            'ui-monospace, SFMono-Regular, SF Mono, Menlo, Consolas, "Liberation Mono", monospace',
           borderRadius: token.borderRadiusLG,
           background: "var(--surface-inset)",
           borderColor: "var(--color-border-subtle)",
-          resize: "none",
         }}
       />
 
-      <Flex justify="space-between" align="center" gap={12} wrap style={{ marginTop: 16 }}>
-        <Text type="secondary" style={{ fontSize: 12 }}>
+      <div className={styles.linkRulesFooter}>
+        <Text type="secondary" className={styles.linkRulesHint}>
           {t("Matching links bypass the iframe and open directly in a new tab.")}
         </Text>
-      </Flex>
+      </div>
     </SurfaceCard>
   );
 }

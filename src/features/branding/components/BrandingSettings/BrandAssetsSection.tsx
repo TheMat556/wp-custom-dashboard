@@ -1,4 +1,5 @@
 import { PictureOutlined } from "@ant-design/icons";
+import styles from "./BrandingSettings.module.css";
 import { LogoField } from "./LogoField";
 import { SurfaceCard } from "./SurfaceCard";
 
@@ -33,13 +34,7 @@ export function BrandAssetsSection({
       description={t("Upload the logo variants used in the shell sidebar.")}
       icon={<PictureOutlined />}
     >
-      <div
-        style={{
-          display: "grid",
-          gridTemplateColumns: isLg ? "repeat(2, minmax(0, 1fr))" : "1fr",
-          gap: 24,
-        }}
-      >
+      <div className={`${styles.brandAssetsGrid}${isLg ? "" : ` ${styles.brandAssetsGridSingle}`}`}>
         <LogoField
           label={t("Light Theme Logo")}
           description=""

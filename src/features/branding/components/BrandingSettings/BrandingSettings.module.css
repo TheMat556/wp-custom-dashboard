@@ -1,0 +1,269 @@
+/* ── Loading skeleton ──────────────────────────────────────────────────── */
+
+.skeletonGrid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 24px;
+  margin-top: 24px;
+}
+
+.skeletonFullWidth {
+  margin-top: 24px;
+}
+
+/* ── Section layout ────────────────────────────────────────────────────── */
+
+.twoColumnGrid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 24px;
+  align-items: stretch;
+}
+
+.twoColumnGridSingle {
+  grid-template-columns: 1fr;
+}
+
+.sectionSpacer {
+  margin-top: 24px;
+}
+
+/* ── Brand assets grid ─────────────────────────────────────────────────── */
+
+.brandAssetsGrid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 24px;
+}
+
+.brandAssetsGridSingle {
+  grid-template-columns: 1fr;
+}
+
+/* ── Typography section ────────────────────────────────────────────────── */
+
+.typoLayout {
+  display: grid;
+  grid-template-columns: 320px minmax(0, 1fr);
+  gap: 24px;
+  align-items: start;
+}
+
+.typoLayoutSingle {
+  grid-template-columns: 1fr;
+}
+
+.typoCardGrid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 16px;
+}
+
+.typoCardGridHalf {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.typoCardGridFull {
+  grid-template-columns: 1fr;
+}
+
+.typoCard {
+  padding: 18px;
+}
+
+.typoCardActive {
+  padding: 18px;
+  outline: 2px solid var(--color-accent-primary);
+  outline-offset: -2px;
+  border-radius: var(--radius-lg);
+}
+
+.typoCardInactive {
+  padding: 18px;
+  opacity: 0.75;
+}
+
+.typoLabel {
+  display: block;
+  margin-bottom: 6px;
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.typoLabelActive {
+  display: block;
+  margin-bottom: 6px;
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--color-accent-primary);
+}
+
+.typoLabelInactive {
+  display: block;
+  margin-bottom: 6px;
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.typoSample {
+  font-size: 28px;
+  line-height: 1;
+  margin-bottom: 10px;
+}
+
+.typoHeading {
+  display: block;
+  font-weight: 600;
+}
+
+.typoBody {
+  display: block;
+  font-size: 12px;
+}
+
+/* ── Inline label (uppercase, small) ────────────────────────────────────── */
+
+.fieldLabel {
+  display: block;
+  margin-bottom: 8px;
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.fieldLabelRow {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 10px;
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.fieldLabelRowSpan {
+  text-transform: none;
+  letter-spacing: 0;
+  font-weight: 500;
+}
+
+/* ── Logo field ────────────────────────────────────────────────────────── */
+
+.logoFieldHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 12px;
+  margin-bottom: 20px;
+}
+
+.logoPreviewBox {
+  height: 160px;
+  margin-bottom: 18px;
+  padding: 18px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  box-sizing: border-box;
+  position: relative;
+}
+
+.logoPreviewImg {
+  display: block;
+  width: auto;
+  height: auto;
+  max-width: min(100%, 240px);
+  max-height: 72px;
+  object-fit: contain;
+}
+
+.dropOverlayIcon {
+  font-size: 24px;
+}
+
+.dropOverlay {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  border-radius: inherit;
+  z-index: 10;
+}
+
+/* ── Color section ─────────────────────────────────────────────────────── */
+
+.colorBody {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  min-height: 100%;
+}
+
+.previewDistBar {
+  height: 8px;
+  border-radius: 999px;
+  overflow: hidden;
+  display: flex;
+  margin-bottom: 12px;
+  padding: 0;
+}
+
+.previewDistActions {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+}
+
+.previewDistNote {
+  font-size: 12px;
+}
+
+/* ── Link rules ────────────────────────────────────────────────────────── */
+
+.linkRulesTextarea {
+  font-family:
+    ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, "Liberation Mono", monospace;
+  resize: none;
+}
+
+.linkRulesFooter {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-top: 16px;
+}
+
+.linkRulesHint {
+  font-size: 12px;
+}
+
+/* ── Footer bar in BrandingSettings ────────────────────────────────────── */
+
+.footerBar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 16px;
+  flex-wrap: wrap;
+  margin-top: 32px;
+  padding-top: 24px;
+}
+
+.footerNote {
+  font-size: 12px;
+}
