@@ -103,6 +103,46 @@ class LicenseStateTransitioner {
 	}
 
 	/**
+	 * Transition cached license state to locked.
+	 *
+	 * If cache is empty (cold start, post-clear), stores just the locked flag.
+	 * Unlock will clear the cache, forcing re-validation that re-populates
+	 * metadata from the remote server.
+	 *
+	 * @param array<string, mixed> $webhook_data Optional webhook event data.
+	 * @return array{status: string, role: ?string, tier: ?string, expiresAt: ?string, features: array<int, string>, graceDaysRemaining: int, keyPrefix: ?string, lastValidatedAt: ?string}
+	 */
+	public function transition_to_locked( array $webhook_data = array() ): array {
+		$payload = $this->cache->get();
+
+		if ( null === $payload || empty( $payload ) ) {
+			$payload = $this->cache->default_payload();
+			$payload['status'] = LicenseCache::STATUS_LOCKED;
+		} else {
+			$payload['status']         = LicenseCache::STATUS_LOCKED;
+			$payload['webhook_secret'] = null;
+		}
+
+		if ( isset( $webhook_data['pre_lock_status'] ) ) {
+			$payload['preLockStatus'] = sanitize_key( (string) $webhook_data['pre_lock_status'] );
+		}
+
+		$this->cache->set( $payload );
+		return $payload;
+	}
+
+	/**
+	 * Transition out of locked state: delete both cache layers completely.
+	 *
+	 * Deleting (not overwriting) forces the next page load to re-validate
+	 * with the remote server, which now returns the restored state.
+	 */
+	public function transition_to_unlocked(): void {
+		delete_transient( LicenseCache::TRANSIENT_KEY );
+		delete_option( LicenseCache::BACKUP_OPTION_KEY );
+	}
+
+	/**
 	 * Transitions to active state given a remote payload.
 	 *
 	 * @param array<string, mixed> $remote_payload Remote license server response.
@@ -150,6 +190,8 @@ class LicenseStateTransitioner {
 
 		if ( in_array( $status, array( 'valid', 'activated' ), true ) ) {
 			$status = LicenseCache::STATUS_ACTIVE;
+		} elseif ( 'locked' === $status ) {
+			$status = LicenseCache::STATUS_LOCKED;
 		}
 
 		$role = sanitize_key( (string) ( $license['role'] ?? '' ) );
@@ -167,7 +209,7 @@ class LicenseStateTransitioner {
 			$expires_at = null;
 		}
 
-		if ( ! in_array( $status, array( LicenseCache::STATUS_ACTIVE, LicenseCache::STATUS_GRACE, LicenseCache::STATUS_EXPIRED, LicenseCache::STATUS_DISABLED ), true ) ) {
+		if ( ! in_array( $status, array( LicenseCache::STATUS_ACTIVE, LicenseCache::STATUS_GRACE, LicenseCache::STATUS_EXPIRED, LicenseCache::STATUS_DISABLED, LicenseCache::STATUS_LOCKED ), true ) ) {
 			$status = LicenseCache::STATUS_DISABLED;
 		}
 

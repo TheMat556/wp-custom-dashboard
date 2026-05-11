@@ -17,13 +17,16 @@ defined( 'ABSPATH' ) || exit;
 final class LicenseCache {
 	public const TRANSIENT_KEY   = 'wp_react_ui_license_state';
 	private const OPTION_KEY     = 'wp_react_ui_license_state_backup';
-	public const STATUS_ACTIVE   = 'active';
-	public const STATUS_EXPIRED  = 'expired';
-	public const STATUS_GRACE    = 'grace';
-	public const STATUS_DISABLED = 'disabled';
+	public const STATUS_ACTIVE     = 'active';
+	public const STATUS_EXPIRED    = 'expired';
+	public const STATUS_GRACE      = 'grace';
+	public const STATUS_DISABLED   = 'disabled';
+	public const STATUS_LOCKED     = 'locked';
+	public const BACKUP_OPTION_KEY = 'wp_react_ui_license_state_backup';
 
 	private const NORMAL_TTL = DAY_IN_SECONDS;
 	private const GRACE_TTL  = HOUR_IN_SECONDS;
+	private const LOCKED_TTL = HOUR_IN_SECONDS;
 
 	private CacheRepositoryInterface $cache;
 	private OptionsRepositoryInterface $options;
@@ -82,7 +85,11 @@ final class LicenseCache {
 	 */
 	public function set( array $data ): bool {
 		$payload = $this->normalize( $data );
-		$ttl     = $this->uses_grace_ttl( $payload ) ? self::GRACE_TTL : self::NORMAL_TTL;
+		// Locked state uses its own TTL so stale transients expire faster
+		// after an unlock webhook misses, forcing re-validation sooner.
+		$ttl = self::STATUS_LOCKED === $payload['status']
+			? self::LOCKED_TTL
+			: ( $this->uses_grace_ttl( $payload ) ? self::GRACE_TTL : self::NORMAL_TTL );
 
 		/**
 		 * Filters the TTL used for cached license payloads.
@@ -132,7 +139,7 @@ final class LicenseCache {
 	private function normalize( array $data ): array {
 		$status = sanitize_key( (string) ( $data['status'] ?? self::STATUS_DISABLED ) );
 
-		if ( ! in_array( $status, array( self::STATUS_ACTIVE, self::STATUS_EXPIRED, self::STATUS_GRACE, self::STATUS_DISABLED ), true ) ) {
+		if ( ! in_array( $status, array( self::STATUS_ACTIVE, self::STATUS_EXPIRED, self::STATUS_GRACE, self::STATUS_DISABLED, self::STATUS_LOCKED ), true ) ) {
 			$status = self::STATUS_DISABLED;
 		}
 

@@ -297,6 +297,32 @@ final class LicenseManager {
 			return $this->build_public_payload( $disabled_state );
 		}
 
+		if ( 'license.locked' === $normalized_event ) {
+			$locked_state = $this->transitioner->transition_to_locked( $data );
+			$this->emit_debug(
+				'webhook_locked',
+				array(
+					'event'     => $normalized_event,
+					'keyPrefix' => $locked_state['keyPrefix'] ?? null,
+				)
+			);
+
+			return $this->build_public_payload( $locked_state );
+		}
+
+		if ( 'license.unlocked' === $normalized_event ) {
+			$this->transitioner->transition_to_unlocked();
+			$this->emit_debug(
+				'webhook_unlocked',
+				array(
+					'event' => $normalized_event,
+				)
+			);
+
+			$payload = $this->cache->default_payload();
+			return $this->build_public_payload( $payload );
+		}
+
 		return new WP_Error(
 			'unsupported_webhook_event',
 			'Unsupported webhook event.',
