@@ -443,10 +443,20 @@ class WP_React_UI_REST_API {
 						'serverUrl' => array(
 							'required'          => false,
 							'type'              => 'string',
-							'format'            => 'uri',
 							'sanitize_callback' => 'esc_url_raw',
 							'validate_callback' => function ( $value ) {
-								return RestValidator::validate_optional_url( $value );
+								if ( empty( $value ) ) {
+									return true;
+								}
+								if ( ! is_string( $value ) ) {
+									return false;
+								}
+								$parts = wp_parse_url( $value );
+								return is_array( $parts )
+									&& isset( $parts['scheme'], $parts['host'] )
+									&& '' !== $parts['scheme']
+									&& '' !== $parts['host']
+									&& in_array( strtolower( $parts['scheme'] ), array( 'http', 'https' ), true );
 							},
 						),
 					),
