@@ -446,7 +446,7 @@ class WP_React_UI_REST_API {
 							'format'            => 'uri',
 							'sanitize_callback' => 'esc_url_raw',
 							'validate_callback' => function ( $value ) {
-								return RestValidator::validate_optional_url( $value );
+								return RestValidator::validate_uri_structure( $value );
 							},
 						),
 					),
