@@ -15,6 +15,8 @@ declare(strict_types=1);
 
 namespace WpReactUi\License;
 
+use WP_Error;
+
 defined( 'ABSPATH' ) || exit;
 
 final class LockScreenHandler {
@@ -42,6 +44,13 @@ final class LockScreenHandler {
 			return;
 		}
 
+		// Admin recheck: force re-validate against the license server.
+		// If the license has been unlocked the cache is updated and the
+		// lock screen is skipped via a redirect.
+		if ( self::handle_admin_recheck() ) {
+			return;
+		}
+
 		$payload = self::get_cached_payload();
 		if ( ( $payload['status'] ?? '' ) !== LicenseCache::STATUS_LOCKED ) {
 			return;
@@ -52,10 +61,55 @@ final class LockScreenHandler {
 	}
 
 	/**
+	 * Handles a manual recheck request from the lock screen page.
+	 *
+	 * When ?wp_react_ui_recheck=1 is present and the current user can
+	 * manage_options, forces a remote validate. If the license is now
+	 * active (unlocked), redirects to the same URL without the recheck
+	 * param so WordPress loads normally. If still locked the caller
+	 * should fall through to render_lock_screen().
+	 *
+	 * @return bool True if the request was handled (recheck processed).
+	 */
+	private static function handle_admin_recheck(): bool {
+		if ( empty( $_GET['wp_react_ui_recheck'] ) || ! current_user_can( 'manage_options' ) ) {
+			return false;
+		}
+
+		$container = LicenseServiceContainer::get_instance();
+		$manager   = $container->get_manager();
+
+		$result = $manager->validate();
+
+		if ( $result instanceof WP_Error ) {
+			// validate failed — still locked, stay on lock screen.
+			return false;
+		}
+
+		$status = sanitize_key( (string) ( $result['status'] ?? '' ) );
+
+		if ( LicenseCache::STATUS_ACTIVE === $status || 'valid' === $status ) {
+			// License is unlocked — remove the recheck param and reload.
+			$redirect_to = remove_query_arg( 'wp_react_ui_recheck' );
+			wp_safe_redirect( $redirect_to );
+			exit;
+		}
+
+		// Still locked or another non-active state — fall through.
+		return false;
+	}
+
+	/**
 	 * Returns true for requests that should bypass the lock screen.
 	 */
 	private static function is_system_request(): bool {
-		return defined( 'REST_REQUEST' ) || defined( 'DOING_AJAX' ) ||
+		// REST_REQUEST may not be defined at init:0 on some setups, so also
+		// check the raw query param and the path for /wp-json/.
+		$is_rest = defined( 'REST_REQUEST' )
+			|| ( isset( $_SERVER['REQUEST_URI'] ) && strpos( sanitize_text_field( wp_unslash( $_SERVER['REQUEST_URI'] ) ), '/wp-json/' ) !== false )
+			|| isset( $_GET['rest_route'] );
+
+		return $is_rest || defined( 'DOING_AJAX' ) ||
 			defined( 'DOING_CRON' ) || defined( 'WP_CLI' ) ||
 			( defined( 'XMLRPC_REQUEST' ) && XMLRPC_REQUEST ) ||
 			( defined( 'WP_INSTALLING' ) && WP_INSTALLING );
@@ -99,7 +153,10 @@ final class LockScreenHandler {
 		// Prevent crawlers from indexing the lock screen.
 		header( 'X-Robots-Tag: noindex, nofollow', true );
 
-		$site_name = get_bloginfo( 'name' );
+		$site_name      = get_bloginfo( 'name' );
+		$rest_url       = rest_url( 'wp-react-ui/v1/license' );
+		$rest_nonce     = wp_create_nonce( 'wp_rest' );
+		$is_admin       = is_admin();
 		?>
 <!DOCTYPE html>
 <html lang="<?php echo esc_attr( get_bloginfo( 'language' ) ); ?>">
@@ -161,6 +218,45 @@ final class LockScreenHandler {
 		color: #6b7280;
 		margin-bottom: 4px;
 	}
+	.recheck-btn {
+		display: inline-block;
+		margin-top: 24px;
+		padding: 10px 24px;
+		font-size: 14px;
+		font-weight: 500;
+		color: #374151;
+		background: #f9fafb;
+		border: 1px solid #d1d5db;
+		border-radius: 8px;
+		cursor: pointer;
+		transition: background 0.15s, border-color 0.15s;
+	}
+	.recheck-btn:hover {
+		background: #f3f4f6;
+		border-color: #9ca3af;
+	}
+	.recheck-btn:disabled {
+		opacity: 0.6;
+		cursor: not-allowed;
+	}
+	.recheck-status {
+		margin-top: 12px;
+		font-size: 13px;
+		color: #9ca3af;
+		min-height: 20px;
+	}
+	.recheck-status.error {
+		color: #dc2626;
+	}
+	.recheck-status.success {
+		color: #16a34a;
+	}
+	.recheck-note {
+		margin-top: 16px;
+		font-size: 12px;
+		color: #9ca3af;
+		line-height: 1.5;
+	}
 	.site-name {
 		margin-top: 24px;
 		padding-top: 20px;
@@ -181,7 +277,67 @@ final class LockScreenHandler {
 	<h1><?php esc_html_e( 'Temporarily Unavailable', 'wp-react-ui' ); ?></h1>
 	<p><?php esc_html_e( 'This website is temporarily unavailable.', 'wp-react-ui' ); ?></p>
 	<p><?php esc_html_e( 'Please contact the site owner to restore access.', 'wp-react-ui' ); ?></p>
-	<?php if ( ! empty( $site_name ) ) : ?>
+
+		<?php if ( $is_admin ) : ?>
+		<button class="recheck-btn" id="wp-react-ui-recheck" type="button">
+			<?php esc_html_e( 'Check Now', 'wp-react-ui' ); ?>
+		</button>
+		<div class="recheck-status" id="wp-react-ui-recheck-status"></div>
+		<div class="recheck-note">
+			<?php esc_html_e( 'After unlocking the license on the server, click "Check Now" to restore access immediately.', 'wp-react-ui' ); ?>
+		</div>
+
+		<script>
+		(function() {
+			var btn   = document.getElementById('wp-react-ui-recheck');
+			var stat  = document.getElementById('wp-react-ui-recheck-status');
+			var url   = <?php echo wp_json_encode( $rest_url ); ?>;
+			var sep   = url.indexOf('?') === -1 ? '?' : '&';
+			var nonce = <?php echo wp_json_encode( $rest_nonce ); ?>;
+
+			btn.addEventListener('click', function() {
+				btn.disabled = true;
+				btn.textContent = <?php echo wp_json_encode( esc_html__( 'Checking…', 'wp-react-ui' ) ); ?>;
+				stat.textContent = '';
+				stat.className   = 'recheck-status';
+
+				var controller = new AbortController();
+				var timer = setTimeout(function() { controller.abort(); }, 15000);
+
+				fetch(url + sep + 'force=1', {
+					signal: controller.signal,
+					headers: {
+						'Accept': 'application/json',
+						'X-WP-Nonce': nonce
+					}
+				})
+				.then(function(r) { clearTimeout(timer); return r.json(); })
+				.then(function(data) {
+					var s = (data && data.status) || '';
+					if (s === 'active' || s === 'valid') {
+						stat.textContent = <?php echo wp_json_encode( esc_html__( 'License is active — reloading…', 'wp-react-ui' ) ); ?>;
+						stat.className   = 'recheck-status success';
+						setTimeout(function() { location.reload(); }, 500);
+					} else {
+						stat.textContent = <?php echo wp_json_encode( esc_html__( 'License is still locked. Try again later.', 'wp-react-ui' ) ); ?>;
+						stat.className   = 'recheck-status error';
+						btn.disabled = false;
+						btn.textContent = <?php echo wp_json_encode( esc_html__( 'Check Again', 'wp-react-ui' ) ); ?>;
+					}
+				})
+				.catch(function() {
+					clearTimeout(timer);
+					stat.textContent = <?php echo wp_json_encode( esc_html__( 'Could not reach the license server.', 'wp-react-ui' ) ); ?>;
+					stat.className   = 'recheck-status error';
+					btn.disabled = false;
+					btn.textContent = <?php echo wp_json_encode( esc_html__( 'Try Again', 'wp-react-ui' ) ); ?>;
+				});
+			});
+		})();
+		</script>
+	<?php endif; ?>
+
+		<?php if ( ! empty( $site_name ) ) : ?>
 		<div class="site-name"><?php echo esc_html( $site_name ); ?></div>
 	<?php endif; ?>
 </div>
