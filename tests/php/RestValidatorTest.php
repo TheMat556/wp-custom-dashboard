@@ -154,4 +154,58 @@ class RestValidatorTest extends TestCase {
 	public function test_validate_optional_mb_string_accepts_valid(): void {
 		$this->assertTrue( RestValidator::validate_optional_mb_string( 'hello' ) );
 	}
+
+	public function test_validate_uri_structure_accepts_empty(): void {
+		$this->assertTrue( RestValidator::validate_uri_structure( '' ) );
+		$this->assertTrue( RestValidator::validate_uri_structure( null ) );
+	}
+
+	public function test_validate_uri_structure_accepts_domain(): void {
+		$this->assertTrue( RestValidator::validate_uri_structure( 'https://example.com/' ) );
+		$this->assertTrue( RestValidator::validate_uri_structure( 'http://localhost:8080' ) );
+	}
+
+	public function test_validate_uri_structure_rejects_non_string(): void {
+		$this->assertFalse( RestValidator::validate_uri_structure( 123 ) );
+		$this->assertFalse( RestValidator::validate_uri_structure( array() ) );
+	}
+
+	public function test_validate_uri_structure_rejects_userinfo(): void {
+		$this->assertFalse( RestValidator::validate_uri_structure( 'https://user:pass@example.com/' ) );
+	}
+
+	public function test_validate_uri_structure_rejects_ipv4(): void {
+		$this->assertFalse( RestValidator::validate_uri_structure( 'http://127.0.0.1/' ) );
+		$this->assertFalse( RestValidator::validate_uri_structure( 'http://10.0.0.5/' ) );
+		// Octal IPv4
+		$this->assertFalse( RestValidator::validate_uri_structure( 'http://0177.0.0.1/' ) );
+		// Integer-form IPv4
+		$this->assertFalse( RestValidator::validate_uri_structure( 'http://2130706433/' ) );
+		// Hex-form IPv4
+		$this->assertFalse( RestValidator::validate_uri_structure( 'http://0x7f000001/' ) );
+	}
+
+	public function test_validate_uri_structure_rejects_ipv6(): void {
+		$this->assertFalse( RestValidator::validate_uri_structure( 'http://[::1]/' ) );
+		$this->assertFalse( RestValidator::validate_uri_structure( 'http://[fe80::1]/' ) );
+	}
+
+	public function test_validate_uri_structure_rejects_ipv6_with_zone_id(): void {
+		$this->assertFalse( RestValidator::validate_uri_structure( 'http://[fe80::1%25eth0]/' ) );
+		$this->assertFalse( RestValidator::validate_uri_structure( 'http://[::1%25lo0]/' ) );
+	}
+
+	public function test_validate_uri_structure_rejects_consecutive_dots(): void {
+		$this->assertFalse( RestValidator::validate_uri_structure( 'http://foo..bar/' ) );
+	}
+
+	public function test_validate_uri_structure_rejects_non_http_scheme(): void {
+		$this->assertFalse( RestValidator::validate_uri_structure( 'file:///etc/passwd' ) );
+		$this->assertFalse( RestValidator::validate_uri_structure( 'ftp://example.com/' ) );
+	}
+
+	public function test_validate_uri_structure_rejects_missing_host(): void {
+		$this->assertFalse( RestValidator::validate_uri_structure( 'http:///' ) );
+		$this->assertFalse( RestValidator::validate_uri_structure( 'not a url' ) );
+	}
 }

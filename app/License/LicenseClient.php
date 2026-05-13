@@ -140,6 +140,34 @@ final class LicenseClient {
 		$attempts      = $retries + 1;
 		$last_response = null;
 
+		// Register the license server host as external so WordPress HTTP API
+		// allows the outbound request even when the host resolves to a private
+		// IP. The host is set by an administrator (manage_options gate).
+		$server_host = wp_parse_url( $server_url, PHP_URL_HOST );
+		$server_host = is_string( $server_host ) ? strtolower( rtrim( $server_host, '.' ) ) : null;
+		$allow_host  = static function ( bool $external, string $host ) use ( $server_host ): bool {
+			$normalized = strtolower( rtrim( $host, '.' ) );
+			// Strip brackets for IPv6 detection — filter_var rejects bracketed literals.
+			$ip_check = str_starts_with( $normalized, '[' ) && str_ends_with( $normalized, ']' )
+				? substr( $normalized, 1, -1 )
+				: $normalized;
+			// Strip IPv6 zone-id (e.g. ::1%eth0) — filter_var rejects scoped addresses.
+			$zone_pos = strpos( $ip_check, '%' );
+			if ( false !== $zone_pos ) {
+				$ip_check = substr( $ip_check, 0, $zone_pos );
+			}
+			if ( null !== $server_host && $server_host === $normalized ) {
+				// Block IP literals even if they match the configured host — if
+				// validate_uri_structure was bypassed, the admin may have saved an
+				// IP-based URL that would let an attacker pivot to internal services.
+				if ( filter_var( $ip_check, FILTER_VALIDATE_IP ) ) {
+					return false;
+				}
+				return true;
+			}
+			return $external;
+		};
+
 		for ( $attempt = 1; $attempt <= $attempts; $attempt++ ) {
 			// Regenerate nonce and timestamp per attempt so retries are not rejected as replays.
 			$timestamp = (string) time();
@@ -176,7 +204,12 @@ final class LicenseClient {
 				'data_format' => 'body',
 			);
 
-			$last_response = call_user_func( $this->remote_post, $url, $args );
+			try {
+				add_filter( 'http_request_host_is_external', $allow_host, 10, 2 );
+				$last_response = call_user_func( $this->remote_post, $url, $args );
+			} finally {
+				remove_filter( 'http_request_host_is_external', $allow_host, 10 );
+			}
 
 			if ( is_wp_error( $last_response ) ) {
 				$this->emit_debug(
@@ -377,7 +410,10 @@ final class LicenseClient {
 
 		$host = strtolower( $host );
 
-		return in_array( $host, array( 'localhost', '127.0.0.1', '::1' ), true )
+		// localhost and *.test / *.local development hosts are allowed with
+		// plain HTTP. 127.0.0.1 and [::1] are not listed here because they
+		// are blocked at save time by validate_uri_structure's IP rejection.
+		return in_array( $host, array( 'localhost' ), true )
 			|| str_ends_with( $host, '.test' )
 			|| str_ends_with( $host, '.local' );
 	}
