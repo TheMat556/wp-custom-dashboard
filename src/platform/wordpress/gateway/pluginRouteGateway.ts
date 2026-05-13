@@ -120,8 +120,9 @@ export function createPluginRouteApi(config: PluginRestConfig): PluginRouteApi {
     },
 
     async fetchLicense(force?: boolean) {
-      const path = force ? `${PLUGIN_ROUTE_PATHS.license}?force=1` : PLUGIN_ROUTE_PATHS.license;
-      return client.get(path);
+      // Pass force as a proper query param so the URL is built correctly
+      // even when restUrl uses ?rest_route=... (ugly permalinks).
+      return client.get(PLUGIN_ROUTE_PATHS.license, force ? { force: "1" } : undefined);
     },
 
     async fetchLicenseSettings() {
