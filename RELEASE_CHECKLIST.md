@@ -59,5 +59,6 @@ The `*.test` and `*.local` TLDs are also allowed for dev.
 
 ### Tag format
 
-Tags must match `vMAJOR.MINOR.PATCH` with an optional `-(alpha|beta|rc)[.N]` prerelease suffix.
+Tags must match `vMAJOR.MINOR.PATCH` with an optional `-(alpha|beta|rc).N` prerelease suffix
+(dot-separated only, e.g. `v2.0.0-rc.1`). Forms like `-alpha2` or `-rc-1` are rejected.
 Tags like `v1.2.3-foo` are rejected by the tag-format validation step.

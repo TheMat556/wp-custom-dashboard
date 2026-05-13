@@ -23,7 +23,7 @@ jobs:
       - name: Validate tag format (tag push) or skip (manual dispatch)
         run: |
           if [ "${{ github.ref_type }}" = "tag" ]; then
-            echo "${{ github.ref_name }}" | grep -qP '^v[0-9]+\.[0-9]+\.[0-9]+(-(alpha|beta|rc)([.\-]?[0-9]+)?)?$' || {
+            echo "${{ github.ref_name }}" | grep -qP '^v[0-9]+\.[0-9]+\.[0-9]+(-(alpha|beta|rc)(\.[0-9]+)?)?$' || {
               echo "ERROR: Tag must match vMAJOR.MINOR.PATCH pattern"
               exit 1
             }
@@ -33,7 +33,7 @@ jobs:
         if: github.ref_type == 'tag'
         run: |
           set -euo pipefail
-          HEADER_VERSION="$(grep -oP 'Version:\s*\K\S+' wp-custom-dashboard.php)"
+          HEADER_VERSION="$(grep -m1 -oP 'Version:\s*\K\S+' wp-custom-dashboard.php)"
           VERSION="${GITHUB_REF_NAME#v}"
           if [ "${VERSION}" != "${HEADER_VERSION}" ]; then
             echo "Tag version (${VERSION}) does not match plugin header (${HEADER_VERSION})"
@@ -322,7 +322,7 @@ jobs:
         run: |
           set -euo pipefail
           TAG="${{ github.ref_name }}"
-          if echo "$TAG" | grep -qP '^v[0-9]+.*-(alpha|beta|rc)([.\-]?[0-9]+)?$'; then
+          if echo "$TAG" | grep -qP '^v[0-9]+.*-(alpha|beta|rc)(\.[0-9]+)?$'; then
             echo "prerelease=true" >> "$GITHUB_OUTPUT"
           else
             echo "prerelease=false" >> "$GITHUB_OUTPUT"
