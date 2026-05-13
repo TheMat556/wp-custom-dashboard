@@ -38,6 +38,7 @@ final class PluginArtifactContract {
 		'app',
 		'dist',
 		'includes',
+		'vendor',
 	);
 
 	/**

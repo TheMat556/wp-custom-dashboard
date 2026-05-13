@@ -1,0 +1,341 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - "v*"
+  workflow_dispatch:
+
+# Cache-key maintenance: bun keys appear in 5 jobs (biome, typecheck, test-js,
+# test-contracts, package); composer keys in 4 (php-lint, test-php, test-contracts,
+# package). Bump the v1 segment in ALL matching locations together. Env-var
+# indirection was tried and reverted (${{ env.X }} does not interpolate reliably
+# in key: fields across all action versions).
+
+jobs:
+  # ── 1. Validate tag ─────────────────────────────────────────────────────────
+  validate:
+    name: Validate
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+
+      - name: Validate tag format (tag push) or skip (manual dispatch)
+        run: |
+          if [ "${{ github.ref_type }}" = "tag" ]; then
+            echo "${{ github.ref_name }}" | grep -qP '^v[0-9]+\.[0-9]+\.[0-9]+(-(alpha|beta|rc)([.\-]?[0-9]+)?)?$' || {
+              echo "ERROR: Tag must match vMAJOR.MINOR.PATCH pattern"
+              exit 1
+            }
+          fi
+
+      - name: Verify tag matches plugin header
+        if: github.ref_type == 'tag'
+        run: |
+          set -euo pipefail
+          HEADER_VERSION="$(grep -oP 'Version:\s*\K\S+' wp-custom-dashboard.php)"
+          VERSION="${GITHUB_REF_NAME#v}"
+          if [ "${VERSION}" != "${HEADER_VERSION}" ]; then
+            echo "Tag version (${VERSION}) does not match plugin header (${HEADER_VERSION})"
+            exit 1
+          fi
+
+  # ── 2. Biome lint + format ──────────────────────────────────────────────────
+  biome:
+    name: Biome (lint + format)
+    runs-on: ubuntu-latest
+    needs: [validate]
+    steps:
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+
+      - uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2
+        with:
+          bun-version: "1.3.13"
+
+      - name: Cache bun
+        uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4
+        with:
+          path: ~/.bun/install/cache
+          key: ${{ runner.os }}-v1-bun-${{ hashFiles('bun.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-v1-bun-
+
+      - name: Install dependencies
+        run: bun install --frozen-lockfile
+
+      - name: Biome check
+        run: bunx @biomejs/biome ci --diagnostic-level=error ./src
+
+  # ── 3. TypeScript type check ────────────────────────────────────────────────
+  typecheck:
+    name: TypeScript
+    runs-on: ubuntu-latest
+    needs: [validate]
+    steps:
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+
+      - uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2
+        with:
+          bun-version: "1.3.13"
+
+      - name: Cache bun
+        uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4
+        with:
+          path: ~/.bun/install/cache
+          key: ${{ runner.os }}-v1-bun-${{ hashFiles('bun.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-v1-bun-
+
+      - name: Install dependencies
+        run: bun install --frozen-lockfile
+
+      - name: Type check
+        run: bunx tsc --noEmit
+
+  # ── 4. PHP lint ─────────────────────────────────────────────────────────────
+  php-lint:
+    name: PHP lint
+    runs-on: ubuntu-latest
+    needs: [validate]
+    steps:
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+
+      - uses: shivammathur/setup-php@728c6c6b8cf02c2e48117716a91ee48313958a19 # v2
+        with:
+          php-version: "8.2"
+          tools: composer
+          coverage: none
+
+      - name: Cache Composer
+        uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4
+        with:
+          path: ~/.cache/composer
+          key: ${{ runner.os }}-v1-composer-${{ hashFiles('composer.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-v1-composer-
+
+      - name: Install PHP dependencies
+        run: composer install --no-interaction --no-progress
+
+      - name: Run PHPCS
+        run: composer run lint
+
+  # ── 5. JS unit tests ────────────────────────────────────────────────────────
+  test-js:
+    name: Vitest
+    runs-on: ubuntu-latest
+    needs: [validate]
+    steps:
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+
+      - uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2
+        with:
+          bun-version: "1.3.13"
+
+      - name: Cache bun
+        uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4
+        with:
+          path: ~/.bun/install/cache
+          key: ${{ runner.os }}-v1-bun-${{ hashFiles('bun.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-v1-bun-
+
+      - name: Install dependencies
+        run: bun install --frozen-lockfile
+
+      - name: Run tests
+        run: bun run test
+
+  # ── 6. PHP unit tests ───────────────────────────────────────────────────────
+  test-php:
+    name: PHPUnit
+    runs-on: ubuntu-latest
+    needs: [validate]
+    steps:
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+
+      - uses: shivammathur/setup-php@728c6c6b8cf02c2e48117716a91ee48313958a19 # v2
+        with:
+          php-version: "8.2"
+          tools: composer
+          coverage: none
+
+      - name: Cache Composer
+        uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4
+        with:
+          path: ~/.cache/composer
+          key: ${{ runner.os }}-v1-composer-${{ hashFiles('composer.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-v1-composer-
+
+      - name: Install PHP dependencies
+        run: composer install --no-interaction --no-progress
+
+      - name: Run PHPUnit
+        run: composer run test
+
+  # ── 7. Contract verification ────────────────────────────────────────────────
+  test-contracts:
+    name: Contract verification
+    runs-on: ubuntu-latest
+    needs: [validate]
+    steps:
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+
+      - uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2
+        with:
+          bun-version: "1.3.13"
+
+      - uses: shivammathur/setup-php@728c6c6b8cf02c2e48117716a91ee48313958a19 # v2
+        with:
+          php-version: "8.2"
+          tools: composer
+          coverage: none
+
+      - name: Cache bun
+        uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4
+        with:
+          path: ~/.bun/install/cache
+          key: ${{ runner.os }}-v1-bun-${{ hashFiles('bun.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-v1-bun-
+
+      - name: Cache Composer
+        uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4
+        with:
+          path: ~/.cache/composer
+          key: ${{ runner.os }}-v1-composer-${{ hashFiles('composer.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-v1-composer-
+
+      - name: Install JS dependencies
+        run: bun install --frozen-lockfile
+
+      - name: Install PHP dependencies
+        run: composer install --no-interaction --no-progress
+
+      - name: Verify generated contracts
+        run: bun run contracts:verify
+
+      - name: Run PHP contract tests
+        run: composer run test:contracts
+
+  # ── 8. Build + package artifact ─────────────────────────────────────────────
+  package:
+    name: Package
+    runs-on: ubuntu-latest
+    needs: [biome, typecheck, php-lint, test-js, test-php, test-contracts]
+    steps:
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+
+      - uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2
+        with:
+          bun-version: "1.3.13"
+
+      - uses: shivammathur/setup-php@728c6c6b8cf02c2e48117716a91ee48313958a19 # v2
+        with:
+          php-version: "8.2"
+          tools: composer
+          coverage: none
+
+      - name: Cache bun
+        uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4
+        with:
+          path: ~/.bun/install/cache
+          key: ${{ runner.os }}-v1-bun-${{ hashFiles('bun.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-v1-bun-
+
+      - name: Cache Composer
+        uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4
+        with:
+          path: ~/.cache/composer
+          key: ${{ runner.os }}-v1-composer-${{ hashFiles('composer.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-v1-composer-
+
+      - name: Install JS dependencies
+        run: bun install --frozen-lockfile
+
+      - name: Install PHP dependencies (production only)
+        run: |
+          rm -rf vendor
+          composer install --no-interaction --no-progress --no-dev --optimize-autoloader
+
+      - name: Build frontend
+        run: bun run build
+
+      - name: Package artifact
+        run: php scripts/package-plugin.php
+
+      - name: Verify artifact
+        run: php scripts/verify-plugin-artifact.php
+
+      - name: Upload artifact zip
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: release-zip
+          path: |
+            artifacts/wp-custom-dashboard.zip
+            artifacts/wp-custom-dashboard.zip.sha256
+          retention-days: 90
+
+  # ── 9. Create GitHub Release (skipped on workflow_dispatch) ──────────────────
+  release:
+    name: Create Release
+    if: github.ref_type == 'tag'
+    runs-on: ubuntu-latest
+    needs: [package]
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+        with:
+          fetch-depth: 0
+
+      - name: Download artifact
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
+        with:
+          name: release-zip
+          path: release-assets
+
+      - name: Generate changelog
+        id: changelog
+        run: |
+          set -euo pipefail
+          PREV_TAG=$(git describe --tags --abbrev=0 --match 'v[0-9]*' HEAD^ 2>/dev/null || echo "")
+          if [ -z "$PREV_TAG" ]; then
+            echo "body<<EOF" >> "$GITHUB_OUTPUT"
+            echo "Initial release." >> "$GITHUB_OUTPUT"
+            echo "EOF" >> "$GITHUB_OUTPUT"
+          else
+            LOG=$(git log --first-parent --pretty=format:"- %s (%h)" "${PREV_TAG}..HEAD" --no-merges)
+            echo "body<<EOF" >> "$GITHUB_OUTPUT"
+            echo "## Changes since ${PREV_TAG}" >> "$GITHUB_OUTPUT"
+            echo "" >> "$GITHUB_OUTPUT"
+            echo "${LOG}" >> "$GITHUB_OUTPUT"
+            echo "EOF" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Check prerelease
+        id: prerelease_check
+        run: |
+          set -euo pipefail
+          TAG="${{ github.ref_name }}"
+          if echo "$TAG" | grep -qP '^v[0-9]+.*-(alpha|beta|rc)([.\-]?[0-9]+)?$'; then
+            echo "prerelease=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "prerelease=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Create Release
+        uses: softprops/action-gh-release@3bb12739c298aeb8a4eeaf626c5b8d85266b0e65 # v2
+        with:
+          tag_name: ${{ github.ref_name }}
+          name: ${{ github.ref_name }}
+          body: ${{ steps.changelog.outputs.body }}
+          files: |
+            release-assets/wp-custom-dashboard.zip
+            release-assets/wp-custom-dashboard.zip.sha256
+          draft: false
+          prerelease: ${{ steps.prerelease_check.outputs.prerelease }}
