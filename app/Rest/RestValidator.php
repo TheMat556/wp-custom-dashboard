@@ -126,19 +126,21 @@ final class RestValidator {
 		if ( isset( $parts['user'] ) ) {
 			return false;
 		}
-		// Reject IP-literal hosts (IPv4, IPv6, localhost) — only domain names
-		// and single-label development hosts (localhost, *.test, *.local) are
+		// Reject IP-literal hosts (IPv4, IPv6) — only domain names and
+		// single-label development hosts (localhost, *.test, *.local) are
 		// allowed as server URLs. SSRF protection for domain-based hosts is
 		// applied at request time via the http_request_host_is_external filter.
-		$host = (string) $parts['host'];
+		$host = rtrim( (string) $parts['host'], '.' );
 
 		// Reject empty DNS labels (consecutive dots).
 		if ( str_contains( $host, '..' ) ) {
 			return false;
 		}
-		// Reject dotted-quad with all-numeric labels only (octal IPv4 like
-		// 0177.0.0.1 = 127.0.0.1, which filter_var rejects as non-standard).
-		if ( preg_match( '/^[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+$/', $host ) ) {
+		// Reject all-numeric dotted forms (2–4 octets): full quad 127.0.0.1,
+		// short forms 127.1 (= 127.0.0.1), 127.0.1 (= 127.0.0.1), and octal
+		// quad 0177.0.0.1 (= 127.0.0.1). filter_var does not recognize octal
+		// or short-form IPv4.
+		if ( preg_match( '/^[0-9]+(\.[0-9]+){1,3}$/', $host ) ) {
 			return false;
 		}
 
