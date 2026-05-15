@@ -82,12 +82,42 @@ final class WebhookListener {
 	}
 
 	/**
+	 * Logs incoming webhook details for debugging.
+	 *
+	 * Writes to: wp-content/debug-license-webhook.log
+	 */
+	private function debug_log( WP_REST_Request $request ): void {
+		$timestamp = gmdate( 'Y-m-d H:i:s T' );
+		$source_ip = $this->get_caller_ip();
+		$headers   = $request->get_headers();
+		$body      = $request->get_body();
+
+		$log  = "=== Webhook Received ===\n";
+		$log .= "Timestamp: {$timestamp}\n";
+		$log .= "Source IP: {$source_ip}\n";
+		$log .= "--- REQUEST HEADERS ---\n";
+		foreach ( $headers as $key => $values ) {
+			foreach ( $values as $value ) {
+				$log .= "{$key}: {$value}\n";
+			}
+		}
+		$log .= "--- REQUEST BODY ---\n";
+		$log .= ( is_string( $body ) ? $body : '(empty)' ) . "\n";
+		$log .= "=== End Webhook ===\n\n";
+
+		$log_file = WP_CONTENT_DIR . '/debug-license-webhook.log';
+		file_put_contents( $log_file, $log, FILE_APPEND | LOCK_EX );
+	}
+
+	/**
 	 * Processes a webhook request after verification succeeds.
 	 *
 	 * @param WP_REST_Request $request Incoming webhook request.
 	 * @return array{status: string, event: string}|WP_Error
 	 */
 	public function handle( WP_REST_Request $request ) {
+		$this->debug_log( $request );
+
 		$rate_limit_error = $this->check_rate_limit();
 		if ( null !== $rate_limit_error ) {
 			return $rate_limit_error;
@@ -156,8 +186,9 @@ final class WebhookListener {
 		$signature  = isset( $payload['signature'] ) ? strtolower( sanitize_text_field( (string) $payload['signature'] ) ) : '';
 		$timestamp  = isset( $payload['timestamp'] ) ? (string) $payload['timestamp'] : '';
 		$data       = isset( $payload['data'] ) && is_array( $payload['data'] ) ? $payload['data'] : null;
+		$body_hash  = isset( $payload['body_hash'] ) ? sanitize_text_field( (string) $payload['body_hash'] ) : '';
 
-		if ( '' === $event || '' === $key_prefix || '' === $signature || '' === $timestamp || ! is_array( $data ) ) {
+		if ( '' === $event || '' === $key_prefix || '' === $signature || '' === $timestamp || ! is_array( $data ) || '' === $body_hash ) {
 			return new WP_Error(
 				'invalid_webhook_payload',
 				'Webhook payload is incomplete.',
@@ -176,21 +207,12 @@ final class WebhookListener {
 			);
 		}
 
-		$data_json = wp_json_encode( $data, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE );
-
-		if ( ! is_string( $data_json ) ) {
-			return new WP_Error(
-				'invalid_webhook_payload',
-				'Webhook payload could not be verified.',
-				array( 'status' => 400 )
-			);
-		}
-
-		// Canonical string includes event_id for deduplication (M1).
+		// Canonical string uses body_hash (SHA-256 of raw JSON data) for deterministic
+		// verification — matches the server-side WebhookDispatcher::build_body().
 		// Backward-compat: if event_id absent (pre-M1 server), use old 4-field canonical.
 		$canonical_fields = '' !== $event_id
-			? array( $event, $event_id, $key_prefix, $timestamp, $data_json )
-			: array( $event, $key_prefix, $timestamp, $data_json );
+			? array( $event, $event_id, $key_prefix, $timestamp, $body_hash )
+			: array( $event, $key_prefix, $timestamp, $body_hash );
 
 		$expected = hash_hmac(
 			'sha256',

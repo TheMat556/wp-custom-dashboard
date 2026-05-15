@@ -56,6 +56,12 @@ final class LockScreenHandler {
 			return;
 		}
 
+		// Owner licenses are NEVER lockable — skip the lock screen even if
+		// the cache says locked (defense-in-depth, second layer).
+		if ( isset( $payload['role'] ) && 'owner' === $payload['role'] ) {
+			return;
+		}
+
 		self::render_lock_screen();
 		exit;
 	}

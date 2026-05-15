@@ -117,11 +117,17 @@ class LicenseStateTransitioner {
 
 		if ( null === $payload || empty( $payload ) ) {
 			$payload = $this->cache->default_payload();
-			$payload['status'] = LicenseCache::STATUS_LOCKED;
-		} else {
-			$payload['status']         = LicenseCache::STATUS_LOCKED;
-			$payload['webhook_secret'] = null;
 		}
+
+		// NEVER lock an owner license — owner licenses are immune even if
+		// a webhook arrives (defense-in-depth; the server already blocks it).
+		if ( isset( $payload['role'] ) && 'owner' === $payload['role'] ) {
+			$this->cache->set( $payload );
+			return $payload;
+		}
+
+		$payload['status']         = LicenseCache::STATUS_LOCKED;
+		$payload['webhook_secret'] = null;
 
 		if ( isset( $webhook_data['pre_lock_status'] ) ) {
 			$payload['preLockStatus'] = sanitize_key( (string) $webhook_data['pre_lock_status'] );
