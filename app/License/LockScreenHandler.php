@@ -6,7 +6,10 @@
  * when the cached license state indicates the license is locked.
  *
  * Runs at init:0 — before WordPress query, before any output.
- * Excludes REST, AJAX, cron, CLI, and installer requests.
+ *
+ * REST, AJAX, and XML-RPC requests are NOT bypassed — instead they receive
+ * a JSON error response or die with a 503, ensuring the kill switch actually
+ * kills all surface areas.
  *
  * @package WP_React_UI
  */
@@ -20,6 +23,8 @@ use WP_Error;
 defined( 'ABSPATH' ) || exit;
 
 final class LockScreenHandler {
+
+	private const RECHECK_NONCE_ACTION = 'wp_react_ui_recheck';
 
 	/**
 	 * Check cached license state and render lock screen if locked.
@@ -40,17 +45,6 @@ final class LockScreenHandler {
 			define( 'DONOTCACHEPAGE', true );
 		}
 
-		if ( self::is_system_request() ) {
-			return;
-		}
-
-		// Admin recheck: force re-validate against the license server.
-		// If the license has been unlocked the cache is updated and the
-		// lock screen is skipped via a redirect.
-		if ( self::handle_admin_recheck() ) {
-			return;
-		}
-
 		$payload = self::get_cached_payload();
 		if ( ( $payload['status'] ?? '' ) !== LicenseCache::STATUS_LOCKED ) {
 			return;
@@ -62,6 +56,20 @@ final class LockScreenHandler {
 			return;
 		}
 
+		// Block REST, AJAX, XML-RPC, cron, CLI, and installer — but return
+		// an error instead of silently passing through.
+		if ( self::is_system_request() ) {
+			self::block_system_request();
+			return;
+		}
+
+		// Admin recheck: force re-validate against the license server.
+		// If the license has been unlocked the cache is updated and the
+		// lock screen is skipped via a redirect.
+		if ( self::handle_admin_recheck() ) {
+			return;
+		}
+
 		self::render_lock_screen();
 		exit;
 	}
@@ -69,16 +77,23 @@ final class LockScreenHandler {
 	/**
 	 * Handles a manual recheck request from the lock screen page.
 	 *
-	 * When ?wp_react_ui_recheck=1 is present and the current user can
-	 * manage_options, forces a remote validate. If the license is now
-	 * active (unlocked), redirects to the same URL without the recheck
-	 * param so WordPress loads normally. If still locked the caller
-	 * should fall through to render_lock_screen().
+	 * When ?wp_react_ui_recheck=1 is present with a valid nonce and the
+	 * current user can manage_options, forces a remote validate.
+	 * If the license is now active (unlocked), redirects to the same URL
+	 * without the recheck param so WordPress loads normally.
 	 *
 	 * @return bool True if the request was handled (recheck processed).
 	 */
 	private static function handle_admin_recheck(): bool {
 		if ( empty( $_GET['wp_react_ui_recheck'] ) || ! current_user_can( 'manage_options' ) ) {
+			return false;
+		}
+
+		// CSRF protection: validate nonce before performing remote call.
+		if ( empty( $_GET['_wpnonce'] ) || ! wp_verify_nonce(
+			sanitize_text_field( wp_unslash( $_GET['_wpnonce'] ) ),
+			self::RECHECK_NONCE_ACTION . '_' . get_current_user_id()
+		) ) {
 			return false;
 		}
 
@@ -106,11 +121,10 @@ final class LockScreenHandler {
 	}
 
 	/**
-	 * Returns true for requests that should bypass the lock screen.
+	 * Returns true for requests that should not render the HTML lock screen
+	 * but should still be blocked.
 	 */
 	private static function is_system_request(): bool {
-		// REST_REQUEST may not be defined at init:0 on some setups, so also
-		// check the raw query param and the path for /wp-json/.
 		$is_rest = defined( 'REST_REQUEST' )
 			|| ( isset( $_SERVER['REQUEST_URI'] ) && strpos( sanitize_text_field( wp_unslash( $_SERVER['REQUEST_URI'] ) ), '/wp-json/' ) !== false )
 			|| isset( $_GET['rest_route'] );
@@ -119,6 +133,59 @@ final class LockScreenHandler {
 			defined( 'DOING_CRON' ) || defined( 'WP_CLI' ) ||
 			( defined( 'XMLRPC_REQUEST' ) && XMLRPC_REQUEST ) ||
 			( defined( 'WP_INSTALLING' ) && WP_INSTALLING );
+	}
+
+	/**
+	 * Block a system request (REST, AJAX, XML-RPC) when the site is locked.
+	 *
+	 * Returns a JSON error for REST/AJAX and dies with a 503 for XML-RPC.
+	 */
+	private static function block_system_request(): void {
+		$is_rest = defined( 'REST_REQUEST' )
+			|| ( isset( $_SERVER['REQUEST_URI'] ) && strpos( sanitize_text_field( wp_unslash( $_SERVER['REQUEST_URI'] ) ), '/wp-json/' ) !== false )
+			|| isset( $_GET['rest_route'] );
+
+		if ( $is_rest ) {
+			// Hook into REST dispatch to return a locked error.
+			add_filter(
+				'rest_pre_dispatch',
+				static function ( $result, $server, $request ) {
+					return new WP_Error(
+						'license_locked',
+						__( 'This site is temporarily unavailable.', 'wp-react-ui' ),
+						array( 'status' => 503 )
+					);
+				},
+				0,
+				3
+			);
+			return;
+		}
+
+		if ( defined( 'DOING_AJAX' ) && DOING_AJAX ) {
+			status_header( 503 );
+			wp_die(
+				wp_json_encode( array(
+					'code'    => 'license_locked',
+					'message' => __( 'This site is temporarily unavailable.', 'wp-react-ui' ),
+				) ),
+				'',
+				array( 'response' => 503 )
+			);
+			exit;
+		}
+
+		if ( defined( 'XMLRPC_REQUEST' ) && XMLRPC_REQUEST ) {
+			status_header( 503 );
+			header( 'Content-Type: text/xml; charset=UTF-8' );
+			echo '<?xml version="1.0"?><methodResponse><fault><value><struct>'
+				. '<member><name>faultCode</name><value><int>503</int></value></member>'
+				. '<member><name>faultString</name><value><string>'
+				. esc_html__( 'This site is temporarily unavailable.', 'wp-react-ui' )
+				. '</string></value></member>'
+				. '</struct></value></fault></methodResponse>';
+			exit;
+		}
 	}
 
 	/**
@@ -141,151 +208,166 @@ final class LockScreenHandler {
 	 * Only reads 'status' from the payload — no dependency on tier/role/
 	 * features, so this is safe even with a sparse payload from a
 	 * cache-miss transition_to_locked() call.
-	 *
-	 * get_bloginfo() is safe at init:0 — WordPress has loaded the
-	 * options table and locale by this point (wp_load_alloptions()
-	 * runs during wp_start()).
 	 */
 	private static function render_lock_screen(): void {
-		// Clear all WordPress output buffers before sending headers.
-		while ( ob_get_level() ) {
-			ob_end_clean();
+		// Check if headers were already sent before flushing buffers.
+		if ( ! headers_sent() ) {
+			while ( ob_get_level() ) {
+				ob_end_clean();
+			}
+
+			status_header( 503 );
+			header( 'Retry-After: 3600' );
+			nocache_headers();
+			header( 'X-Robots-Tag: noindex, nofollow', true );
 		}
-
-		status_header( 503 );
-		header( 'Retry-After: 3600' );
-		nocache_headers();
-
-		// Prevent crawlers from indexing the lock screen.
-		header( 'X-Robots-Tag: noindex, nofollow', true );
 
 		$site_name      = get_bloginfo( 'name' );
 		$rest_url       = rest_url( 'wp-react-ui/v1/license' );
 		$rest_nonce     = wp_create_nonce( 'wp_rest' );
 		$is_admin       = is_admin();
+		$recheck_url    = '';
+		if ( $is_admin ) {
+			$recheck_url = add_query_arg(
+				array(
+					'wp_react_ui_recheck' => '1',
+					'_wpnonce'            => wp_create_nonce( self::RECHECK_NONCE_ACTION . '_' . get_current_user_id() ),
+				),
+				remove_query_arg( 'wp_react_ui_recheck' )
+			);
+		}
 		?>
-<!DOCTYPE html>
-<html lang="<?php echo esc_attr( get_bloginfo( 'language' ) ); ?>">
-<head>
-<meta charset="<?php bloginfo( 'charset' ); ?>">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<meta name="robots" content="noindex, nofollow">
-<title><?php echo esc_html__( 'Temporarily Unavailable', 'wp-react-ui' ); ?></title>
-<style>
-	* { margin: 0; padding: 0; box-sizing: border-box; }
-	body {
-		font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto,
-					 Oxygen, Ubuntu, Cantarell, sans-serif;
-		background: #f3f4f6;
-		display: flex;
-		align-items: center;
-		justify-content: center;
-		min-height: 100vh;
-		color: #374151;
-		padding: 20px;
+	<!DOCTYPE html>
+	<html lang="<?php echo esc_attr( get_bloginfo( 'language' ) ); ?>">
+	<head>
+	<meta charset="<?php bloginfo( 'charset' ); ?>">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<meta name="robots" content="noindex, nofollow">
+	<title><?php echo esc_html__( 'Temporarily Unavailable', 'wp-react-ui' ); ?></title>
+	<?php
+	// Emit CSP that allows the inline recheck script.
+	if ( ! headers_sent() ) {
+		$csp_nonce = bin2hex( random_bytes( 16 ) );
+		header( "Content-Security-Policy: script-src 'nonce-{$csp_nonce}'; base-uri 'self';" );
+	} else {
+		$csp_nonce = '';
 	}
-	.lock-container {
-		text-align: center;
-		padding: 48px 40px;
-		max-width: 480px;
-		width: 100%;
-		background: #ffffff;
-		border-radius: 12px;
-		box-shadow: 0 1px 3px rgba(0,0,0,0.1), 0 1px 2px rgba(0,0,0,0.06);
-	}
-	.lock-icon {
-		width: 72px;
-		height: 72px;
-		margin: 0 auto 24px;
-		border-radius: 50%;
-		background: #fee2e2;
-		display: flex;
-		align-items: center;
-		justify-content: center;
-	}
-	.lock-icon svg {
-		width: 36px;
-		height: 36px;
-		stroke: #dc2626;
-		fill: none;
-		stroke-width: 2;
-		stroke-linecap: round;
-		stroke-linejoin: round;
-	}
-	h1 {
-		font-size: 22px;
-		font-weight: 600;
-		margin-bottom: 12px;
-		color: #111827;
-	}
-	p {
-		font-size: 15px;
-		line-height: 1.6;
-		color: #6b7280;
-		margin-bottom: 4px;
-	}
-	.recheck-btn {
-		display: inline-block;
-		margin-top: 24px;
-		padding: 10px 24px;
-		font-size: 14px;
-		font-weight: 500;
-		color: #374151;
-		background: #f9fafb;
-		border: 1px solid #d1d5db;
-		border-radius: 8px;
-		cursor: pointer;
-		transition: background 0.15s, border-color 0.15s;
-	}
-	.recheck-btn:hover {
-		background: #f3f4f6;
-		border-color: #9ca3af;
-	}
-	.recheck-btn:disabled {
-		opacity: 0.6;
-		cursor: not-allowed;
-	}
-	.recheck-status {
-		margin-top: 12px;
-		font-size: 13px;
-		color: #9ca3af;
-		min-height: 20px;
-	}
-	.recheck-status.error {
-		color: #dc2626;
-	}
-	.recheck-status.success {
-		color: #16a34a;
-	}
-	.recheck-note {
-		margin-top: 16px;
-		font-size: 12px;
-		color: #9ca3af;
-		line-height: 1.5;
-	}
-	.site-name {
-		margin-top: 24px;
-		padding-top: 20px;
-		border-top: 1px solid #e5e7eb;
-		font-size: 13px;
-		color: #9ca3af;
-	}
-</style>
-</head>
-<body>
-<div class="lock-container">
-	<div class="lock-icon">
-		<svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-			<rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
-			<path d="M7 11V7a5 5 0 0 1 10 0v4"/>
-		</svg>
-	</div>
-	<h1><?php esc_html_e( 'Temporarily Unavailable', 'wp-react-ui' ); ?></h1>
-	<p><?php esc_html_e( 'This website is temporarily unavailable.', 'wp-react-ui' ); ?></p>
-	<p><?php esc_html_e( 'Please contact the site owner to restore access.', 'wp-react-ui' ); ?></p>
+	?>
+	<style>
+		* { margin: 0; padding: 0; box-sizing: border-box; }
+		body {
+			font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto,
+						 Oxygen, Ubuntu, Cantarell, sans-serif;
+			background: #f3f4f6;
+			display: flex;
+			align-items: center;
+			justify-content: center;
+			min-height: 100vh;
+			color: #374151;
+			padding: 20px;
+		}
+		.lock-container {
+			text-align: center;
+			padding: 48px 40px;
+			max-width: 480px;
+			width: 100%;
+			background: #ffffff;
+			border-radius: 12px;
+			box-shadow: 0 1px 3px rgba(0,0,0,0.1), 0 1px 2px rgba(0,0,0,0.06);
+		}
+		.lock-icon {
+			width: 72px;
+			height: 72px;
+			margin: 0 auto 24px;
+			border-radius: 50%;
+			background: #fee2e2;
+			display: flex;
+			align-items: center;
+			justify-content: center;
+		}
+		.lock-icon svg {
+			width: 36px;
+			height: 36px;
+			stroke: #dc2626;
+			fill: none;
+			stroke-width: 2;
+			stroke-linecap: round;
+			stroke-linejoin: round;
+		}
+		h1 {
+			font-size: 22px;
+			font-weight: 600;
+			margin-bottom: 12px;
+			color: #111827;
+		}
+		p {
+			font-size: 15px;
+			line-height: 1.6;
+			color: #6b7280;
+			margin-bottom: 4px;
+		}
+		.recheck-btn {
+			display: inline-block;
+			margin-top: 24px;
+			padding: 10px 24px;
+			font-size: 14px;
+			font-weight: 500;
+			color: #374151;
+			background: #f9fafb;
+			border: 1px solid #d1d5db;
+			border-radius: 8px;
+			cursor: pointer;
+			transition: background 0.15s, border-color 0.15s;
+		}
+		.recheck-btn:hover {
+			background: #f3f4f6;
+			border-color: #9ca3af;
+		}
+		.recheck-btn:disabled {
+			opacity: 0.6;
+			cursor: not-allowed;
+		}
+		.recheck-status {
+			margin-top: 12px;
+			font-size: 13px;
+			color: #9ca3af;
+			min-height: 20px;
+		}
+		.recheck-status.error {
+			color: #dc2626;
+		}
+		.recheck-status.success {
+			color: #16a34a;
+		}
+		.recheck-note {
+			margin-top: 16px;
+			font-size: 12px;
+			color: #9ca3af;
+			line-height: 1.5;
+		}
+		.site-name {
+			margin-top: 24px;
+			padding-top: 20px;
+			border-top: 1px solid #e5e7eb;
+			font-size: 13px;
+			color: #9ca3af;
+		}
+	</style>
+	</head>
+	<body>
+	<div class="lock-container">
+		<div class="lock-icon">
+			<svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+				<rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
+				<path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+			</svg>
+		</div>
+		<h1><?php esc_html_e( 'Temporarily Unavailable', 'wp-react-ui' ); ?></h1>
+		<p><?php esc_html_e( 'This website is temporarily unavailable.', 'wp-react-ui' ); ?></p>
+		<p><?php esc_html_e( 'Please contact the site owner to restore access.', 'wp-react-ui' ); ?></p>
 
 		<?php if ( $is_admin ) : ?>
-		<button class="recheck-btn" id="wp-react-ui-recheck" type="button">
+		<button class="recheck-btn" id="wp-react-ui-recheck" type="button" data-recheck-url="<?php echo esc_url( $recheck_url ); ?>">
 			<?php esc_html_e( 'Check Now', 'wp-react-ui' ); ?>
 		</button>
 		<div class="recheck-status" id="wp-react-ui-recheck-status"></div>
@@ -293,7 +375,7 @@ final class LockScreenHandler {
 			<?php esc_html_e( 'After unlocking the license on the server, click "Check Now" to restore access immediately.', 'wp-react-ui' ); ?>
 		</div>
 
-		<script>
+		<script nonce="<?php echo esc_attr( $csp_nonce ); ?>">
 		(function() {
 			var btn   = document.getElementById('wp-react-ui-recheck');
 			var stat  = document.getElementById('wp-react-ui-recheck-status');
@@ -346,9 +428,9 @@ final class LockScreenHandler {
 		<?php if ( ! empty( $site_name ) ) : ?>
 		<div class="site-name"><?php echo esc_html( $site_name ); ?></div>
 	<?php endif; ?>
-</div>
-</body>
-</html>
+	</div>
+	</body>
+	</html>
 		<?php
 	}
 }

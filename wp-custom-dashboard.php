@@ -2,7 +2,7 @@
 /**
  * Plugin Name: WP React UI
  * Description: Replaces Navbar and Sidebar with React + Ant Design
- * Version: 1.0.0
+ * Version: 1.1.0
  * Requires PHP: 8.0
  *
  * @package WP_React_UI
