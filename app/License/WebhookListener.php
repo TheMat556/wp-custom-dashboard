@@ -86,7 +86,7 @@ final class WebhookListener {
 	 *
 	 * Writes to: wp-content/debug-license-webhook.log
 	 */
-	private function debug_log( WP_REST_Request $request ): void {
+	private function debug_log( WP_REST_Request $request, $result = null ): void {
 		$timestamp = gmdate( 'Y-m-d H:i:s T' );
 		$source_ip = $this->get_caller_ip();
 		$headers   = $request->get_headers();
@@ -103,6 +103,23 @@ final class WebhookListener {
 		}
 		$log .= "--- REQUEST BODY ---\n";
 		$log .= ( is_string( $body ) ? $body : '(empty)' ) . "\n";
+
+		if ( null !== $result ) {
+			if ( $result instanceof WP_Error ) {
+				$log .= "--- RESULT: ERROR ---\n";
+				$log .= "Code: " . $result->get_error_code() . "\n";
+				$log .= "Message: " . $result->get_error_message() . "\n";
+				$data = $result->get_error_data();
+				if ( is_array( $data ) && isset( $data['status'] ) ) {
+					$log .= "HTTP Status: " . $data['status'] . "\n";
+				}
+			} elseif ( is_array( $result ) ) {
+				$log .= "--- RESULT: SUCCESS ---\n";
+				$log .= "Status: " . ( $result['status'] ?? 'unknown' ) . "\n";
+				$log .= "Event: " . ( $result['event'] ?? 'unknown' ) . "\n";
+			}
+		}
+
 		$log .= "=== End Webhook ===\n\n";
 
 		$log_file = WP_CONTENT_DIR . '/debug-license-webhook.log';
@@ -120,6 +137,7 @@ final class WebhookListener {
 
 		$rate_limit_error = $this->check_rate_limit();
 		if ( null !== $rate_limit_error ) {
+			$this->debug_log( $request, $rate_limit_error );
 			return $rate_limit_error;
 		}
 
@@ -127,37 +145,44 @@ final class WebhookListener {
 		$header_secret = strtolower( sanitize_text_field( (string) $request->get_header( 'X-Webhook-Secret' ) ) );
 
 		if ( '' === $stored_secret || '' === $header_secret || ! hash_equals( $stored_secret, $header_secret ) ) {
-			return new WP_Error(
+			$error = new WP_Error(
 				'invalid_webhook_secret',
 				'Webhook secret is invalid.',
 				array( 'status' => 403 )
 			);
+			$this->debug_log( $request, $error );
+			return $error;
 		}
 
 		$payload = $request->get_json_params();
 
 		if ( ! is_array( $payload ) ) {
-			return new WP_Error(
+			$error = new WP_Error(
 				'invalid_webhook_payload',
 				'Webhook payload must be a JSON object.',
 				array( 'status' => 400 )
 			);
+			$this->debug_log( $request, $error );
+			return $error;
 		}
 
 		$verification = $this->verify_signature( $payload );
 
 		if ( is_wp_error( $verification ) ) {
+			$this->debug_log( $request, $verification );
 			return $verification;
 		}
 
 		$timestamp = (int) $payload['timestamp'];
 
 		if ( abs( time() - $timestamp ) > self::MAX_CLOCK_SKEW ) {
-			return new WP_Error(
+			$error = new WP_Error(
 				'webhook_timestamp_expired',
 				'Webhook timestamp is outside the accepted window.',
 				array( 'status' => 401 )
 			);
+			$this->debug_log( $request, $error );
+			return $error;
 		}
 
 		$result = $this->manager->apply_webhook_event(
@@ -166,13 +191,17 @@ final class WebhookListener {
 		);
 
 		if ( is_wp_error( $result ) ) {
+			$this->debug_log( $request, $result );
 			return $result;
 		}
 
-		return array(
+		$response = array(
 			'status' => 'accepted',
 			'event'  => sanitize_text_field( (string) $payload['event'] ),
 		);
+
+		$this->debug_log( $request, $response );
+		return $response;
 	}
 
 	/**
