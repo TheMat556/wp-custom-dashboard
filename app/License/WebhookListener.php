@@ -16,7 +16,7 @@ defined( 'ABSPATH' ) || exit;
 
 final class WebhookListener {
 	private const MAX_CLOCK_SKEW    = 300;
-	private const RATE_LIMIT_MAX    = 10;
+	private const RATE_LIMIT_MAX    = 100;
 	private const RATE_LIMIT_WINDOW = 300; // seconds (5 minutes).
 
 	/** @var LicenseSettingsRepository */
