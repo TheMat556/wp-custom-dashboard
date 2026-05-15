@@ -121,15 +121,32 @@ final class LockScreenHandler {
 	}
 
 	/**
+	 * Returns true for REST API requests by checking standard WordPress
+	 * constants, the request URI, and the rest_route query parameter.
+	 */
+	private static function is_rest_request(): bool {
+		if ( defined( 'REST_REQUEST' ) ) {
+			return true;
+		}
+		if ( isset( $_GET['rest_route'] ) ) {
+			return true;
+		}
+		if ( isset( $_SERVER['REQUEST_URI'] ) ) {
+			// Match /wp-json/ only in the URL path, not in query parameters.
+			$request_path = wp_parse_url( sanitize_text_field( wp_unslash( $_SERVER['REQUEST_URI'] ) ), PHP_URL_PATH );
+			if ( is_string( $request_path ) && strpos( $request_path, '/wp-json/' ) !== false ) {
+				return true;
+			}
+		}
+		return false;
+	}
+
+	/**
 	 * Returns true for requests that should not render the HTML lock screen
 	 * but should still be blocked.
 	 */
 	private static function is_system_request(): bool {
-		$is_rest = defined( 'REST_REQUEST' )
-			|| ( isset( $_SERVER['REQUEST_URI'] ) && strpos( sanitize_text_field( wp_unslash( $_SERVER['REQUEST_URI'] ) ), '/wp-json/' ) !== false )
-			|| isset( $_GET['rest_route'] );
-
-		return $is_rest || defined( 'DOING_AJAX' ) ||
+		return self::is_rest_request() || defined( 'DOING_AJAX' ) ||
 			defined( 'DOING_CRON' ) || defined( 'WP_CLI' ) ||
 			( defined( 'XMLRPC_REQUEST' ) && XMLRPC_REQUEST ) ||
 			( defined( 'WP_INSTALLING' ) && WP_INSTALLING );
@@ -141,11 +158,7 @@ final class LockScreenHandler {
 	 * Returns a JSON error for REST/AJAX and dies with a 503 for XML-RPC.
 	 */
 	private static function block_system_request(): void {
-		$is_rest = defined( 'REST_REQUEST' )
-			|| ( isset( $_SERVER['REQUEST_URI'] ) && strpos( sanitize_text_field( wp_unslash( $_SERVER['REQUEST_URI'] ) ), '/wp-json/' ) !== false )
-			|| isset( $_GET['rest_route'] );
-
-		if ( $is_rest ) {
+		if ( self::is_rest_request() ) {
 			// Hook into REST dispatch to return a locked error.
 			add_filter(
 				'rest_pre_dispatch',
@@ -216,10 +229,15 @@ final class LockScreenHandler {
 				ob_end_clean();
 			}
 
+			$csp_nonce = bin2hex( random_bytes( 16 ) );
+
 			status_header( 503 );
 			header( 'Retry-After: 3600' );
 			nocache_headers();
 			header( 'X-Robots-Tag: noindex, nofollow', true );
+			header( "Content-Security-Policy: default-src 'none'; script-src 'nonce-{$csp_nonce}'; style-src 'unsafe-inline'; img-src 'self' data:; base-uri 'none'; frame-ancestors 'none';" );
+		} else {
+			$csp_nonce = '';
 		}
 
 		$site_name      = get_bloginfo( 'name' );
@@ -243,16 +261,6 @@ final class LockScreenHandler {
 	<meta charset="<?php bloginfo( 'charset' ); ?>">
 	<meta name="viewport" content="width=device-width, initial-scale=1.0">
 	<meta name="robots" content="noindex, nofollow">
-	<title><?php echo esc_html__( 'Temporarily Unavailable', 'wp-react-ui' ); ?></title>
-	<?php
-	// Emit CSP that allows the inline recheck script.
-	if ( ! headers_sent() ) {
-		$csp_nonce = bin2hex( random_bytes( 16 ) );
-		header( "Content-Security-Policy: script-src 'nonce-{$csp_nonce}'; base-uri 'self';" );
-	} else {
-		$csp_nonce = '';
-	}
-	?>
 	<style>
 		* { margin: 0; padding: 0; box-sizing: border-box; }
 		body {
@@ -375,54 +383,18 @@ final class LockScreenHandler {
 			<?php esc_html_e( 'After unlocking the license on the server, click "Check Now" to restore access immediately.', 'wp-react-ui' ); ?>
 		</div>
 
-		<script nonce="<?php echo esc_attr( $csp_nonce ); ?>">
-		(function() {
-			var btn   = document.getElementById('wp-react-ui-recheck');
-			var stat  = document.getElementById('wp-react-ui-recheck-status');
-			var url   = <?php echo wp_json_encode( $rest_url ); ?>;
-			var sep   = url.indexOf('?') === -1 ? '?' : '&';
-			var nonce = <?php echo wp_json_encode( $rest_nonce ); ?>;
+			<script nonce="<?php echo esc_attr( $csp_nonce ); ?>">
+			(function() {
+				var btn = document.getElementById('wp-react-ui-recheck');
 
-			btn.addEventListener('click', function() {
-				btn.disabled = true;
-				btn.textContent = <?php echo wp_json_encode( esc_html__( 'Checking…', 'wp-react-ui' ) ); ?>;
-				stat.textContent = '';
-				stat.className   = 'recheck-status';
-
-				var controller = new AbortController();
-				var timer = setTimeout(function() { controller.abort(); }, 15000);
-
-				fetch(url + sep + 'force=1', {
-					signal: controller.signal,
-					headers: {
-						'Accept': 'application/json',
-						'X-WP-Nonce': nonce
+				btn.addEventListener('click', function() {
+					var url = btn.getAttribute('data-recheck-url');
+					if (url) {
+						location.assign(url);
 					}
-				})
-				.then(function(r) { clearTimeout(timer); return r.json(); })
-				.then(function(data) {
-					var s = (data && data.status) || '';
-					if (s === 'active' || s === 'valid') {
-						stat.textContent = <?php echo wp_json_encode( esc_html__( 'License is active — reloading…', 'wp-react-ui' ) ); ?>;
-						stat.className   = 'recheck-status success';
-						setTimeout(function() { location.reload(); }, 500);
-					} else {
-						stat.textContent = <?php echo wp_json_encode( esc_html__( 'License is still locked. Try again later.', 'wp-react-ui' ) ); ?>;
-						stat.className   = 'recheck-status error';
-						btn.disabled = false;
-						btn.textContent = <?php echo wp_json_encode( esc_html__( 'Check Again', 'wp-react-ui' ) ); ?>;
-					}
-				})
-				.catch(function() {
-					clearTimeout(timer);
-					stat.textContent = <?php echo wp_json_encode( esc_html__( 'Could not reach the license server.', 'wp-react-ui' ) ); ?>;
-					stat.className   = 'recheck-status error';
-					btn.disabled = false;
-					btn.textContent = <?php echo wp_json_encode( esc_html__( 'Try Again', 'wp-react-ui' ) ); ?>;
 				});
-			});
-		})();
-		</script>
+			})();
+			</script>
 	<?php endif; ?>
 
 		<?php if ( ! empty( $site_name ) ) : ?>

@@ -65,15 +65,18 @@ final class WebhookListener {
 	}
 
 	/**
-	 * Enforces a transient-based rate limit for the given IP.
-	 * Only counts failed authentication attempts, so legitimate traffic
-	 * is never starved by unauthenticated junk requests.
+	 * Checks whether the caller has exceeded the failed-auth rate limit.
+	 *
+	 * Read-only check of the failed-auth bucket (does NOT increment).
+	 * Called BEFORE secret verification, so garbage requests never reach
+	 * hash_equals. A global backstop prevents total CPU exhaustion from
+	 * distributed attackers cycling through IPs behind trusted proxies.
 	 *
 	 * @return WP_Error|null WP_Error with status 429 when the limit is exceeded, null otherwise.
 	 */
-	private function check_rate_limit(): ?WP_Error {
+	private function is_failed_auth_rate_limited(): ?WP_Error {
 		$ip  = $this->get_caller_ip();
-		$key = 'wh_rl_' . md5( $ip );
+		$key = 'wh_rl_failed_' . md5( $ip );
 
 		$attempts = (int) get_transient( $key );
 
@@ -88,10 +91,17 @@ final class WebhookListener {
 			);
 		}
 
-		if ( 0 === $attempts ) {
-			set_transient( $key, 1, self::RATE_LIMIT_WINDOW );
-		} else {
-			set_transient( $key, $attempts + 1, self::RATE_LIMIT_WINDOW );
+		// Global backstop: cap total failed-auth attempts across all sources.
+		$global = (int) get_transient( 'wh_rl_global' );
+		if ( $global >= ( self::RATE_LIMIT_MAX * 100 ) ) {
+			return new WP_Error(
+				'webhook_global_rate_limit_exceeded',
+				'Too many requests.',
+				array(
+					'status'  => 429,
+					'headers' => array( 'Retry-After' => (string) self::RATE_LIMIT_WINDOW ),
+				)
+			);
 		}
 
 		return null;
@@ -136,8 +146,16 @@ final class WebhookListener {
 			}
 		}
 		$log .= "--- REQUEST BODY ---\n";
-		$log .= ( is_string( $body ) ? $body : '(empty)' ) . "\n";
-
+		// Redact the signature from the logged body.
+		$logged_body = is_string( $body ) ? $body : '(empty)';
+		if ( is_string( $logged_body ) && '' !== $logged_body ) {
+			$decoded = json_decode( $logged_body, true );
+			if ( is_array( $decoded ) && isset( $decoded['signature'] ) ) {
+				$decoded['signature'] = '(redacted)';
+				$logged_body = (string) wp_json_encode( $decoded );
+			}
+		}
+		$log .= $logged_body . "\n";
 		if ( null !== $result ) {
 			if ( $result instanceof WP_Error ) {
 				$log .= "--- RESULT: ERROR ---\n";
@@ -163,22 +181,26 @@ final class WebhookListener {
 	 * Processes a webhook request after verification succeeds.
 	 *
 	 * Order of operations:
-	 * 1. Secret + signature verification (authentication)
-	 * 2. Rate-limit only on failed auth (not on success)
+	 * 1. Check failed-auth rate limit (before any crypto work)
+	 * 2. Secret + signature verification (authentication)
 	 * 3. Event processing
 	 *
 	 * @param WP_REST_Request $request Incoming webhook request.
 	 * @return array{status: string, event: string}|WP_Error
 	 */
 	public function handle( WP_REST_Request $request ) {
+		// Check failed-auth rate limit BEFORE debug logging or any crypto work.
+		// A flood of garbage secrets never fills the debug log or reaches hash_equals.
+		$rate_limited = $this->is_failed_auth_rate_limited();
+		if ( null !== $rate_limited ) {
+			return $rate_limited;
+		}
+
 		$this->debug_log( $request );
 
 		$stored_secret = $this->settings_repository->get_webhook_secret();
 		$header_secret = strtolower( sanitize_text_field( (string) $request->get_header( 'X-Webhook-Secret' ) ) );
 
-		// Check secret FIRST — before rate limiting. This way, unauthenticated
-		// junk requests can never starve legitimate webhooks out of the rate-limit
-		// bucket.
 		if ( '' === $stored_secret || '' === $header_secret || ! hash_equals( $stored_secret, $header_secret ) ) {
 			$error = new WP_Error(
 				'invalid_webhook_secret',
@@ -257,7 +279,7 @@ final class WebhookListener {
 	/**
 	 * Increments the rate-limit counter for failed authentication attempts.
 	 * Does NOT apply to requests that passed auth — they are never rate-limited
-	 * by this bucket.
+	 * by this bucket. Also bumps a global backstop counter.
 	 */
 	private function rate_limit_failed_auth(): void {
 		$ip  = $this->get_caller_ip();
@@ -269,6 +291,10 @@ final class WebhookListener {
 		} else {
 			set_transient( $key, $attempts + 1, self::RATE_LIMIT_WINDOW );
 		}
+
+		// Global backstop counter — limits total CPU burn from distributed sources.
+		$global = (int) get_transient( 'wh_rl_global' );
+		set_transient( 'wh_rl_global', $global + 1, self::RATE_LIMIT_WINDOW );
 	}
 
 	/**
@@ -289,6 +315,24 @@ final class WebhookListener {
 				'invalid_webhook_payload',
 				'Webhook payload is incomplete.',
 				array( 'status' => 400 )
+			);
+		}
+		// Verify body_hash against the actual data — prevents a mismatch
+		// between what was signed and what gets processed. The server-side
+		// receiver (WebhookReceiverController) performs the same check.
+		$data_json = wp_json_encode( $data, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE );
+		if ( ! is_string( $data_json ) ) {
+			return new WP_Error(
+				'invalid_webhook_payload',
+				'Webhook data could not be encoded.',
+				array( 'status' => 400 )
+			);
+		}
+		if ( ! hash_equals( hash( 'sha256', $data_json ), $body_hash ) ) {
+			return new WP_Error(
+				'invalid_webhook_body_hash',
+				'Webhook body hash does not match the payload data.',
+				array( 'status' => 401 )
 			);
 		}
 

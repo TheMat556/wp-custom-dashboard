@@ -119,15 +119,23 @@ class LicenseStateTransitioner {
 			$payload = $this->cache->default_payload();
 		}
 
+		// Resolve role from authoritative storage, not from cache.
+		// The cache can be cold (post-clear, fresh activation) and default_payload
+		// returns role => null, which would let a webhook lock an owner license.
+		$role = $this->settings_repository->get_role();
+		if ( '' === $role && isset( $payload['role'] ) ) {
+			$role = $payload['role'];
+		}
+		$payload['role'] = $role;
+
 		// NEVER lock an owner license — owner licenses are immune even if
 		// a webhook arrives (defense-in-depth; the server already blocks it).
-		if ( isset( $payload['role'] ) && 'owner' === $payload['role'] ) {
+		if ( 'owner' === $role ) {
 			$this->cache->set( $payload );
 			return $payload;
 		}
 
-		$payload['status']         = LicenseCache::STATUS_LOCKED;
-		$payload['webhook_secret'] = null;
+		$payload['status'] = LicenseCache::STATUS_LOCKED;
 
 		if ( isset( $webhook_data['pre_lock_status'] ) ) {
 			$payload['preLockStatus'] = sanitize_key( (string) $webhook_data['pre_lock_status'] );
@@ -161,6 +169,15 @@ class LicenseStateTransitioner {
 			$this->settings_repository->save_webhook_secret( $remote_payload['webhook_secret'] );
 		} else {
 			$this->settings_repository->save_webhook_secret( '' );
+		}
+		// Persist role for owner-immunity checks (survives cache clears).
+		$role = isset( $remote_payload['license']['role'] ) && is_string( $remote_payload['license']['role'] )
+			? sanitize_key( $remote_payload['license']['role'] )
+			: '';
+		if ( '' !== $role ) {
+			$this->settings_repository->save_role( $role );
+		} else {
+			$this->settings_repository->save_role( '' );
 		}
 		$this->grace_period->clear_grace();
 

@@ -70,9 +70,10 @@ final class RestValidator {
 	/**
 	 * Validates a URL using WordPress built-in validation.
 	 *
-	 * Performs SSRF-aware validation — rejects private/loopback IPs,
-	 * file:// schemes, and other unsafe destinations. Use this for
-	 * URLs that will be directly requested at runtime.
+	 * Delegates to wp_http_validate_url which rejects private/loopback IPs
+	 * and non-http(s) schemes against the default HTTP API allowlist. For
+	 * comprehensive SSRF validation at request time, see
+	 * WebhookTargetValidator in the license-server plugin.
 	 *
 	 * @param mixed $value The value to validate.
 	 * @return bool True if valid URL, false otherwise.

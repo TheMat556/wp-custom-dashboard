@@ -167,7 +167,7 @@ final class LicenseSettingsRepository {
 		);
 
 		if ( '' !== $decrypted ) {
-			return strtolower( sanitize_text_field( $decrypted ) );
+			return sanitize_text_field( $decrypted );
 		}
 
 		// No encrypted secret found — check for a legacy plain-text value and migrate it.
@@ -177,7 +177,7 @@ final class LicenseSettingsRepository {
 			return '';
 		}
 
-		$legacy = strtolower( sanitize_text_field( $legacy ) );
+		$legacy = sanitize_text_field( $legacy );
 
 		// Encrypt and persist the plain-text value so subsequent reads use encryption.
 		$this->save_webhook_secret( $legacy );
@@ -191,7 +191,7 @@ final class LicenseSettingsRepository {
 	 * @param string $webhook_secret Activation webhook secret.
 	 */
 	public function save_webhook_secret( string $webhook_secret ): bool {
-		$sanitized = preg_replace( '/[^a-f0-9]/i', '', strtolower( sanitize_text_field( $webhook_secret ) ) );
+		$sanitized = sanitize_text_field( $webhook_secret );
 
 		if ( ! is_string( $sanitized ) ) {
 			$sanitized = '';
@@ -408,6 +408,28 @@ final class LicenseSettingsRepository {
 	/**
 	 * Returns the configured license server URL.
 	 */
+	/**
+	 * Returns the stored license role.
+	 */
+	public function get_role(): string {
+		$settings = $this->get_settings();
+		return isset( $settings['role'] ) && is_string( $settings['role'] ) ? $settings['role'] : '';
+	}
+
+	/**
+	 * Persists the license role.
+	 */
+	public function save_role( string $role ): bool {
+		return update_option(
+			self::OPTION_NAME,
+			array_merge(
+				$this->get_settings(),
+				array( 'role' => sanitize_key( $role ) )
+			),
+			false
+		);
+	}
+
 	public function get_server_url(): string {
 		$configured = '';
 
