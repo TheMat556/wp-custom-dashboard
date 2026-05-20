@@ -18,8 +18,10 @@ use PHPUnit\Framework\TestCase;
 class LicenseClientShouldAllowHostTest extends TestCase {
 
 	public function test_matching_domain_returns_true(): void {
+		// skip_pinning=true bypasses the DNS-pin gate so this unit test
+		// can exercise the host-match logic without resolving DNS.
 		$this->assertTrue(
-			LicenseClient::should_allow_host( false, 'api.example.com', 'api.example.com' )
+			LicenseClient::should_allow_host( false, 'api.example.com', 'api.example.com', array(), true )
 		);
 	}
 
@@ -78,8 +80,10 @@ class LicenseClientShouldAllowHostTest extends TestCase {
 	}
 
 	public function test_trailing_dot_normalized_correctly(): void {
+		// skip_pinning=true bypasses the DNS-pin gate so this unit test
+		// can exercise host normalization without resolving DNS.
 		$this->assertTrue(
-			LicenseClient::should_allow_host( false, 'api.example.com.', 'api.example.com' )
+			LicenseClient::should_allow_host( false, 'api.example.com.', 'api.example.com', array(), true )
 		);
 	}
 
@@ -89,6 +93,36 @@ class LicenseClientShouldAllowHostTest extends TestCase {
 		);
 		$this->assertFalse(
 			LicenseClient::should_allow_host( false, 'any.host', null )
+		);
+	}
+
+	public function test_cloud_metadata_hosts_blocked(): void {
+		$this->assertFalse(
+			LicenseClient::should_allow_host( true, 'metadata.google.internal', 'api.example.com' )
+		);
+		$this->assertFalse(
+			LicenseClient::should_allow_host( true, 'metadata.aws.internal', 'api.example.com' )
+		);
+	}
+
+	public function test_cloud_metadata_ip_blocked(): void {
+		$this->assertFalse(
+			LicenseClient::should_allow_host( true, '169.254.169.254', 'api.example.com' )
+		);
+		$this->assertFalse(
+			LicenseClient::should_allow_host( true, '100.100.100.200', 'api.example.com' )
+		);
+	}
+
+	public function test_cloud_metadata_trailing_dot_still_blocked(): void {
+		$this->assertFalse(
+			LicenseClient::should_allow_host( true, 'metadata.google.internal.', 'api.example.com' )
+		);
+	}
+
+	public function test_legitimate_external_host_not_blocked(): void {
+		$this->assertTrue(
+			LicenseClient::should_allow_host( true, 'valid-license-server.example.com', 'api.example.com' )
 		);
 	}
 }

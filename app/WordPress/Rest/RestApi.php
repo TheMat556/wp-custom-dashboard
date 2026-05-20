@@ -495,10 +495,18 @@ class WP_React_UI_REST_API {
 				'permission_callback' => '__return_true',
 			)
 		);
+
+		// Compatibility route: the license server dispatches webhooks to
+		// license-server/v1/webhook. Register it here so push events
+		// (lock, unlock, expiry) arrive at the same handler.
+		register_rest_route(
+			'license-server/v1',
+			'/webhook',
+			array(
+				'methods'             => 'POST',
+				'callback'            => array( $license_webhook_controller, 'handle' ),
+				'permission_callback' => '__return_true',
+			)
+		);
 	}
 }
-
-// Ensure the webhook permission callback stays __return_true — the endpoint must
-// be public to receive push events from the license server. Actual verification
-// happens inside WebhookListener::handle(): secret comparison, HMAC signature,
-// timestamp expiry, and rate limiting.

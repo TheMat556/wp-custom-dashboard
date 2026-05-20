@@ -145,8 +145,60 @@ final class LicenseClient {
 		// IP. The host is set by an administrator (manage_options gate).
 		$server_host = wp_parse_url( $server_url, PHP_URL_HOST );
 		$server_host = is_string( $server_host ) ? strtolower( rtrim( $server_host, '.' ) ) : null;
-		$allow_host  = static fn( bool $external, string $host ): bool
-			=> self::should_allow_host( $external, $host, $server_host );
+
+		// Resolve the server host ONCE up front and pin the IP via cURL.
+		// This kills DNS-rebinding: a malicious authoritative nameserver
+		// returning a public IP at validation time and a private IP at
+		// request time cannot redirect us.
+		$pinned_ips = ( null !== $server_host ) ? $this->resolve_pinned_ips( $server_host ) : array();
+
+		/**
+		 * Filters whether to skip DNS pinning for the license server request.
+		 *
+		 * Returning true skips the resolution-failed bail-out. Intended for
+		 * local development and tests where DNS may not be resolvable. Leave
+		 * this false in production — it is the load-bearing defence against
+		 * DNS rebinding.
+		 *
+		 * @param bool   $skip        Whether to skip DNS pinning. Default false.
+		 * @param string $server_host Configured server host.
+		 */
+		$skip_pinning = (bool) apply_filters(
+			'wp_react_ui_license_skip_dns_pinning',
+			false,
+			(string) $server_host
+		);
+
+		if ( null !== $server_host && empty( $pinned_ips ) && ! $skip_pinning ) {
+			return new WP_Error(
+				'license_dns_resolution_failed',
+				'Could not resolve the license server host to a public IP address.',
+				array(
+					'status'   => 503,
+					'endpoint' => $action,
+				)
+			);
+		}
+
+		$allow_host = static fn( bool $external, string $host ): bool
+			=> self::should_allow_host( $external, $host, $server_host, $pinned_ips, $skip_pinning );
+
+		// Pin the resolved IP(s) into cURL via CURLOPT_RESOLVE so the underlying
+		// transport never re-resolves the host between our check and the request.
+		$server_port = (int) ( wp_parse_url( $server_url, PHP_URL_PORT ) ?: ( 'https' === strtolower( (string) wp_parse_url( $server_url, PHP_URL_SCHEME ) ) ? 443 : 80 ) );
+		$curl_pin    = function ( $handle ) use ( $server_host, $pinned_ips, $server_port ): void {
+			if ( null === $server_host || empty( $pinned_ips ) || ! is_resource( $handle ) && ! ( $handle instanceof \CurlHandle ) ) {
+				return;
+			}
+			$resolve = array();
+			foreach ( $pinned_ips as $ip ) {
+				$resolve[] = $server_host . ':' . $server_port . ':' . $ip;
+			}
+			if ( defined( 'CURLOPT_RESOLVE' ) ) {
+				// phpcs:ignore WordPress.WP.AlternativeFunctions.curl_curl_setopt
+				curl_setopt( $handle, CURLOPT_RESOLVE, $resolve );
+			}
+		};
 
 		for ( $attempt = 1; $attempt <= $attempts; $attempt++ ) {
 			// Regenerate nonce and timestamp per attempt so retries are not rejected as replays.
@@ -186,9 +238,11 @@ final class LicenseClient {
 
 			try {
 				add_filter( 'http_request_host_is_external', $allow_host, 10, 2 );
+				add_action( 'http_api_curl', $curl_pin, 10, 1 );
 				$last_response = call_user_func( $this->remote_post, $url, $args );
 			} finally {
 				remove_filter( 'http_request_host_is_external', $allow_host, 10 );
+				remove_action( 'http_api_curl', $curl_pin, 10 );
 			}
 
 			if ( is_wp_error( $last_response ) ) {
@@ -399,6 +453,56 @@ final class LicenseClient {
 	}
 
 	/**
+	 * Resolve the license server hostname to a list of public IP addresses.
+	 *
+	 * Returns an empty array on any failure (resolution error, no records,
+	 * or any record resolving to a non-public IP). Callers must treat an
+	 * empty return as a hard failure — never fall through to allow the
+	 * request.
+	 *
+	 * @param string $host Lowercased, trailing-dot-stripped host.
+	 * @return array<int, string> List of pinned public IPs (A + AAAA).
+	 */
+	private function resolve_pinned_ips( string $host ): array {
+		if ( ! function_exists( 'dns_get_record' ) ) {
+			return array();
+		}
+
+		// Suppress the previous_error reporting handler — dns_get_record
+		// emits warnings on lookup failure that we want to convert into a
+		// boolean failure path instead.
+		set_error_handler( static function (): bool {
+			return true;
+		} );
+		try {
+			$records = dns_get_record( $host, DNS_A + DNS_AAAA );
+		} finally {
+			restore_error_handler();
+		}
+
+		if ( ! is_array( $records ) || empty( $records ) ) {
+			return array();
+		}
+
+		$ips = array();
+		foreach ( $records as $record ) {
+			$ip = (string) ( $record['ip'] ?? $record['ipv6'] ?? '' );
+			if ( '' === $ip ) {
+				continue;
+			}
+			// Deny if ANY record points to a non-public IP. This kills
+			// DNS rebinding where the attacker returns one public + one
+			// private address and hopes cURL picks the private one.
+			if ( ! self::is_public_ip( $ip ) ) {
+				return array();
+			}
+			$ips[] = $ip;
+		}
+
+		return $ips;
+	}
+
+	/**
 	 * Determines whether a host should be treated as external for HTTP requests.
 	 *
 	 * If the host matches the configured license server host AND is not an IP
@@ -407,13 +511,15 @@ final class LicenseClient {
 	 *
 	 * @internal Public only for testability. Do not call from outside the class.
 	 *
-	 * @param bool        $external    Current WordPress external-host state.
-	 * @param string      $host        The host being checked.
-	 * @param string|null $server_host Configured license server host (lowercased,
-	 *                                 trailing dots stripped), or null.
+	 * @param bool                $external    Current WordPress external-host state.
+	 * @param string              $host        The host being checked.
+	 * @param string|null         $server_host Configured license server host (lowercased,
+	 *                                         trailing dots stripped), or null.
+	 * @param array<int, string>  $pinned_ips  Pre-resolved public IPs for $server_host.
+	 *                                         Empty array means resolution failed.
 	 * @return bool True if the host should be considered external.
 	 */
-	public static function should_allow_host( bool $external, string $host, ?string $server_host ): bool {
+	public static function should_allow_host( bool $external, string $host, ?string $server_host, array $pinned_ips = array(), bool $skip_pinning = false ): bool {
 		$normalized = strtolower( rtrim( $host, '.' ) );
 
 		// Strip brackets for IPv6 detection — filter_var rejects bracketed literals.
@@ -424,6 +530,40 @@ final class LicenseClient {
 		$zone_pos = strpos( $ip_check, '%' );
 		if ( false !== $zone_pos ) {
 			$ip_check = substr( $ip_check, 0, $zone_pos );
+		}
+
+		// Defense-in-depth: always block cloud metadata hostnames and IPs,
+		// regardless of whether they match the configured server. These are
+		// well-known SSRF targets on AWS/GCP/Azure/Alibaba/DigitalOcean.
+		$metadata_hosts = array(
+			'metadata.google.internal',
+			'metadata.aws.internal',
+			'metadata.azure.com',
+			'metadata',
+		);
+		if ( in_array( $normalized, $metadata_hosts, true ) ) {
+			return false;
+		}
+		// Cloud metadata IPs: 169.254.169.254 (AWS/GCP/Azure/DO link-local) and
+		// 100.100.100.200 (Alibaba). Also blocks any 169.254/16 link-local addr.
+		if ( filter_var( $ip_check, FILTER_VALIDATE_IP, FILTER_FLAG_IPV4 ) ) {
+			if ( preg_match( '/^169\.254\./', $ip_check ) ) {
+				return false;
+			}
+			if ( '100.100.100.200' === $ip_check ) {
+				return false;
+			}
+		}
+
+		// If the host matches the configured server and we have pre-resolved,
+		// public IPs already pinned, accept. Otherwise deny — we never want
+		// to fall through to a runtime DNS lookup that might rebind. The
+		// $skip_pinning escape hatch is for local development and tests where
+		// DNS may not be resolvable; production code paths never set it.
+		if ( null !== $server_host && $server_host === $normalized ) {
+			if ( empty( $pinned_ips ) && ! $skip_pinning ) {
+				return false;
+			}
 		}
 
 		if ( null !== $server_host && $server_host === $normalized ) {
@@ -475,5 +615,29 @@ final class LicenseClient {
 		 * @param array  $context Event context without the full license key.
 		 */
 		do_action( 'wp_react_ui_license_debug', $event, $context );
+	}
+
+	/**
+	 * Check if an IP is a public (non-private, non-reserved) address.
+	 * Mirrors DnsResolver::is_public_ip() for use in should_allow_host.
+	 */
+	private static function is_public_ip( string $ip ): bool {
+		if ( preg_match( '/^::ffff:(\d+\.\d+\.\d+\.\d+)$/i', $ip, $m ) ) {
+			return false !== filter_var(
+				$m[1],
+				FILTER_VALIDATE_IP,
+				FILTER_FLAG_NO_PRIV_RANGE | FILTER_FLAG_NO_RES_RANGE
+			);
+		}
+		if ( preg_match( '/^64:ff9b:/i', $ip ) ||
+			 preg_match( '/^fe[89ab][0-9a-f]:/i', $ip ) ||
+			 '::1' === $ip ) {
+			return false;
+		}
+		return false !== filter_var(
+			$ip,
+			FILTER_VALIDATE_IP,
+			FILTER_FLAG_NO_PRIV_RANGE | FILTER_FLAG_NO_RES_RANGE
+		);
 	}
 }

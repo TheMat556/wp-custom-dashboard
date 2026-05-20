@@ -103,6 +103,77 @@ class LicenseStateTransitioner {
 	}
 
 	/**
+	 * Transition cached license state to locked.
+	 *
+	 * If cache is empty (cold start, post-clear), stores just the locked flag.
+	 * Unlock will clear the cache, forcing re-validation that re-populates
+	 * metadata from the remote server.
+	 *
+	 * @param array<string, mixed> $webhook_data Optional webhook event data.
+	 * @return array{status: string, role: ?string, tier: ?string, expiresAt: ?string, features: array<int, string>, graceDaysRemaining: int, keyPrefix: ?string, lastValidatedAt: ?string}
+	 */
+	public function transition_to_locked( array $webhook_data = array() ): array {
+		$payload = $this->cache->get();
+
+		if ( null === $payload || empty( $payload ) ) {
+			$payload = $this->cache->default_payload();
+		}
+
+		// Resolve role from authoritative storage, not from cache.
+		// The cache can be cold (post-clear, fresh activation) and default_payload
+		// returns role => null, which would let a webhook lock an owner license.
+		$role = $this->settings_repository->get_role();
+		if ( '' === $role && isset( $payload['role'] ) ) {
+			$role = $payload['role'];
+
+			// If the cache says 'owner' but the settings (authoritative) say
+			// empty, treat this as cache poisoning — log a warning and default
+			// to 'customer' so the site can still be locked if needed.
+			if ( 'owner' === $role ) {
+				error_log(
+					sprintf(
+						'[WP React UI] LicenseStateTransitioner: settings role empty but cache claims owner — treating as customer (possible cache poisoning at %s)',
+						(string) wp_date( 'c' )
+					)
+				);
+				$role = 'customer';
+			}
+		}
+		$payload['role'] = $role;
+
+		// NEVER lock an owner license — owner licenses are immune even if
+		// a webhook arrives (defense-in-depth; the server already blocks it).
+		if ( 'owner' === $role ) {
+			$this->cache->set( $payload );
+			return $payload;
+		}
+
+		$payload['status'] = LicenseCache::STATUS_LOCKED;
+
+		if ( isset( $webhook_data['pre_lock_status'] ) ) {
+			$payload['preLockStatus'] = sanitize_key( (string) $webhook_data['pre_lock_status'] );
+		}
+
+		$this->cache->set( $payload );
+		return $payload;
+	}
+
+	/**
+	 * Transition out of locked state: delete both cache layers completely.
+	 *
+	 * Deleting (not overwriting) forces the next page load to re-validate
+	 * with the remote server, which now returns the restored state.
+	 */
+	public function transition_to_unlocked(): void {
+		delete_transient( LicenseCache::TRANSIENT_KEY );
+		delete_option( LicenseCache::BACKUP_OPTION_KEY );
+
+		// Clear the persisted role so a newly re-issued non-owner key does
+		// not inherit the prior owner role from stale settings storage.
+		$this->settings_repository->save_role( '' );
+	}
+
+	/**
 	 * Transitions to active state given a remote payload.
 	 *
 	 * @param array<string, mixed> $remote_payload Remote license server response.
@@ -115,6 +186,15 @@ class LicenseStateTransitioner {
 			$this->settings_repository->save_webhook_secret( $remote_payload['webhook_secret'] );
 		} else {
 			$this->settings_repository->save_webhook_secret( '' );
+		}
+		// Persist role for owner-immunity checks (survives cache clears).
+		$role = isset( $remote_payload['license']['role'] ) && is_string( $remote_payload['license']['role'] )
+			? sanitize_key( $remote_payload['license']['role'] )
+			: '';
+		if ( '' !== $role ) {
+			$this->settings_repository->save_role( $role );
+		} else {
+			$this->settings_repository->save_role( '' );
 		}
 		$this->grace_period->clear_grace();
 
@@ -150,6 +230,8 @@ class LicenseStateTransitioner {
 
 		if ( in_array( $status, array( 'valid', 'activated' ), true ) ) {
 			$status = LicenseCache::STATUS_ACTIVE;
+		} elseif ( 'locked' === $status ) {
+			$status = LicenseCache::STATUS_LOCKED;
 		}
 
 		$role = sanitize_key( (string) ( $license['role'] ?? '' ) );
@@ -167,7 +249,7 @@ class LicenseStateTransitioner {
 			$expires_at = null;
 		}
 
-		if ( ! in_array( $status, array( LicenseCache::STATUS_ACTIVE, LicenseCache::STATUS_GRACE, LicenseCache::STATUS_EXPIRED, LicenseCache::STATUS_DISABLED ), true ) ) {
+		if ( ! in_array( $status, array( LicenseCache::STATUS_ACTIVE, LicenseCache::STATUS_GRACE, LicenseCache::STATUS_EXPIRED, LicenseCache::STATUS_DISABLED, LicenseCache::STATUS_LOCKED ), true ) ) {
 			$status = LicenseCache::STATUS_DISABLED;
 		}
 

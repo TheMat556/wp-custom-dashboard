@@ -47,6 +47,10 @@ includes/                     → WP_React_UI_* prefix, WordPress-facing compati
 
 `wp-custom-dashboard.php` is the plugin entrypoint. `\WpReactUi\Plugin::boot()` → `PluginBootstrap::boot()` → `OptionsMigration::run()` → legacy init sequence.
 
+### License Lock Screen (init:0)
+
+`\WpReactUi\License\LockScreenHandler::check_and_lock()` runs at `init:0` — before WordPress query, before any output. It reads the cached license state from transient (with option fallback) and renders a 503 full-screen HTML lock page if status is `locked`. Skips REST, AJAX, cron, CLI, XML-RPC, and installer requests. `DONOTCACHEPAGE` is defined unconditionally so caching plugins never serve stale "not locked" pages after a lock event.
+
 ### Frontend layout
 
 ```

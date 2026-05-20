@@ -2,7 +2,7 @@ import { z } from "zod";
 import type { LicenseResponse, LicenseSettingsResponse } from "../../../generated/contracts/dto";
 
 export const LicenseResponseSchema = z.object({
-  status: z.enum(["active", "expired", "grace", "disabled"]),
+  status: z.enum(["active", "expired", "grace", "disabled", "locked"]),
   role: z.string().nullable(),
   tier: z.string().nullable(),
   expiresAt: z.string().nullable(),

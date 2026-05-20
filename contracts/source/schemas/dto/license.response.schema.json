@@ -17,7 +17,7 @@
   "properties": {
     "status": {
       "type": "string",
-      "enum": ["active", "expired", "grace", "disabled"]
+      "enum": ["active", "expired", "grace", "disabled", "locked"]
     },
     "role": {
       "type": ["string", "null"]

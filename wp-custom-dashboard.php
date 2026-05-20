@@ -2,7 +2,7 @@
 /**
  * Plugin Name: WP React UI
  * Description: Replaces Navbar and Sidebar with React + Ant Design
- * Version: 1.0.0
+ * Version: 1.1.0
  * Requires PHP: 8.0
  *
  * @package WP_React_UI
@@ -14,6 +14,11 @@ $wp_react_ui_autoload = __DIR__ . '/vendor/autoload.php';
 if ( file_exists( $wp_react_ui_autoload ) ) {
 	require_once $wp_react_ui_autoload;
 }
+
+// Lock screen check — must run before any output at the earliest possible hook.
+// This covers both frontend and admin. REST, AJAX, cron, CLI, and installer
+// requests are excluded inside the handler.
+add_action( 'init', array( 'WpReactUi\License\LockScreenHandler', 'check_and_lock' ), 0 );
 
 register_activation_hook(
 	__FILE__,
