@@ -97,6 +97,13 @@ final class LockScreenHandler {
 			return false;
 		}
 
+		// Rate-limit recheck: 15-second cooldown per user.
+		$rate_key = 'wp_react_ui_recheck_' . get_current_user_id();
+		if ( get_transient( $rate_key ) ) {
+			return false;
+		}
+		set_transient( $rate_key, 1, 15 );
+
 		$container = LicenseServiceContainer::get_instance();
 		$manager   = $container->get_manager();
 
@@ -163,6 +170,15 @@ final class LockScreenHandler {
 			add_filter(
 				'rest_pre_dispatch',
 				static function ( $result, $server, $request ) {
+					// Allow webhook and license routes through — the kill
+					// switch must not block its own recovery channel.
+					$route = $request->get_route();
+					if (
+						str_starts_with( $route, '/license-server/v1/webhook' ) ||
+						str_starts_with( $route, '/wp-react-ui/v1/license' )
+					) {
+						return $result;
+					}
 					return new WP_Error(
 						'license_locked',
 						__( 'This site is temporarily unavailable.', 'wp-react-ui' ),

@@ -178,6 +178,11 @@ final class LicenseCache {
 			}
 		}
 
+		$pre_lock_status = isset( $data['preLockStatus'] ) ? sanitize_key( (string) $data['preLockStatus'] ) : null;
+		if ( '' === $pre_lock_status ) {
+			$pre_lock_status = null;
+		}
+
 		return array(
 			'status'             => $status,
 			'role'               => $role,
@@ -187,6 +192,7 @@ final class LicenseCache {
 			'graceDaysRemaining' => absint( $data['graceDaysRemaining'] ?? 0 ),
 			'keyPrefix'          => $key_prefix,
 			'lastValidatedAt'    => $last_validated_at,
+			'preLockStatus'      => $pre_lock_status,
 		);
 	}
 

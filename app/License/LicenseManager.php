@@ -311,6 +311,58 @@ final class LicenseManager {
 		}
 
 		if ( 'license.unlocked' === $normalized_event ) {
+			// Precondition: the current cached status must be 'locked'.
+			// If the cache already says something else, this is likely a
+			// stale replay and should be ignored.
+			$cached = $this->cache->get();
+			if ( is_array( $cached ) && LicenseCache::STATUS_LOCKED !== $cached['status'] ) {
+				return new WP_Error(
+					'license_not_locked',
+					__( 'Cannot unlock: current status is not locked.', 'wp-react-ui' ),
+					array( 'status' => 409 )
+				);
+			}
+
+			// Confirm with the server before clearing the cache.
+			// During a server outage, a replayed unlock could otherwise
+			// transition the site to grace state instead of staying locked.
+			//
+			// This call is synchronous on the webhook request path. Force a
+			// short hard timeout so a stalled server can't pin the webhook
+			// worker open for the full default timeout (10s). The webhook
+			// itself has its own deadline upstream.
+			$validate = $this->call_validate_with_short_timeout(
+				$this->settings_repository->get_license_key()
+			);
+
+			if ( is_wp_error( $validate ) ) {
+				// Server unreachable or returned an error — do NOT clear cache.
+				// Fail closed: stay locked until the server confirms unlock.
+				return new WP_Error(
+					'license_unlock_verify_failed',
+					__( 'Could not verify unlock status with the license server.', 'wp-react-ui' ),
+					array( 'status' => 502 )
+				);
+			}
+
+			$remote_status = sanitize_key( (string) ( $validate['status'] ?? '' ) );
+			if ( LicenseCache::STATUS_LOCKED === $remote_status ) {
+				// Server still says locked. Return 200 with a no-op envelope
+				// rather than 409: the sender treats non-2xx as failure and
+				// will retry, producing a thundering-herd loop when the
+				// server intentionally took longer to clear the lock than
+				// the webhook took to arrive.
+				$this->emit_debug(
+					'webhook_unlocked_still_locked',
+					array( 'event' => $normalized_event )
+				);
+				return array(
+					'status' => 'noop',
+					'event'  => $normalized_event,
+					'reason' => 'still_locked',
+				);
+			}
+
 			$this->transitioner->transition_to_unlocked();
 			$this->emit_debug(
 				'webhook_unlocked',
@@ -545,5 +597,25 @@ final class LicenseManager {
 	 */
 	private function emit_debug( string $event, array $context ): void {
 		do_action( 'wp_react_ui_license_debug', $event, $context );
+	}
+
+	/**
+	 * Invoke client->validate() with a hard short timeout suitable for the
+	 * webhook request path. Falls back to the existing per-request timeout
+	 * filter so test code overriding the timeout still works.
+	 *
+	 * @param string $license_key License key to validate.
+	 * @return array<string, mixed>|WP_Error
+	 */
+	private function call_validate_with_short_timeout( string $license_key ) {
+		$short_timeout = (int) apply_filters( 'wp_react_ui_license_webhook_validate_timeout', 5 );
+		$force_timeout = static fn( int $current ): int => min( $current, max( 1, $short_timeout ) );
+
+		add_filter( 'wp_react_ui_license_http_timeout', $force_timeout, 99 );
+		try {
+			return $this->client->validate( $license_key );
+		} finally {
+			remove_filter( 'wp_react_ui_license_http_timeout', $force_timeout, 99 );
+		}
 	}
 }

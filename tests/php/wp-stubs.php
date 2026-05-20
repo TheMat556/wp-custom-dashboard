@@ -59,6 +59,9 @@ function wp_test_reset_state(): void {
 		'remote_post_handler' => null,
 		'user_id'    => 1,
 		'settings_errors' => array(),
+		'cache'      => array(),
+		'using_ext_object_cache' => true,
+		'environment_type' => 'production',
 	);
 }
 
@@ -118,6 +121,113 @@ function wp_test_sorted_keys( array $input ): array {
 	$keys = array_keys( $input );
 	sort( $keys );
 	return $keys;
+}
+
+if ( ! function_exists( '__' ) ) {
+	function __( string $text, string $domain = 'default' ): string {
+		return $text;
+	}
+}
+
+if ( ! function_exists( '_x' ) ) {
+	function _x( string $text, string $context, string $domain = 'default' ): string {
+		return $text;
+	}
+}
+
+if ( ! function_exists( 'esc_html__' ) ) {
+	function esc_html__( string $text, string $domain = 'default' ): string {
+		return htmlspecialchars( $text, ENT_QUOTES, 'UTF-8' );
+	}
+}
+
+if ( ! function_exists( 'esc_html' ) ) {
+	function esc_html( string $text ): string {
+		return htmlspecialchars( $text, ENT_QUOTES, 'UTF-8' );
+	}
+}
+
+if ( ! function_exists( 'add_option' ) ) {
+	function add_option( string $option, $value, string $deprecated = '', $autoload = 'yes' ): bool {
+		global $wp_test_state;
+		if ( array_key_exists( $option, $wp_test_state['options'] ?? array() ) ) {
+			return false;
+		}
+		$wp_test_state['options'][ $option ] = $value;
+		return true;
+	}
+}
+
+if ( ! function_exists( 'wp_cache_add' ) ) {
+	function wp_cache_add( string $key, $value, string $group = '', int $expiration = 0 ): bool {
+		global $wp_test_state;
+		$bucket =& $wp_test_state['cache'][ $group ];
+		if ( ! is_array( $bucket ) ) {
+			$bucket = array();
+		}
+		if ( array_key_exists( $key, $bucket ) ) {
+			return false;
+		}
+		$bucket[ $key ] = $value;
+		return true;
+	}
+}
+
+if ( ! function_exists( 'wp_cache_set' ) ) {
+	function wp_cache_set( string $key, $value, string $group = '', int $expiration = 0 ): bool {
+		global $wp_test_state;
+		if ( ! isset( $wp_test_state['cache'][ $group ] ) || ! is_array( $wp_test_state['cache'][ $group ] ) ) {
+			$wp_test_state['cache'][ $group ] = array();
+		}
+		$wp_test_state['cache'][ $group ][ $key ] = $value;
+		return true;
+	}
+}
+
+if ( ! function_exists( 'wp_cache_get' ) ) {
+	function wp_cache_get( string $key, string $group = '' ) {
+		global $wp_test_state;
+		return $wp_test_state['cache'][ $group ][ $key ] ?? false;
+	}
+}
+
+if ( ! function_exists( 'wp_cache_delete' ) ) {
+	function wp_cache_delete( string $key, string $group = '' ): bool {
+		global $wp_test_state;
+		unset( $wp_test_state['cache'][ $group ][ $key ] );
+		return true;
+	}
+}
+
+if ( ! function_exists( 'wp_cache_flush' ) ) {
+	function wp_cache_flush(): bool {
+		global $wp_test_state;
+		$wp_test_state['cache'] = array();
+		return true;
+	}
+}
+
+if ( ! function_exists( 'wp_using_ext_object_cache' ) ) {
+	function wp_using_ext_object_cache(): bool {
+		global $wp_test_state;
+		return (bool) ( $wp_test_state['using_ext_object_cache'] ?? true );
+	}
+}
+
+if ( ! function_exists( 'wp_mkdir_p' ) ) {
+	function wp_mkdir_p( string $path ): bool {
+		if ( is_dir( $path ) ) {
+			return true;
+		}
+		return @mkdir( $path, 0755, true );
+	}
+}
+
+if ( ! function_exists( 'wp_get_environment_type' ) ) {
+	function wp_get_environment_type(): string {
+		global $wp_test_state;
+		return (string) ( $wp_test_state['environment_type'] ?? 'production' );
+	}
 }
 
 if ( ! function_exists( 'wp_strip_all_tags' ) ) {
@@ -682,6 +792,22 @@ if ( ! function_exists( 'remove_action' ) ) {
 	}
 }
 
+if ( ! function_exists( 'remove_filter' ) ) {
+	function remove_filter( string $hook, $callback, int $priority = 10 ): bool {
+		global $wp_test_state;
+		if ( ! isset( $wp_test_state['filters'][ $hook ] ) ) {
+			return false;
+		}
+		foreach ( $wp_test_state['filters'][ $hook ] as $index => $registered ) {
+			if ( (int) $registered['priority'] === $priority && $registered['callback'] === $callback ) {
+				unset( $wp_test_state['filters'][ $hook ][ $index ] );
+			}
+		}
+		$wp_test_state['filters'][ $hook ] = array_values( $wp_test_state['filters'][ $hook ] );
+		return true;
+	}
+}
+
 if ( ! function_exists( 'wp_enqueue_media' ) ) {
 	function wp_enqueue_media(): void {
 	}
@@ -807,6 +933,8 @@ if ( ! class_exists( 'WP_REST_Request' ) ) {
 
 		private string $body;
 
+		private string $route = '';
+
 		/**
 		 * @param mixed $arg1 Route params or HTTP method.
 		 * @param mixed $arg2 JSON params or route path.
@@ -821,6 +949,14 @@ if ( ! class_exists( 'WP_REST_Request' ) ) {
 				$this->params      = $arg1;
 				$this->json_params = $arg2;
 			}
+		}
+
+		public function set_route( string $route ): void {
+			$this->route = $route;
+		}
+
+		public function get_route(): string {
+			return $this->route;
 		}
 
 		public function get_param( string $key ) {

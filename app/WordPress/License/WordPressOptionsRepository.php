@@ -40,7 +40,7 @@ final class WordPressOptionsRepository implements OptionsRepositoryInterface {
 	 * @return bool True on success, false on failure.
 	 */
 	public function update( string $key, mixed $value ): bool {
-		return false !== update_option( $key, $value );
+		return false !== update_option( $key, $value, false );
 	}
 
 	/**

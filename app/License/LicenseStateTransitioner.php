@@ -125,6 +125,19 @@ class LicenseStateTransitioner {
 		$role = $this->settings_repository->get_role();
 		if ( '' === $role && isset( $payload['role'] ) ) {
 			$role = $payload['role'];
+
+			// If the cache says 'owner' but the settings (authoritative) say
+			// empty, treat this as cache poisoning — log a warning and default
+			// to 'customer' so the site can still be locked if needed.
+			if ( 'owner' === $role ) {
+				error_log(
+					sprintf(
+						'[WP React UI] LicenseStateTransitioner: settings role empty but cache claims owner — treating as customer (possible cache poisoning at %s)',
+						(string) wp_date( 'c' )
+					)
+				);
+				$role = 'customer';
+			}
 		}
 		$payload['role'] = $role;
 
@@ -154,6 +167,10 @@ class LicenseStateTransitioner {
 	public function transition_to_unlocked(): void {
 		delete_transient( LicenseCache::TRANSIENT_KEY );
 		delete_option( LicenseCache::BACKUP_OPTION_KEY );
+
+		// Clear the persisted role so a newly re-issued non-owner key does
+		// not inherit the prior owner role from stale settings storage.
+		$this->settings_repository->save_role( '' );
 	}
 
 	/**

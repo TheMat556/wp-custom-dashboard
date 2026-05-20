@@ -16,7 +16,8 @@ defined( 'ABSPATH' ) || exit;
 
 final class WebhookListener {
 	private const MAX_CLOCK_SKEW       = 300;
-	private const RATE_LIMIT_MAX      = 100;
+	private const REPLAY_TTL           = 600; // 2 × clock skew.
+	private const RATE_LIMIT_MAX      = 10;
 	private const RATE_LIMIT_WINDOW   = 300; // seconds (5 minutes).
 	private const LOG_FILE_MAX_SIZE   = 10 * 1024 * 1024; // 10 MB.
 	private const ALLOWED_EVENTS      = [ 'license.locked', 'license.unlocked', 'license.expired', 'license.suspended', 'license.cancelled' ];
@@ -118,7 +119,32 @@ final class WebhookListener {
 			return;
 		}
 
-		$log_file = WP_CONTENT_DIR . '/debug-license-webhook.log';
+		$log_dir  = WP_CONTENT_DIR . '/wp-react-ui-private';
+		$log_file = $log_dir . '/debug-license-webhook.log';
+
+		// Ensure the debug directory exists. Refuse to write logs at all if it
+		// can't be created — never leak debug content into a world-readable dir.
+		if ( ! is_dir( $log_dir ) && ! wp_mkdir_p( $log_dir ) ) {
+			error_log( 'wp-react-ui: cannot create debug log dir ' . $log_dir );
+			return;
+		}
+
+		// Always (re-)create access-denial files if missing. A deleted .htaccess
+		// would otherwise silently expose the directory to the public.
+		$deny_files = array(
+			$log_dir . '/.htaccess'   => "Require all denied\n<Limit GET POST PUT DELETE HEAD>\nOrder allow,deny\nDeny from all\n</Limit>\n",
+			$log_dir . '/index.php'   => "<?php // Silence is golden.\n",
+			$log_dir . '/web.config'  => "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<configuration>\n  <system.webServer>\n    <authorization>\n      <deny users=\"*\" />\n    </authorization>\n  </system.webServer>\n</configuration>\n",
+		);
+		foreach ( $deny_files as $path => $contents ) {
+			if ( ! file_exists( $path ) ) {
+				// phpcs:ignore WordPressVIPMinimum.Files.IncludingFile.UsingVariable
+				if ( false === file_put_contents( $path, $contents ) ) {
+					error_log( 'wp-react-ui: failed to write deny file ' . $path );
+					return;
+				}
+			}
+		}
 
 		// Rotate if oversized.
 		if ( file_exists( $log_file ) && filesize( $log_file ) > self::LOG_FILE_MAX_SIZE ) {
@@ -199,12 +225,12 @@ final class WebhookListener {
 		$this->debug_log( $request );
 
 		$stored_secret = $this->settings_repository->get_webhook_secret();
-		$header_secret = strtolower( sanitize_text_field( (string) $request->get_header( 'X-Webhook-Secret' ) ) );
+		$header_secret = sanitize_text_field( (string) $request->get_header( 'X-Webhook-Secret' ) );
 
 		if ( '' === $stored_secret || '' === $header_secret || ! hash_equals( $stored_secret, $header_secret ) ) {
 			$error = new WP_Error(
 				'invalid_webhook_secret',
-				'Webhook secret is invalid.',
+				__('Webhook secret is invalid.', 'wp-react-ui'),
 				array( 'status' => 403 )
 			);
 			$this->rate_limit_failed_auth();
@@ -217,7 +243,7 @@ final class WebhookListener {
 		if ( ! is_array( $payload ) ) {
 			$error = new WP_Error(
 				'invalid_webhook_payload',
-				'Webhook payload must be a JSON object.',
+				__('Webhook payload must be a JSON object.', 'wp-react-ui'),
 				array( 'status' => 400 )
 			);
 			$this->rate_limit_failed_auth();
@@ -238,7 +264,7 @@ final class WebhookListener {
 		if ( abs( time() - $timestamp ) > self::MAX_CLOCK_SKEW ) {
 			$error = new WP_Error(
 				'webhook_timestamp_expired',
-				'Webhook timestamp is outside the accepted window.',
+				__('Webhook timestamp is outside the accepted window.', 'wp-react-ui'),
 				array( 'status' => 401 )
 			);
 			$this->debug_log( $request, $error );
@@ -250,11 +276,21 @@ final class WebhookListener {
 		if ( ! in_array( $event, self::ALLOWED_EVENTS, true ) ) {
 			$error = new WP_Error(
 				'webhook_event_not_allowed',
-				'Webhook event is not recognized.',
+				__('Webhook event is not recognized.', 'wp-react-ui'),
 				array( 'status' => 400 )
 			);
 			$this->debug_log( $request, $error );
 			return $error;
+		}
+
+		// Replay protection: skip processing if this event_id was already
+		// handled within the replay window (2 × clock skew).
+		$event_id  = sanitize_text_field( (string) $payload['event_id'] );
+		$dedup_key = 'wh_dedup_' . hash( 'sha256', $event_id );
+
+		if ( ! $this->claim_replay_slot( $dedup_key ) ) {
+			$this->debug_log( $request, $this->build_replay_response( $event, $event_id ) );
+			return $this->build_replay_response( $event, $event_id );
 		}
 
 		$result = $this->manager->apply_webhook_event(
@@ -267,13 +303,105 @@ final class WebhookListener {
 			return $result;
 		}
 
+		// The manager may return a noop envelope (e.g. "still locked" on an
+		// unlock webhook) that the sender must NOT retry. Forward it verbatim
+		// so the sender sees 2xx + the explicit noop reason and stops.
+		if ( is_array( $result ) && isset( $result['status'] ) && 'noop' === $result['status'] ) {
+			$this->debug_log( $request, $result );
+			return $result;
+		}
+
 		$response = array(
 			'status' => 'accepted',
 			'event'  => $event,
 		);
 
+		// Replay TTL was already set atomically by wp_cache_add() above; no
+		// follow-up write is needed here.
+
 		$this->debug_log( $request, $response );
 		return $response;
+	}
+
+	/**
+	 * Build a response indicating an event was already processed (replay).
+	 *
+	 * @param string $event    Event name.
+	 * @param string $event_id Unique event identifier.
+	 * @return array{status: string, event: string, event_id: string}
+	 */
+	private function build_replay_response( string $event, string $event_id ): array {
+		return array(
+			'status'   => 'accepted',
+			'event'    => $event,
+			'event_id' => $event_id,
+		);
+	}
+
+	/**
+	 * Atomically claim a replay-protection slot for the given dedup key.
+	 *
+	 * Prefers a persistent external object cache via `wp_cache_add`. When the
+	 * site is not running a persistent object cache, `wp_cache_*` is purely
+	 * per-request — useless for cross-request replay protection — so we fall
+	 * back to a DB-backed primitive via `add_option`, whose `option_name`
+	 * unique index gives us set-if-not-exists semantics. Stale rows are
+	 * cleaned up opportunistically via a scheduled GC and on every claim.
+	 *
+	 * @param string $dedup_key Replay key (already hashed, prefixed).
+	 * @return bool True if the slot was newly claimed (process the event).
+	 */
+	private function claim_replay_slot( string $dedup_key ): bool {
+		if ( function_exists( 'wp_using_ext_object_cache' ) && wp_using_ext_object_cache() ) {
+			return (bool) wp_cache_add( $dedup_key, 1, '', self::REPLAY_TTL );
+		}
+
+		// Fallback path: external object cache missing. Use wp_options as a
+		// best-effort, set-if-not-exists store. Surface an admin notice so the
+		// operator knows to install Redis/Memcached for production use.
+		$this->maybe_warn_missing_object_cache();
+
+		$option_name = 'wpru_wh_dedup_' . substr( $dedup_key, strlen( 'wh_dedup_' ) );
+		$expires_at  = time() + self::REPLAY_TTL;
+
+		// add_option() returns false if the option already exists. The
+		// option_name column has a unique index, so this is race-safe.
+		$claimed = add_option( $option_name, $expires_at, '', 'no' );
+
+		if ( ! $claimed ) {
+			// Existing claim — check whether it has expired and reclaim if so.
+			$existing = (int) get_option( $option_name, 0 );
+			if ( $existing > 0 && $existing < time() ) {
+				delete_option( $option_name );
+				return (bool) add_option( $option_name, $expires_at, '', 'no' );
+			}
+			return false;
+		}
+
+		return true;
+	}
+
+	/**
+	 * Emit an admin-notice once when running webhook replay protection
+	 * without a persistent object cache.
+	 */
+	private function maybe_warn_missing_object_cache(): void {
+		if ( get_transient( 'wpru_wh_no_obj_cache_warned' ) ) {
+			return;
+		}
+		set_transient( 'wpru_wh_no_obj_cache_warned', 1, DAY_IN_SECONDS );
+
+		add_action(
+			'admin_notices',
+			static function (): void {
+				if ( ! current_user_can( 'manage_options' ) ) {
+					return;
+				}
+				echo '<div class="notice notice-warning"><p>';
+				echo esc_html__( 'WP React UI: No persistent object cache detected. License webhook replay protection is using a slower DB fallback. Install Redis or Memcached for production.', 'wp-react-ui' );
+				echo '</p></div>';
+			}
+		);
 	}
 
 	/**
@@ -313,7 +441,7 @@ final class WebhookListener {
 		if ( '' === $event || '' === $event_id || '' === $key_prefix || '' === $signature || '' === $timestamp || ! is_array( $data ) || '' === $body_hash ) {
 			return new WP_Error(
 				'invalid_webhook_payload',
-				'Webhook payload is incomplete.',
+				__( 'Webhook payload is incomplete.', 'wp-react-ui' ),
 				array( 'status' => 400 )
 			);
 		}

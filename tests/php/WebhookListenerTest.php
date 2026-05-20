@@ -21,6 +21,11 @@ class WebhookListenerTest extends TestCase {
 		$settings = new LicenseSettingsRepository();
 		$settings->save_license_key( self::LICENSE_KEY );
 		$settings->save_webhook_secret( self::WEBHOOK_SECRET );
+		$settings->save_server_url( 'https://license.example.test' );
+
+		// The integration-style tests don't resolve real DNS — opt out of
+		// DNS pinning so the outbound call reaches our remote_post_handler.
+		add_filter( 'wp_react_ui_license_skip_dns_pinning', '__return_true' );
 
 		delete_transient( 'wh_rl_failed_' . md5( '127.0.0.1' ) );
 		delete_transient( 'wh_rl_global' );
@@ -221,14 +226,57 @@ class WebhookListenerTest extends TestCase {
 		$cached = ( new LicenseCache() )->get();
 		$this->assertSame( 'locked', $cached['status'] );
 
+		// The unlock path now verifies with the license server before clearing
+		// the cache (fail-closed). Stub the remote validate to return active.
+		global $wp_test_state;
+		$wp_test_state['remote_post_handler'] = static function () {
+			return array(
+				'response' => array( 'code' => 200 ),
+				'body'     => wp_json_encode( array( 'status' => 'active' ) ),
+			);
+		};
+
 		$unlock_request = $this->build_request( 'license.unlocked', array( 'restored_status' => 'active' ) );
 		$response = $listener->handle( $unlock_request );
+
+		$wp_test_state['remote_post_handler'] = null;
 
 		$this->assertIsArray( $response );
 		$this->assertSame( 'accepted', $response['status'] );
 
 		$cached = ( new LicenseCache() )->get();
 		$this->assertNull( $cached );
+	}
+
+	public function test_unlock_webhook_no_ops_when_server_still_locked(): void {
+		$listener = new WebhookListener();
+		$listener->handle(
+			$this->build_request( 'license.locked', array( 'pre_lock_status' => 'active' ) )
+		);
+
+		// Server says STILL LOCKED — the unlock event must NOT clear the cache,
+		// and must return 200 with a noop envelope rather than 409 (which would
+		// trigger a retry storm).
+		global $wp_test_state;
+		$wp_test_state['remote_post_handler'] = static function () {
+			return array(
+				'response' => array( 'code' => 200 ),
+				'body'     => wp_json_encode( array( 'status' => 'locked' ) ),
+			);
+		};
+
+		$response = $listener->handle(
+			$this->build_request( 'license.unlocked', array( 'restored_status' => 'active' ) )
+		);
+		$wp_test_state['remote_post_handler'] = null;
+
+		$this->assertIsArray( $response, 'Still-locked unlock must return a 2xx envelope, not WP_Error.' );
+		$this->assertSame( 'noop', $response['status'] ?? null );
+		$this->assertSame( 'still_locked', $response['reason'] ?? null );
+
+		$cached = ( new LicenseCache() )->get();
+		$this->assertIsArray( $cached );
+		$this->assertSame( 'locked', $cached['status'] );
 	}
 
 	/**
